@@ -69,3 +69,4 @@ ALTER TABLE bagactueel.bag3d ADD PRIMARY KEY (gid);
 COMMENT ON TABLE bagactueel.bag3d IS 'The 3D BAG';
 
 DROP VIEW bagactueel.bag3d_border_union;
+
