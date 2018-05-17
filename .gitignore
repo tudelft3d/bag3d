@@ -1,2 +1,5 @@
 .settings
 .pytest_cache
+
+# Sphinx
+docs/_build
