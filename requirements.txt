@@ -1,0 +1,12 @@
+# packages for operation
+shapely
+fiona
+psycopg2
+pyyaml
+
+# packages for testing and reporting
+pytest
+pytest-pep8
+pytest-cov
+coverage
+Sphinx

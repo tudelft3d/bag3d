@@ -1,11 +1,20 @@
 [[source]]
-name = "pypi"
 url = "https://pypi.org/simple"
 verify_ssl = true
-
-[requires]
-python_version = "3.5"
+name = "pypi"
 
 [packages]
+"psycopg2" = "*"
+pytest = "*"
+"pytest-pep8" = "*"
+pytest-cov = "*"
+coverage = "*"
+Shapely = "*"
+Fiona = "*"
+PyYAML = "*"
+Sphinx = "*"
+
+[requires]
+python_version = "3.6"
 
 [dev-packages]
