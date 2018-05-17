@@ -1,6 +1,9 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+"""Configure the batch3dfier processes for the tiles on AHN2 and AHN3 border"""
+
+
 from os import path
 from sys import exit
 import warnings

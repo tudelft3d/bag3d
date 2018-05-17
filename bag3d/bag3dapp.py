@@ -80,31 +80,27 @@ def main():
     
     args_in = parse_console_args(sys.argv[1:])
     
-#    put all the swtiches in a YAML config file
     logger.debug("Parsing configuration file")
 
     if args_in['create_db']:
-        logger.debug("Creating BAG database")
+        logger.info("Creating BAG database")
 
     if args_in['update_ahn']:
-        logger.debug("Updating AHN files")
-
-#        update ahn in the BAG DB
+        logger.info("Updating AHN files")
 
     if args_in['import_tile_idx']:
-        logger.debug("Importing tile indexes")
+        logger.info("Importing tile indexes")
 
 
     if args_in['update_bag']:
-        logger.debug("Updating the BAG database")
+        logger.info("Updating the BAG database")
 
-#    import the batch3dfier config
-    logger.debug("Parsing batch3dfier configuration")
-
-#    prepare the 3 configs for the border and rest tiles
-    logger.info("Configuring AHN2-3 border tiles")
 
     if args_in['run_3dfier']:
+        logger.info("Parsing batch3dfier configuration")
+
+        logger.info("Configuring AHN2-3 border tiles")
+        
         logger.info("Running batch3dfier")
         
         logger.info("Importing batch3dfier output into database")

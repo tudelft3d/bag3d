@@ -1,20 +1,6 @@
-#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-"""Generate a 3D BAG data set.
-
-It processes the CSV output from 3dfier (CSV-BUILDINGS-MULTIPLE) and imports
-the data back to the database. Finally, combines the BAG building (pand)
-footprint geometry and attributes with the height values from the CSV and info
-about the respective AHN tile (file date and AHN version). The result is the
-<bag schema>.bag3d table containing all the mentioned fields, therefore it
-duplicates the BAG pand table.
-Only works when the AHN3 and BAG tiles have the same size and identifier. That
-is, because 3dfier outputs a CSV per BAG tile, then the bag3d module assigns
-a single AHN date and version to the whole CSV, based on the tile ID that is 
-part of the CSV file name. This ID should have a match among the AHN tiles.
-Works in Linux only, due to the use of gawk and sed.
-"""
+"""Import batch3dfier output into the database"""
 
 import os
 import sys
@@ -256,204 +242,9 @@ def create_bag3d_relations(cfg):
     db.sendQuery(query)
 
 
-def combine_border_tiles():
-    """Combine the border tiles from AHN2 and AHN3"""
-    return None
-
-
-def export_csv(cur, csv_out, cfg):
-    """Export the 3DBAG table into a CSV file"""
+def run(args_in, cfg):
+    """Import the batch3dfier CSV output into the BAG database"""
     
-    bag3d_table_q = sql.Identifier(cfg['bag3d_table'])
-    
-    query = sql.SQL("""COPY (
-    SELECT
-        gid,
-        identificatie,
-        aanduidingrecordinactief,
-        aanduidingrecordcorrectie,
-        officieel,
-        inonderzoek,
-        documentnummer,
-        documentdatum,
-        pandstatus,
-        bouwjaar,
-        begindatumtijdvakgeldigheid,
-        einddatumtijdvakgeldigheid,
-        "ground-0.00",
-        "ground-0.10",
-        "ground-0.20",
-        "ground-0.30",
-        "ground-0.40",
-        "ground-0.50",
-        "roof-0.00",
-        "roof-0.10",
-        "roof-0.25",
-        "roof-0.50",
-        "roof-0.75",
-        "roof-0.90",
-        "roof-0.95",
-        "roof-0.99",
-        ahn_file_date,
-        ahn_version
-    FROM bagactueel.{bag3d})
-    TO STDOUT
-    WITH (FORMAT 'csv', HEADER TRUE, ENCODING 'utf-8')
-    """).format(bag3d=bag3d_table_q)
-    
-    with open(csv_out, "w") as c_out:
-        cur.copy_expert(query, c_out)
-
-
-def export_bag3d(cfg, out_dir):
-    """Export and prepare the 3D BAG in various formats
-    
-    PostGIS dump is restored as:
-    
-    createdb <db>
-    psql -d <db> -c 'create extension postgis;'
-    
-    pg_restore \
-    --no-owner \
-    --no-privileges \
-    -h <host> \
-    -U <user> \
-    -d <db> \
-    -w bagactueel_schema.backup
-    
-    pg_restore \
-    --no-owner \
-    --no-privileges \
-    -j 2 \
-    --clean \
-    -h <host> \
-    -U <user> \
-    -d <db> \
-    -w bag3d_30-12-2017.backup
-    
-    """
-    db = cfg["dbase"]
-    bag3d = cfg['bag3d_table']
-    
-    date = datetime.date.today().isoformat()
-    
-    postgis_dir = os.path.join(out_dir, "postgis")
-    # PostGIS schema (required because of the pandstatus custom data type)
-    command = "pg_dump \
---host {h} \
---port {p} \
---username {u} \
---no-password \
---format custom \
---no-owner \
---compress 7 \
---encoding UTF8 \
---verbose \
---schema-only \
---schema bagactueel \
---file {f} \
-bag".format(h=db.host,
-            p=db.port,
-            u=db.user,
-            f=os.path.join(postgis_dir,"bagactueel_schema.backup"))
-    run(command, shell=True)
-    
-    # The 3D BAG (building heights + footprint geom)
-    x =  "bag3d_{d}.backup".format(d=date)
-    command = "pg_dump \
---host {h} \
---port {p} \
---username {u} \
---no-password \
---format custom \
---no-owner \
---compress 7 \
---encoding UTF8 \
---verbose \
---file {f} \
---table bagactueel.{bag3d} \
-bag".format(h=db.host,
-            p=db.port,
-            u=db.user,
-            f=os.path.join(postgis_dir, x),
-            bag3d=bag3d)
-    run(command, shell=True)
-    
-    # Create GeoPackage
-    x = "bag3d_{d}.gpkg".format(d=date)
-    f = os.path.join(out_dir, "gpkg", x)
-    command = "ogr2ogr -f GPKG {f} \
-    PG:'dbname={db} \
-    host={h} \
-    user={u} \
-    password={pw} \
-    schemas=bagactueel tables={bag3d}'".format(f=f,
-                                             db=db.dbname,
-                                             h=db.host,
-                                             pw=db.password,
-                                             u=db.user,
-                                             bag3d=bag3d)
-    run(command, shell=True)
-    
-    # CSV
-    x = "bag3d_{d}.csv".format(d=date)
-    csv_out = os.path.join(out_dir, "csv", x)
-    with db.conn:
-        with db.conn.cursor() as cur:
-            export_csv(cur, csv_out, cfg)
-
-
-def main():
-    """Main function
-    
-    !!! The script processes ALL csv files in the given directory !!!
-
-    Creates the table if doesn't exists.
-    
-    Example:
-    
-    $ csv2db.py -d /some/directory/with/CSVs -s bagactueel -t heights -rm 
-    """
-    
-    parser = argparse.ArgumentParser(description="Copy CSV-BUILDINGS-MULTIPLE files to PostgreSQL table")
-    parser.add_argument(
-        "-d",
-        help="Directory with CSV files")
-    parser.add_argument(
-        "-c",
-        help="batch3dfier config file")
-    parser.add_argument(
-        "-o",
-        help="Output directory")
-    parser.add_argument(
-        "--no-export",
-        action="store_false",
-        dest="e",
-        help="Do not export the 3D BAG into CSV, GPKG, PostgreSQL")
-    parser.add_argument(
-        "--del-csv",
-        action="store_true",
-        dest="rm",
-        help="Remove CSV files from disk after import")
-    parser.add_argument(
-        "--keep-csv",
-        action="store_false",
-        dest="rm",
-        help="Keep CSV files from disk after import (default)")
-    parser.set_defaults(rm=False)
-    parser.set_defaults(e=True)
-
-    args = parser.parse_args()
-    args_in = {}
-    args_in['csv_dir'] = os.path.abspath(args.d)
-    # TODO: detect missing -o and use that instead of --no-export
-    args_in['out_dir'] = os.path.abspath(args.o)
-    args_in['rm'] = args.rm
-    args_in["cfg_file"] = args.c
-    args_in['export'] = args.e
-    
-    cfg = parse_config_yaml(args_in)
-
     # Get CSV files in dir
     for root, dir, filenames in os.walk(args_in['csv_dir'], topdown=True):
         csv_files = [f for f in filenames if os.path.splitext(f)[1].lower() == ".csv"]
@@ -465,24 +256,134 @@ def main():
         logging.exception("Couln't find any CSVs in %s", args_in['csv_dir'])
         sys.exit(1)
 
-
     csv2db(cfg, out_paths)
     
     # TODO: add option for dropping the relations if exist
     create_bag3d_relations(cfg)
-    
-    if args_in['export']:
-        export_bag3d(cfg, args_in['out_dir'])
-    
-    if args_in['rm']:
-        p = os.path.join(args_in['csv_dir'], "*.csv")
-        cmd = " ".join("rm", p)
-        run(cmd, shell=True)
-    
-    cfg['dbase'].close()
-    
-    # report how many files were created and how many tiles are there
 
 
-if __name__ == '__main__':
-    main()
+# --------------------- Unite tiles
+
+import psycopg2, psycopg2.sql
+
+
+config = {
+    'db': {
+        'dbname': "bag_test",
+        'host': "localhost",
+        'port': "55555",
+        'user': "bag_admin"
+        },
+    'tile_index': {
+        'schema': "tile_index",
+        'table': {
+            'name': "ahn_index",
+            'version': "ahn_version",
+            'geom': "geom",
+            'tile': "bladnr"
+            },
+        'border_table': 'border_tiles'
+        },
+    'ahn2': {
+        'dir': "/data/pointcloud/AHN2/merged"
+        },
+    'ahn3': {
+        'dir': "/data/pointcloud/AHN3/as_downloaded"
+        },
+    'config': {
+        'in': "/home/bdukai/Data/3DBAG/batch3dfy_bag_test_area.yml",
+        'out_rest': "/home/bdukai/Data/3DBAG/conf_test_rest.yml",
+        'out_border_ahn2': "/home/bdukai/Data/3DBAG/conf_test_border_ahn2.yml",
+        'out_border_ahn3': "/home/bdukai/Data/3DBAG/conf_test_border_ahn3.yml"
+        }
+    }
+
+
+def unite_tiles():
+    """Unite border tiles with the rest"""
+
+
+def unite_border_tiles(conn, schema, border_ahn2, border_ahn3):
+    """Unite the tiles on the AHN2 and AHN3 border"""
+    
+    query = psycopg2.sql.SQL("""
+    CREATE OR REPLACE VIEW {schema}.bag3d_border_union AS
+    WITH border_ahn3_notnull AS(
+        SELECT
+            a.*
+        FROM
+            {schema}.{border_ahn3} a
+        WHERE
+            a."ground-0.00" IS NOT NULL
+            AND a."ground-0.10" IS NOT NULL
+            AND a."ground-0.20" IS NOT NULL
+            AND a."ground-0.30" IS NOT NULL
+            AND a."ground-0.40" IS NOT NULL
+            AND a."ground-0.50" IS NOT NULL
+            AND a."roof-0.00" IS NOT NULL
+            AND a."roof-0.10" IS NOT NULL
+            AND a."roof-0.25" IS NOT NULL
+            AND a."roof-0.50" IS NOT NULL
+            AND a."roof-0.75" IS NOT NULL
+            AND a."roof-0.90" IS NOT NULL
+            AND a."roof-0.95" IS NOT NULL
+            AND a."roof-0.99" IS NOT NULL
+    ),
+    border_ahn2_id AS(
+        SELECT
+            ARRAY_AGG( a.identificatie ) identificatie
+        FROM
+            (
+                SELECT
+                    identificatie
+                FROM
+                    {schema}.{border_ahn2}
+            EXCEPT SELECT
+                    identificatie
+                FROM
+                    border_ahn3_notnull
+            ) a
+    ) SELECT
+        *
+    FROM
+        border_ahn3_notnull
+    UNION SELECT
+        a.*
+    FROM
+        {schema}.{border_ahn2} a,
+        border_ahn2_id b
+    WHERE
+        a.identificatie = ANY(b.identificatie)
+    ;
+    """).format(
+        schema=psycopg2.sql.Identifier(schema),
+        border_ahn3=psycopg2.sql.Identifier(border_ahn3),
+        border_ahn2=psycopg2.sql.Identifier(border_ahn2)
+        )
+    
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute(query)
+
+
+def create_bag3d_table(conn, schema):
+    """Unite the border tiles with the rest"""
+    
+    query = psycopg2.sql.SQL("""
+    CREATE TABLE {schema}.bag3d AS
+    SELECT *
+    FROM {schema}.bag3d_rest
+    UNION
+    SELECT *
+    FROM {schema}.bag3d_border_union;
+    
+    CREATE INDEX bag3d_geom_idx ON {schema}.bag3d USING gist (geovlak);
+    ALTER TABLE {schema}.bag3d ADD PRIMARY KEY (gid);
+    COMMENT ON TABLE {schema}.bag3d IS 'The 3D BAG';
+    
+    DROP VIEW {schema}.bag3d_border_union;
+    """).format(schema=psycopg2.sql.Identifier(schema))
+    
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute(query)
