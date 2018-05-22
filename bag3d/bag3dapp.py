@@ -3,6 +3,7 @@
 
 """Handles the whole flow of updating AHN files and BAG, and generating the 3D BAG"""
 
+import sys
 import os.path
 from sys import argv
 
@@ -62,8 +63,10 @@ def parse_console_args(args):
 
     args = parser.parse_args(args)
     args_in = {}
-    # FIXME: handle file not found
     args_in['cfg_file'] = os.path.abspath(args.path)
+    if not os.path.exists(args_in['cfg_file']):
+        logger.exception('Configuration file not round')
+        sys.exit(1)
     args_in['cfg_dir'] = os.path.dirname(args_in['cfg_file'])
     args_in['threads'] = args.threads
     args_in['create_db'] = args.create_db

@@ -43,8 +43,10 @@ def parse_console_args():
 
     args = parser.parse_args()
     args_in = {}
-    # FIXME: handle file not found
     args_in['cfg_file'] = os.path.abspath(args.path)
+    if not os.path.exists(args_in['cfg_file']):
+        logging.exception('Configuration file not round')
+        sys.exit(1)
     args_in['cfg_dir'] = os.path.dirname(args_in['cfg_file'])
     args_in['threads'] = args.threads
 
