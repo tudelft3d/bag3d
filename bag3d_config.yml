@@ -1,0 +1,48 @@
+database:
+    dbname: batch3dfier_db
+    host: localhost
+    port: 5433
+    user: batch3dfier
+    pw: batch3d_test
+
+input_polygons:
+    tile_schema: bag_tiles
+    user_schema: 
+    tile_prefix: t_ 
+    uniqueid: identification
+    extent: /home/bdukai/Development/batch3dfier/example_data/extent_small.geojson
+    tile_list: [25gn1_c1, 25gn1_c2, 25gn1_c3, 25gn1_c4]
+
+input_elevation:
+    dataset_dir:
+        - /example_data/ahn3
+        - /example_data/ahn2/merged
+    dataset_name: 
+        - "c_{tile}.laz"
+        - "{tile}.laz"
+
+tile_index:
+    polygons:
+        schema: tile_index
+        table: bag_index
+        fields:
+            primary_key: gid
+            geometry: geom
+            unit_name: unit
+    elevation: 
+        schema: tile_index
+        table: ahn_index
+        fields:
+            primary_key: gid
+            geometry: geom
+            unit_name: unit
+
+output:
+    dir: /home/bdukai/Data/3DBAG
+    schema: bagactueel
+    table: heights
+    bag3d_table: bag3d
+
+path_3dfier: /home/bdukai/Development/3dfier/build/3dfier
+
+
