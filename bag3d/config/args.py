@@ -9,6 +9,8 @@ import warnings
 import logging
 
 import yaml
+import pykwalify.core
+import pykwalify.errors
 
 from bag3d.config import db
 
@@ -90,16 +92,32 @@ def add_abspath(dirs):
         return os.path.abspath(dirs)
 
 
-def parse_config_yaml(args_in):
-    """Process the config YAML to internal format"""
-    cfg = {}
-
+def validate_config(config, schema):
+    """Validates the configuration file against the schema"""
+    c = pykwalify.core.Core(source_file=config, schema_files=[schema])
     try:
-        stream = open(args_in['cfg_file'], "r")
-        cfg_stream = yaml.load(stream)
-    except FileNotFoundError as e:
-        logging.exception("Config file not found at %s", args_in['cfg_file'])
+        c.validate(raise_exception=True)
+        return True
+    except pykwalify.errors.PyKwalifyException as e:
+        logger.exception("Configuration file is not valid")
+        return False
+
+
+def parse_config(args_in):
+    """Process the configuration file"""
+    cfg = {}
+    
+    schema = os.path.abspath('bag3d_config_schema.yml')
+    if not os.path.exists(schema):
+        logger.exception('Schema file %s not round', schema)
         sys.exit(1)
+    else:
+        v = validate_config(args_in['cfg_file'], schema)
+        if v == True:
+            with open(args_in['cfg_file'], "r") as stream:
+                cfg_stream = yaml.load(stream)
+        else:
+            sys.exit(1)
 
     cfg['pc_dataset_name'] = cfg_stream["input_elevation"]["dataset_name"]
     cfg['pc_dir'] = add_abspath(

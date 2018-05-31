@@ -1,7 +1,7 @@
 database:
     dbname: batch3dfier_db
     host: localhost
-    port: 5433
+    port: 5432
     user: batch3dfier
     pw: batch3d_test
 

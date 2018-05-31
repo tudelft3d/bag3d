@@ -24,6 +24,9 @@ def main():
     args_in = args.parse_console_args(sys.argv[1:])
     
     logger.debug("Parsing configuration file")
+    
+    cfg = args.parse_config(args_in)
+    cfg["dbase"].close()
 
     if args_in['create_db']:
         logger.info("Creating BAG database")
