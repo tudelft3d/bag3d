@@ -38,7 +38,7 @@ tile_index:
             unit_name: unit
 
 output:
-    dir: /home/bdukai/Data/3DBAG
+    dir: /tmp/3DBAG
     schema: bagactueel
     table: heights
     bag3d_table: bag3d

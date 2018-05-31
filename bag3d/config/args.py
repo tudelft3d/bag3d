@@ -126,23 +126,13 @@ def parse_config(args_in):
     cfg['polygons'] = cfg_stream['tile_index']['polygons']
     cfg['elevation'] = cfg_stream['tile_index']['elevation']
 
-    OUTPUT_FORMAT = cfg_stream["output"]["format"]
-    if all(f not in OUTPUT_FORMAT.lower() for f in ["csv", "obj"]):
-        warnings.warn(
-            "\n No file format is appended to output. Currently only .obj or .csv is handled.\n")
-    cfg['output_format'] = OUTPUT_FORMAT
     cfg['output_dir'] = os.path.abspath(cfg_stream["output"]["dir"])
     if not os.path.exists(cfg['output_dir']):
         os.makedirs(cfg['output_dir'], exist_ok=True)
-    if 'CSV-BUILDINGS-MULTIPLE' == cfg['output_format']:
-        cfg['out_schema'] = cfg_stream["output"]["schema"]
-        cfg['out_table'] = cfg_stream["output"]["table"]
-        cfg['bag3d_table'] = cfg_stream["output"]["bag3d_table"]
-    else:
-        # OBJ is not imported into postgres
-        cfg['out_schema'] = None
-        cfg['out_table'] = None
-        pass
+    
+    cfg['out_schema'] = cfg_stream["output"]["schema"]
+    cfg['out_table'] = cfg_stream["output"]["table"]
+    cfg['bag3d_table'] = cfg_stream["output"]["bag3d_table"]
 
     cfg['path_3dfier'] = cfg_stream["path_3dfier"]
 

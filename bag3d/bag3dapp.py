@@ -26,7 +26,7 @@ def main():
     logger.debug("Parsing configuration file")
     
     cfg = args.parse_config(args_in)
-    cfg["dbase"].close()
+    
 
     if args_in['create_db']:
         logger.info("Creating BAG database")
@@ -56,7 +56,7 @@ def main():
     if args_in['export']:
         logger.info("Exporting 3D BAG")
     
-    logger.warning('test warning')
+    cfg["dbase"].close()
 
 if __name__ == '__main__':
     main()
