@@ -8,80 +8,20 @@ import os.path
 from sys import argv
 
 import argparse
-import logging
-import logging.config
+import yaml
+import logging, logging.config
 
-logfile = os.path.join(os.getcwd(), 'bag3d.log')
-logging.basicConfig(filename=logfile,
-                    filemode='a',
-                    level=logging.DEBUG,
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+from bag3d.config import args
 
-
-def parse_console_args(args):
-    """Parse command line arguments"""
-    parser = argparse.ArgumentParser(description="Generate a 3D BAG")
-    parser.add_argument(
-        "path",
-        help="The YAML configuration file")
-    parser.add_argument(
-        "-t", "--threads",
-        help="The number of threads to run.",
-        default=3,
-        type=int)
-    parser.add_argument(
-        "--create_db",
-        action="store_true",
-        help="Create a new database for the BAG")
-    parser.add_argument(
-        "--update_bag",
-        action="store_true",
-        help="Update the BAG in the database")
-    parser.add_argument(
-        "--update_ahn",
-        action="store_true",
-        help="Download/update the AHN files")
-    parser.add_argument(
-        "--import_tile_idx",
-        action="store_true",
-        help="Import the BAG and AHN tile indexes into the BAG database")
-    parser.add_argument(
-        "--run_3dfier",
-        action="store_true",
-        help="Run batch3dfier")
-    parser.add_argument(
-        "--export",
-        action="store_true",
-        help="Export the 3D BAG into files")
-    parser.set_defaults(create_db=False)
-    parser.set_defaults(update_bag=False)
-    parser.set_defaults(update_ahn=False)
-    parser.set_defaults(import_tile_idx=False)
-    parser.set_defaults(run_3dfier=False)
-    parser.set_defaults(export=False)
-
-    args = parser.parse_args(args)
-    args_in = {}
-    args_in['cfg_file'] = os.path.abspath(args.path)
-    if not os.path.exists(args_in['cfg_file']):
-        logger.exception('Configuration file not round')
-        sys.exit(1)
-    args_in['cfg_dir'] = os.path.dirname(args_in['cfg_file'])
-    args_in['threads'] = args.threads
-    args_in['create_db'] = args.create_db
-    args_in['update_bag'] = args.update_bag
-    args_in['update_ahn'] = args.update_ahn
-    args_in['import_tile_idx'] = args.import_tile_idx
-    args_in['run_3dfier'] = args.run_3dfier
-    args_in['export'] = args.export
-    
-    return args_in
+with open('logging.conf', 'r') as f:
+    log_conf = yaml.safe_load(f)
+logging.config.dictConfig(log_conf)
+logger = logging.getLogger('bag3dapp')
 
 
 def main():
     
-    args_in = parse_console_args(sys.argv[1:])
+    args_in = args.parse_console_args(sys.argv[1:])
     
     logger.debug("Parsing configuration file")
 
@@ -112,6 +52,8 @@ def main():
 
     if args_in['export']:
         logger.info("Exporting 3D BAG")
+    
+    logger.warning('test warning')
 
 if __name__ == '__main__':
     main()

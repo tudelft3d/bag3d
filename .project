@@ -17,6 +17,11 @@
 	</natures>
 	<linkedResources>
 		<link>
+			<name>schema</name>
+			<type>2</type>
+			<location>/home/balazs/Development/cityjson/schema</location>
+		</link>
+		<link>
 			<name>val3dity</name>
 			<type>2</type>
 			<location>/home/balazs/Development/val3dity</location>

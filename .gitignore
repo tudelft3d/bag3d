@@ -1,5 +1,6 @@
 .settings
 .pytest_cache
+bag3d.egg-info
 
 # Sphinx
 docs/_build
