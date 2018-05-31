@@ -32,6 +32,7 @@ tile_index:
     elevation: 
         schema: tile_index
         table: ahn_index
+        border_table: border_tiles
         fields:
             primary_key: gid
             geometry: geom

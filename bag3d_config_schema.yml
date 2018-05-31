@@ -98,6 +98,10 @@ mapping:
                     table:
                         type: str
                         required: True
+                    border_table:
+                        type: str
+                        required: False
+                        desc: Name of the table that contains those tiles which are on the border of the AHN3, and thus these tiles are missing points in AHN3
                     fields:
                         type: map
                         mapping:

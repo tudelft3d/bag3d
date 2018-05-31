@@ -3,13 +3,14 @@
 
 """Handles the whole flow of updating AHN files and BAG, and generating the 3D BAG"""
 
-import sys
-import os.path
 from sys import argv
+import os.path
 
-import argparse
 import yaml
 import logging, logging.config
+
+from pprint import pprint
+
 
 from bag3d.config import args
 from bag3d.config import db
@@ -22,7 +23,7 @@ logger = logging.getLogger('bag3dapp')
 
 def main():
     
-    args_in = args.parse_console_args(sys.argv[1:])
+    args_in = args.parse_console_args(argv[1:])
     
     logger.debug("Parsing configuration file")
     
@@ -34,6 +35,7 @@ def main():
         user=cfg["database"]["user"],
         password=cfg["database"]["pw"])
     
+    pprint(cfg)
 
     if args_in['create_db']:
         logger.info("Creating BAG database")

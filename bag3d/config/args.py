@@ -119,7 +119,6 @@ def parse_config(args_in):
     cfg['pc_dataset_name'] = cfg_stream["input_elevation"]["dataset_name"]
     cfg['pc_dir'] = add_abspath(
         cfg_stream["input_elevation"]["dataset_dir"])
-#     cfg['pc_tile_case'] = cfg_stream["input_elevation"]["tile_case"]
     cfg['polygons'] = cfg_stream['tile_index']['polygons']
     cfg['elevation'] = cfg_stream['tile_index']['elevation']
 
