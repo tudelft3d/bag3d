@@ -5,14 +5,11 @@
 import sys
 import os.path
 import argparse
-import warnings
 import logging
 
 import yaml
 import pykwalify.core
 import pykwalify.errors
-
-from bag3d.config import db
 
 logger = logging.getLogger('config.args')
 
@@ -156,14 +153,8 @@ def parse_config(args_in):
     USER_SCHEMA = cfg_stream["input_polygons"]["user_schema"]
     if (USER_SCHEMA is None) or (EXTENT_FILE is None):
         cfg['user_schema'] = cfg['tile_schema']
-
-    # Connect to database ----------------------------------------------------
-    cfg['dbase'] = db.db(
-        dbname=cfg_stream["database"]["dbname"],
-        host=str(cfg_stream["database"]["host"]),
-        port=cfg_stream["database"]["port"],
-        user=cfg_stream["database"]["user"],
-        password=cfg_stream["database"]["pw"])
+    
+    cfg['database'] = cfg_stream['database']
 
     cfg['uniqueid'] = cfg_stream["input_polygons"]['uniqueid']
 

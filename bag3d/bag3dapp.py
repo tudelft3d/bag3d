@@ -12,6 +12,7 @@ import yaml
 import logging, logging.config
 
 from bag3d.config import args
+from bag3d.config import db
 
 with open('logging.conf', 'r') as f:
     log_conf = yaml.safe_load(f)
@@ -26,6 +27,12 @@ def main():
     logger.debug("Parsing configuration file")
     
     cfg = args.parse_config(args_in)
+    conn = db.db(
+        dbname=cfg["database"]["dbname"],
+        host=str(cfg["database"]["host"]),
+        port=cfg["database"]["port"],
+        user=cfg["database"]["user"],
+        password=cfg["database"]["pw"])
     
 
     if args_in['create_db']:
@@ -56,7 +63,7 @@ def main():
     if args_in['export']:
         logger.info("Exporting 3D BAG")
     
-    cfg["dbase"].close()
+    conn.close()
 
 if __name__ == '__main__':
     main()
