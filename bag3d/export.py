@@ -12,7 +12,7 @@ from psycopg2 import sql
 import datetime
 import logging
 
-from batch3dfier.batch3dfierapp import parse_config_yaml
+from batch3dfier.batch3dfierapp import parse_config
 
 
 def export_csv(cur, csv_out, cfg):

@@ -11,7 +11,7 @@ from psycopg2 import sql
 import datetime
 import logging
 
-from batch3dfier.batch3dfierapp import parse_config_yaml
+from batch3dfier.batch3dfierapp import parse_config
 
 
 def create_heights_table(db, schema, table):
@@ -69,7 +69,7 @@ def csv2db(cfg, out_paths):
     ----------
     db : db Class instance
     cfg: dict
-        batch3dfier YAML config (output by parse_config_yaml() )
+        batch3dfier YAML config (output by parse_config() )
     args_in: dict
         batch3dfier command line arguments
     out_paths: list of strings

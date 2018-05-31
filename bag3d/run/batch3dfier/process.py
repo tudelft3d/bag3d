@@ -69,7 +69,7 @@ def add_abspath(dirs):
         return os.path.abspath(dirs)
 
 
-def parse_config_yaml(args_in):
+def parse_config(args_in):
     """Process the config YAML to internal format"""
     cfg = {}
 
@@ -154,7 +154,7 @@ def main():
     tiles_clipped = None
 
     args_in = parse_console_args()
-    cfg = parse_config_yaml(args_in)
+    cfg = parse_config(args_in)
     dbase = cfg['dbase']
     tiles = cfg['tiles']
     pc_name_map = config.pc_name_dict(cfg['pc_dir'], cfg['pc_dataset_name'])
