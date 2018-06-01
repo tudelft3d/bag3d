@@ -5,10 +5,12 @@
 import psycopg2
 import logging
 
+logger = logging.getLogger('config.db')
+
 class db(object):
     """A database connection class """
 
-    def __init__(self, dbname, host, port, user, password):
+    def __init__(self, dbname, host, port, user, password=None):
         self.dbname = dbname
         self.host = host
         self.port = port
@@ -16,11 +18,13 @@ class db(object):
         self.password = password
         try:
             self.conn = psycopg2.connect(
-                "dbname=%s host=%s port=%s user=%s password=%s" %
-                (dbname, host, port, user, password))
-            logging.debug("Opened database successfully")
-        except BaseException as e:
-            logging.exception("I'm unable to connect to the database. Exiting function.")
+                dbname=dbname, host=host, port=port, user='bla',
+                password=password
+                )
+            logger.debug("Opened database successfully")
+        except BaseException:
+            logger.exception("I'm unable to connect to the database")
+            raise
 
     def sendQuery(self, query):
         """Send a query to the DB when no results need to return (e.g. CREATE)
@@ -91,7 +95,7 @@ class db(object):
     def close(self):
         """Close connection"""
         self.conn.close()
-        logging.debug("Closed database successfuly")
+        logger.debug("Closed database successfuly")
 
 
 def create():
