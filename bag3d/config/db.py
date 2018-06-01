@@ -3,9 +3,10 @@
 """Database connection class."""
 
 from subprocess import run
+import logging
 
 import psycopg2
-import logging
+
 
 logger = logging.getLogger('config.db')
 
@@ -93,16 +94,21 @@ class db(object):
             psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
         query = psycopg2.sql.SQL("VACUUM ANALYZE;")
         self.sendQuery(query)
+    
+    def check_postgis(self):
+        """Create the PostGIS extension if not exitst"""
+        self.sendQuery("CREATE EXTENSION IF NOT EXISTS postgis;")
 
     def close(self):
         """Close connection"""
         self.conn.close()
         logger.debug("Closed database successfully")
 
-def create(dbname, user, host, port):
-    """Create and empty database"""
-    run(['createdb', '-O', user, '-h', host, '-p', str(port), dbname])
+# def create(dbname, user, host, port):
+#     """Create and empty database"""
+#     run(['createdb', '-O', user, '-h', host, '-p', str(port), dbname])
+# 
+# def drop(dbname):
+#     """Drops a database"""
+#     run(['dropdb', dbname])
 
-def drop(dbname):
-    """Drops a database"""
-    run(['dropdb', dbname])

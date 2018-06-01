@@ -32,6 +32,10 @@ def main():
     
     logger.debug(pformat(cfg))
     
+    if args_in['create_db']:
+        logger.info("Creating BAG database")
+        db.create()
+    
     try:
         conn = db.db(
             dbname=cfg["database"]["dbname"],
@@ -41,9 +45,6 @@ def main():
             password=cfg["database"]["pw"])
     except:
         exit(1)
-    
-    if args_in['create_db']:
-        logger.info("Creating BAG database")
 
     if args_in['update_ahn']:
         logger.info("Updating AHN files")
