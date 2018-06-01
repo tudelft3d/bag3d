@@ -5,17 +5,20 @@ name = "pypi"
 
 [packages]
 "psycopg2" = "*"
-pytest = "*"
-"pytest-pep8" = "*"
-pytest-cov = "*"
-coverage = "*"
 Shapely = "*"
 Fiona = "*"
 PyYAML = "*"
 Sphinx = "*"
 "e1839a8" = {path = ".", editable = true}
+lxml = "*"
+"bs4" = "*"
+pykwalify = "*"
 
 [requires]
 python_version = "3.6"
 
 [dev-packages]
+pytest = "*"
+"pytest-pep8" = "*"
+pytest-cov = "*"
+coverage = "*"
