@@ -33,3 +33,7 @@ class TestBAG():
     def test_download_BAG(self, caplog, bag_url):
         with caplog.at_level(logging.DEBUG):
             bag.download_BAG(bag_url, doexec=False)
+    
+    def test_restore_BAG(self, caplog, dbname):
+        with caplog.at_level(logging.DEBUG):
+            bag.restore_BAG(dbname, doexec=False)

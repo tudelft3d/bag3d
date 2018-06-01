@@ -2,7 +2,7 @@
 
 """Update the BAG database (2D) and tile index"""
 
-from datetime import datetime
+from datetime import datetime, date
 from subprocess import run, PIPE
 import locale
 
@@ -37,21 +37,29 @@ def get_latest_BAG(url):
     return data['bag-laatst.backup']
 
 
-def setup_BAG(conn):
+def setup_BAG(conn, doexec=True):
     """Prepares the BAG database"""
     conn.check_postgis()
-    conn.sendQuery("""
-    CREATE TABLE public.bag_updates (id serial constraint id_pkey primary key, last_update timestamp, note text);
-    CREATE SCHEMA tile_index;
-    """)
+    if doexec:
+        conn.sendQuery("""
+        CREATE TABLE public.bag_updates (id serial constraint id_pkey primary key, last_update timestamp, note text);
+        CREATE SCHEMA tile_index;
+        """)
+    else:
+        pass
 
 
-def run_subprocess(command):
+def run_subprocess(command, doexec=True):
     """Subprocess runner"""
-    proc = run(command, stderr=PIPE, stdout=PIPE)
-    err = proc.stderr.decode(locale.getpreferredencoding(do_setlocale=True))
-    if proc.returncode != 0:
-        logger.error("Process returned with non-zero exit code", err)
+    if doexec:
+        logger.debug(" ".join(command))
+        proc = run(command, stderr=PIPE, stdout=PIPE)
+        err = proc.stderr.decode(locale.getpreferredencoding(do_setlocale=True))
+        if proc.returncode != 0:
+            logger.error("Process returned with non-zero exit code", err)
+    else:
+        logger.debug(" ".join(command))
+
 
 def run_pg_restore(dbase, doexec=True):
     """Run the pg_restore process"""
@@ -59,30 +67,21 @@ def run_pg_restore(dbase, doexec=True):
     command = ['psql', '-h', dbase['host'], '-U', dbase['user'],
                '-d', dbase['dbname'], '-w', '-c',
                "'DROP SCHEMA IF EXISTS bagactueel CASCADE;'"]
-    if doexec:
-        run_subprocess(command)
-    else:
-        logger.debug(" ".join(command))
+    run_subprocess(command, doexec)
     
     # Restore from the latest extract
     command = ['pg_restore', '--no-owner', '--no-privileges', '-j', '20',
                '-h', dbase['host'], '-U', dbase['user'], '-d', dbase['dbname'],
                '-w', './data.nlextract.nl/bag/postgis/bag-laatst.backup']
-    if doexec:
-        run_subprocess(command)
-    else:
-        logger.debug(" ".join(command))
+    run_subprocess(command, doexec)
 
 
 def download_BAG(url, doexec=True):
     """Download the latest BAG extract"""
     command = ['wget', '-q', '-r', url] 
-    if doexec:
-        run_subprocess(command)
-    else:
-        logger.debug(" ".join(command))
+    run_subprocess(command, doexec)
 
-def restore_BAG(dbase):
+def restore_BAG(dbase, doexec=True):
     """Restores the BAG extract into a database"""
     try:
         conn = db.db(dbname=dbase['dbname'], host=dbase['host'],
@@ -91,7 +90,7 @@ def restore_BAG(dbase):
     except BaseException:
         raise
     
-    setup_BAG(conn)
+    setup_BAG(conn, doexec=False)
     
     bag_url = 'http://data.nlextract.nl/bag/postgis/'
     bag_latest = get_latest_BAG(bag_url)
@@ -103,47 +102,57 @@ def restore_BAG(dbase):
     
     # in case there is no entry yet in last_update
     if godzilla_update:
+        logger.debug("public.bag_updates is not empty")
         godzilla_update = godzilla_update.date()
     else:
-        godzilla_update = datetime.date(1,1,1)
+        logger.debug("public.bag_updates is empty")
+        godzilla_update = date(1,1,1)
     logger.debug("godzilla_update is %s", godzilla_update.isoformat())
     
     # Download the latest dump if necessary ------------------------------------
     if bag_latest > godzilla_update:
-        logger.info("There is a newer BAG-extract available, starting download and update...\n")
-        download_BAG(bag_url, doexec=False)
+        logger.info("There is a newer BAG-extract available, starting download and update...")
+        download_BAG(bag_url, doexec=doexec)
         
-        run_pg_restore(dbase, doexec=False)
+        run_pg_restore(dbase, doexec=doexec)
         
         # Update timestamp in bag_updates
-        query = sql.SQL("""INSERT INTO public.bag_updates (last_update, note)
-                VALUES ({}, 'auto-update by overwriting the bagactueel schema');
-                """).format(sql.Literal(bag_latest))
-        conn.sendQuery(query)
+        query = sql.SQL("""
+        INSERT INTO public.bag_updates (last_update, note)
+        VALUES ({}, 'auto-update by overwriting the bagactueel schema');
+        """).format(sql.Literal(bag_latest))
+        logger.debug(query.as_string(conn.conn).strip().replace('\n', ' '))
         
-        conn.sendQuery("""COMMENT ON SCHEMA bagactueel IS 
+        if doexec:
+            conn.sendQuery(query)
+            conn.sendQuery("""
+            COMMENT ON SCHEMA bagactueel IS 
             '!!! WARNING !!! This schema contains the BAG itself.
              At every update, there is a DROP SCHEMA bagactueel CASCADE,
-              which deletes the schema with all its contents and all objects
-               depending on the schema. Therefore you might want to save
-                your scripts to recreate the views etc. that depend on
-                 this schema, otherwise they will be lost forever.';""")
-        try:
-            conn.conn.commit()
-            logger.debug("\nUpdated bag_updates and commented on bagactueel schema.\n")
-            return True
-        except:
-            conn.conn.rollback()
-            logger.error("""Cannot update public.bag_updates and/or comment on
-             schema bagactueel. Rolling back transaction""")
-            return False
-        finally:
-            # delete backup file
-            command = "rm -rf ./data.nlextract.nl"
-            run(command, shell=True)
-    
+            which deletes the schema with all its contents and all objects
+            depending on the schema. Therefore you might want to save
+            your scripts to recreate the views etc. that depend on
+            this schema, otherwise they will be lost forever.';
+            """)
+            try:
+                conn.conn.commit()
+                logger.debug("\nUpdated bag_updates and commented on bagactueel schema.\n")
+                return True
+            except:
+                conn.conn.rollback()
+                logger.error("""Cannot update public.bag_updates and/or comment on
+                 schema bagactueel. Rolling back transaction""")
+                return False
+            finally:
+                # delete backup file
+                command = ['rm', '-r', '-f', './data.nlextract.nl']
+                run_subprocess(command, doexec=doexec)
+                conn.close()
+        else:
+            logger.debug("Not executing commands")
+            conn.close()
     else:
         logger.info("Godzilla is up-to-date with the BAG.")
+        conn.close()
         return False
     
-    conn.close()

@@ -2,7 +2,7 @@
 
 """Database connection class."""
 
-from subprocess import run
+#from subprocess import run
 import logging
 
 import psycopg2
@@ -103,6 +103,7 @@ class db(object):
         """Close connection"""
         self.conn.close()
         logger.debug("Closed database successfully")
+
 
 # def create(dbname, user, host, port):
 #     """Create and empty database"""
