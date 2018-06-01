@@ -2,6 +2,8 @@
 
 """Database connection class."""
 
+from subprocess import run
+
 import psycopg2
 import logging
 
@@ -18,7 +20,7 @@ class db(object):
         self.password = password
         try:
             self.conn = psycopg2.connect(
-                dbname=dbname, host=host, port=port, user='bla',
+                dbname=dbname, host=host, port=port, user=user,
                 password=password
                 )
             logger.debug("Opened database successfully")
@@ -95,8 +97,12 @@ class db(object):
     def close(self):
         """Close connection"""
         self.conn.close()
-        logger.debug("Closed database successfuly")
+        logger.debug("Closed database successfully")
 
+def create(dbname, user, host, port):
+    """Create and empty database"""
+    run(['createdb', '-O', user, '-h', host, '-p', str(port), dbname])
 
-def create():
-    """Create a BAG database from the BAG extract"""
+def drop(dbname):
+    """Drops a database"""
+    run(['dropdb', dbname])

@@ -48,6 +48,11 @@ def invalid_config(request):
     request.addfinalizer(del_conf)
     return fname
 
+@pytest.fixture('module')
+def empty_db():
+    yield {'dbname': "testdb", 'user': "batch3dfier", 'pw': None,
+           'port': 5432, 'host': 'localhost'}
+
 
 class TestArgs():
     """Testing config.args"""
@@ -87,3 +92,21 @@ class TestDB():
         with pytest.raises(BaseException):
             # invalid password
             db.db(dbname='batch3dfier_db', host='localhost', port=5432, user='batch3dfier', password='invalid')
+
+    def test_create_empty(self, empty_db):
+        dbname=empty_db['dbname']
+        user=empty_db['user']
+        host=empty_db['host']
+        port=empty_db['port']
+        password=empty_db['pw']
+        
+        db.create(dbname, user, host, port)
+        try:
+            conn = db.db(dbname=dbname, host=host, port=port, user=user,
+                         password=password)
+            conn.close()
+            db.drop(dbname)
+        except:
+            raise
+        
+        
