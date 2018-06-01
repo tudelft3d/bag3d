@@ -25,30 +25,35 @@ def parse_console_args(args):
         default=3,
         type=int)
     parser.add_argument(
-        "--create_db",
+        "--get-bag",
+        dest='get_bag',
         action="store_true",
-        help="Create a new database for the BAG")
+        help="Download and restore the BAG extract into the database")
     parser.add_argument(
-        "--update_bag",
+        "--update-bag",
+        dest='update_bag',
         action="store_true",
         help="Update the BAG in the database")
     parser.add_argument(
-        "--update_ahn",
+        "--update-ahn",
+        dest='update_ahn',
         action="store_true",
         help="Download/update the AHN files")
     parser.add_argument(
-        "--import_tile_idx",
+        "--import-tile-idx",
+        dest='import_tile_idx',
         action="store_true",
         help="Import the BAG and AHN tile indexes into the BAG database")
     parser.add_argument(
-        "--run_3dfier",
+        "--run-3dfier",
+        dest='run_3dfier',
         action="store_true",
         help="Run batch3dfier")
     parser.add_argument(
         "--export",
         action="store_true",
         help="Export the 3D BAG into files")
-    parser.set_defaults(create_db=False)
+    parser.set_defaults(get_bag=False)
     parser.set_defaults(update_bag=False)
     parser.set_defaults(update_ahn=False)
     parser.set_defaults(import_tile_idx=False)
@@ -63,7 +68,7 @@ def parse_console_args(args):
         exit(1)
     args_in['cfg_dir'] = os.path.dirname(args_in['cfg_file'])
     args_in['threads'] = args.threads
-    args_in['create_db'] = args.create_db
+    args_in['get_bag'] = args.get_bag
     args_in['update_bag'] = args.update_bag
     args_in['update_ahn'] = args.update_ahn
     args_in['import_tile_idx'] = args.import_tile_idx
@@ -106,7 +111,7 @@ def parse_config(args_in):
     """Process the configuration file"""
     cfg = {}
     
-    schema = os.path.abspath('bag3d_config_schema2.yml')
+    schema = os.path.abspath('bag3d_config_schema.yml')
     try:
         validate_config(args_in['cfg_file'], schema)
         logger.info("Configuration file is valid")

@@ -10,6 +10,7 @@ import logging, logging.config
 
 from bag3d.config import args
 from bag3d.config import db
+from bag3d.update import bag
 
 from pprint import pformat
 
@@ -32,10 +33,6 @@ def main():
     
     logger.debug(pformat(cfg))
     
-    if args_in['create_db']:
-        logger.info("Creating BAG database")
-        db.create()
-    
     try:
         conn = db.db(
             dbname=cfg["database"]["dbname"],
@@ -45,6 +42,12 @@ def main():
             password=cfg["database"]["pw"])
     except:
         exit(1)
+    
+    if args_in['get_bag']:
+        logger.info("Restoring BAG database")
+        # At this point an empty database should exists, restore_BAG 
+        # takes care of the rest
+        bag.restore_BAG(cfg["database"], doexec=False)
 
     if args_in['update_ahn']:
         logger.info("Updating AHN files")
