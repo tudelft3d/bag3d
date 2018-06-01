@@ -1,11 +1,11 @@
 import pytest
 import os
-import os.path
 
 import yaml
 import pykwalify.errors
 
 from bag3d.config import args
+from bag3d.config import db
 
 
 @pytest.fixture(scope='module')
@@ -53,8 +53,37 @@ class TestArgs():
     """Testing config.args"""
     def test_config_validation(self, config, schema):
         """Schema validation"""
-        assert args.validate_config(config, schema) == True
+        try:
+            args.validate_config(config, schema)
+        except pykwalify.errors.PyKwalifyException:
+            raise
     
     def test_config_invalid(self, invalid_config, schema):
         """Invalid schema"""
-        assert args.validate_config(invalid_config, schema) == False
+        with pytest.raises(pykwalify.errors.PyKwalifyException):
+            args.validate_config(invalid_config, schema)
+    def test_schema_notfound(self, config, schema='some_schema.yml'):
+        """Invalid schema"""
+        with pytest.raises(FileNotFoundError):
+            args.validate_config(config, schema)
+
+
+class TestDB():
+    """Testing config.db"""
+    def test_failed_connection(self):
+        """Failed connection raises BaseException"""
+        with pytest.raises(BaseException):
+            # invalid dbname
+            db.db(dbname='invalid', host='localhost', port=5432, user='batch3dfier')
+        with pytest.raises(BaseException):
+            # invalid host
+            db.db(dbname='batch3dfier_db', host='invalid', port=5432, user='batch3dfier')
+        with pytest.raises(BaseException):
+            # invalid port
+            db.db(dbname='batch3dfier_db', host='localhost', port=1, user='batch3dfier')
+        with pytest.raises(BaseException):
+            # invalid user
+            db.db(dbname='batch3dfier_db', host='localhost', port=5432, user='invalid')
+        with pytest.raises(BaseException):
+            # invalid password
+            db.db(dbname='batch3dfier_db', host='localhost', port=5432, user='batch3dfier', password='invalid')

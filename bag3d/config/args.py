@@ -2,7 +2,7 @@
 
 """Parse configuration"""
 
-import sys
+from sys import exit
 import os.path
 import argparse
 import logging
@@ -60,7 +60,7 @@ def parse_console_args(args):
     args_in['cfg_file'] = os.path.abspath(args.path)
     if not os.path.exists(args_in['cfg_file']):
         logger.exception('Configuration file %s not round', args_in['cfg_file'])
-        sys.exit(1)
+        exit(1)
     args_in['cfg_dir'] = os.path.dirname(args_in['cfg_file'])
     args_in['threads'] = args.threads
     args_in['create_db'] = args.create_db
@@ -91,30 +91,29 @@ def add_abspath(dirs):
 
 def validate_config(config, schema):
     """Validates the configuration file against the schema"""
-    c = pykwalify.core.Core(source_file=config, schema_files=[schema])
+    if not os.path.exists(schema):
+        logger.exception('Schema file %s not round', schema)
+        raise FileNotFoundError
     try:
+        c = pykwalify.core.Core(source_file=config, schema_files=[schema])
         c.validate(raise_exception=True)
-        return True
-    except pykwalify.errors.PyKwalifyException as e:
+    except pykwalify.errors.PyKwalifyException:
         logger.exception("Configuration file is not valid")
-        return False
+        raise
 
 
 def parse_config(args_in):
     """Process the configuration file"""
     cfg = {}
     
-    schema = os.path.abspath('bag3d_config_schema.yml')
-    if not os.path.exists(schema):
-        logger.exception('Schema file %s not round', schema)
-        sys.exit(1)
-    else:
-        v = validate_config(args_in['cfg_file'], schema)
-        if v == True:
-            with open(args_in['cfg_file'], "r") as stream:
-                cfg_stream = yaml.load(stream)
-        else:
-            sys.exit(1)
+    schema = os.path.abspath('bag3d_config_schema2.yml')
+    try:
+        validate_config(args_in['cfg_file'], schema)
+        logger.info("Configuration file is valid")
+        with open(args_in['cfg_file'], "r") as stream:
+            cfg_stream = yaml.load(stream)
+    except pykwalify.errors.PyKwalifyException:
+        raise
 
     cfg['pc_dataset_name'] = cfg_stream["input_elevation"]["dataset_name"]
     cfg['pc_dir'] = add_abspath(
@@ -136,6 +135,7 @@ def parse_config(args_in):
         # in case user gave " " or "" for 'extent'
         if len(cfg_stream["input_polygons"]["extent"]) <= 1:
             EXTENT_FILE = None
+            logger.debug("extent string has length <= 1")
         cfg['extent_file'] = os.path.abspath(
             cfg_stream["input_polygons"]["extent"])
         cfg['tiles'] = None
@@ -151,6 +151,7 @@ def parse_config(args_in):
     cfg['tile_schema'] = cfg_stream["input_polygons"]["tile_schema"]
     USER_SCHEMA = cfg_stream["input_polygons"]["user_schema"]
     if (USER_SCHEMA is None) or (EXTENT_FILE is None):
+        logger.debug("user_schema or extent is None")
         cfg['user_schema'] = cfg['tile_schema']
     
     cfg['database'] = cfg_stream['database']
