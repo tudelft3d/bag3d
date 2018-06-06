@@ -89,6 +89,8 @@ mapping:
                                 type: str
                                 required: True
                                 desc: Name of the field of the tile index unit names
+                    file:
+                        type: str
             elevation:
                 type: map
                 mapping:
@@ -117,6 +119,8 @@ mapping:
                                 type: str
                                 required: True
                                 desc: Name of the field of the tile index unit names
+                    file:
+                        type: str
     output:
         type: map
         mapping:

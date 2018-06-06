@@ -29,6 +29,7 @@ tile_index:
             primary_key: gid
             geometry: geom
             unit_name: unit
+        file: /data/BAG/tile_index/bag_index.json
     elevation: 
         schema: tile_index
         table: ahn_index
@@ -37,6 +38,7 @@ tile_index:
             primary_key: gid
             geometry: geom
             unit_name: unit
+        file: /data/AHN3/tile_index/ahn_index.json
 
 output:
     dir: /tmp/3DBAG

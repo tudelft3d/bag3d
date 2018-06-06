@@ -1,6 +1,18 @@
+# Eclipse
 .settings
+.project
+.pydevproject
+
+# Testing and coverage
 .pytest_cache
 bag3d.egg-info
+.coverage
 
 # Sphinx
 docs/_build
+
+# Logs
+*.log
+
+# Docker
+docker

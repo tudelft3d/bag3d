@@ -37,7 +37,7 @@ def main():
         conn = db.db(
             dbname=cfg["database"]["dbname"],
             host=str(cfg["database"]["host"]),
-            port=cfg["database"]["port"],
+            port=str(cfg["database"]["port"]),
             user=cfg["database"]["user"],
             password=cfg["database"]["pw"])
     except:
@@ -54,7 +54,14 @@ def main():
 
     if args_in['import_tile_idx']:
         logger.info("Importing tile indexes")
-
+        bag.import_index(cfg['polygons']["file"], cfg["database"]["dbname"], 
+                         cfg['polygons']["schema"], str(cfg["database"]["host"]), 
+                         str(cfg["database"]["port"]), cfg["database"]["user"], 
+                         doexec=False)
+        bag.import_index(cfg['elevation']["file"], cfg["database"]["dbname"], 
+                         cfg['elevation']["schema"], str(cfg["database"]["host"]), 
+                         str(cfg["database"]["port"]), cfg["database"]["user"], 
+                         doexec=False)
 
     if args_in['update_bag']:
         logger.info("Updating the BAG database")
