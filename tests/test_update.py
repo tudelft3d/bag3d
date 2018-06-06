@@ -37,3 +37,12 @@ class TestBAG():
     def test_restore_BAG(self, caplog, dbname):
         with caplog.at_level(logging.DEBUG):
             bag.restore_BAG(dbname, doexec=False)
+    
+    def test_import_index(self, caplog):
+        with caplog.at_level(logging.DEBUG):
+            bag.import_index("/data/pointcloud/AHN3/ahn_index.json", 
+                                 'bag_test', 
+                                 'tile_index', 
+                                 'localhost', 
+                                 '5432', 
+                                 'bag_admin', doexec=False)

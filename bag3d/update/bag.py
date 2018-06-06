@@ -2,6 +2,7 @@
 
 """Update the BAG database (2D) and tile index"""
 
+import os.path
 from datetime import datetime, date
 from subprocess import run, PIPE
 import locale
@@ -15,6 +16,18 @@ from bag3d.config import db
 
 
 logger = logging.getLogger('update.bag')
+
+
+def run_subprocess(command, doexec=True):
+    """Subprocess runner"""
+    if doexec:
+        logger.debug(" ".join(command))
+        proc = run(command, stderr=PIPE, stdout=PIPE)
+        err = proc.stderr.decode(locale.getpreferredencoding(do_setlocale=True))
+        if proc.returncode != 0:
+            logger.error("Process returned with non-zero exit code", err)
+    else:
+        logger.debug(" ".join(command))
 
 
 def get_latest_BAG(url):
@@ -47,18 +60,6 @@ def setup_BAG(conn, doexec=True):
         """)
     else:
         pass
-
-
-def run_subprocess(command, doexec=True):
-    """Subprocess runner"""
-    if doexec:
-        logger.debug(" ".join(command))
-        proc = run(command, stderr=PIPE, stdout=PIPE)
-        err = proc.stderr.decode(locale.getpreferredencoding(do_setlocale=True))
-        if proc.returncode != 0:
-            logger.error("Process returned with non-zero exit code", err)
-    else:
-        logger.debug(" ".join(command))
 
 
 def run_pg_restore(dbase, doexec=True):
@@ -155,4 +156,18 @@ def restore_BAG(dbase, doexec=True):
         logger.info("Godzilla is up-to-date with the BAG.")
         conn.close()
         return False
+
+
+def import_index(idx, dbname, tile_schema, host, port, user, doexec=True):
+    """Import the tile index into the database
     
+    Calls ogr2ogr.
+    """
+    pg_conn = 'PG:"dbname={d} active_schema={s} host={h} port={p} user={u}"'.format(
+        d=dbname, s=tile_schema, h=host, p=port, u=user)
+    i = os.path.abspath(idx)
+    command = ['ogr2ogr', '-f', 'PostgreSQL', pg_conn, i, 
+               '-skip-failure', '-a_srs', 'EPSG:28992', '-lco', 'FID=id', 
+               '-lco', 'GEOMETRY_NAME=geom']
+    run_subprocess(command, doexec=doexec)
+
