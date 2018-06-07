@@ -44,8 +44,8 @@ def main():
     except:
         exit(1)
     
-    if args_in['get_bag']:
-        logger.info("Restoring BAG database")
+    if args_in['update_bag']:
+        logger.info("Updating BAG database")
         # At this point an empty database should exists, restore_BAG 
         # takes care of the rest
         bag.restore_BAG(cfg["database"], doexec=False)
@@ -54,7 +54,7 @@ def main():
         logger.info("Updating AHN files")
 
     if args_in['import_tile_idx']:
-        logger.info("Importing tile indexes")
+        logger.info("Importing BAG tile index")
         bag.import_index(cfg['polygons']["file"], cfg["database"]["dbname"], 
                          cfg['polygons']["schema"], str(cfg["database"]["host"]), 
                          str(cfg["database"]["port"]), cfg["database"]["user"], 
@@ -67,25 +67,52 @@ def main():
                                                    cfg['polygons']["fields"]["geometry"], 
                                                    cfg['polygons']["fields"]["unit_name"]]
                                      )
+        logger.info("Partitioning the BAG")
+        logger.debug("Creating centroids")
+        footprints.create_centroids(conn,
+                                    table_centroid=["bagactueel", "pand_centroid"],
+                                    table_footprint=["bagactueel", "pandactueelbestaand"],
+                                    fields_footprint=["gid", "geovlak"]
+                                    )
+        logger.debug("Creating tiles")
+        footprints.create_views(conn, schema_tiles=cfg['tile_schema'], 
+                                 table_index=[cfg['polygons']["schema"], 
+                                              cfg['polygons']["table"]],
+                                 fields_index=[cfg['polygons']["fields"]["primary_key"], 
+                                               cfg['polygons']["fields"]["geometry"], 
+                                               cfg['polygons']["fields"]["unit_name"]],
+                                 table_centroid=["bagactueel", "pand_centroid"],
+                                 fields_centroid=["gid", "geom"],
+                                 table_footprint=["bagactueel", "pandactueelbestaand"],
+                                 fields_footprint=["gid", "geovlak", "identificatie"],
+                                 prefix_tiles=cfg['prefix_tile_footprint'])
+ 
+        # Restore privileges on schema bagactueel
+        bag.grant_access(conn, cfg["database"]["user"], 
+                         cfg['tile_schema'], 
+                         cfg['polygons']["schema"])
+        
+        logger.info("Importing AHN tile index")
         bag.import_index(cfg['elevation']["file"], cfg["database"]["dbname"], 
                          cfg['elevation']["schema"], str(cfg["database"]["host"]), 
                          str(cfg["database"]["port"]), cfg["database"]["user"], 
                          doexec=False)
-    else:
-        # in case the BAG index was imported by some other way
-        cols = conn.get_fields(cfg['polygons']["schema"], 
-                               cfg['polygons']["table"])
-        if 'geom_border' not in cols:
-            footprints.update_tile_index(conn,
-                                         table_index=[cfg['polygons']["schema"], 
-                                                      cfg['polygons']["table"]],
-                                         fields_index=[cfg['polygons']["fields"]["primary_key"], 
-                                                       cfg['polygons']["fields"]["geometry"], 
-                                                       cfg['polygons']["fields"]["unit_name"]]
-                                         )
-
-    if args_in['update_bag']:
-        logger.info("Updating the BAG database")
+        
+        
+#     else:
+#         # in case the BAG index was imported by some other way
+#         cols = conn.get_fields(cfg['polygons']["schema"], 
+#                                cfg['polygons']["table"])
+#         if 'geom_border' not in cols:
+#             footprints.update_tile_index(conn,
+#                                          table_index=[cfg['polygons']["schema"], 
+#                                                       cfg['polygons']["table"]],
+#                                          fields_index=[cfg['polygons']["fields"]["primary_key"], 
+#                                                        cfg['polygons']["fields"]["geometry"], 
+#                                                        cfg['polygons']["fields"]["unit_name"]]
+#                                          )
+#     if args_in['update_bag']:
+#         logger.info("Updating the BAG database")
 
 
     if args_in['run_3dfier']:

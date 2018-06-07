@@ -178,3 +178,41 @@ def import_index(idx, dbname, tile_schema, host, port, user, doexec=True):
                '-lco', 'FID=id', 
                '-lco', 'GEOMETRY_NAME=geom']
     run_subprocess(command, shell=True, doexec=doexec)
+
+
+def grant_access(conn, user, tile_schema, tile_index_schema):
+    """Grants all the necessary privileges for a user for operating on the 3DBAG database
+    
+    Parameters
+    ----------
+    conn: db Class connection
+    tile_schema: Schema with the footprint tiles, in config: 'input_polygons:tile_schema'
+    tile_index_schema: Schema with the footprint tile index, in config: 'tile_index:polygons:schema'
+    """
+    query_public = sql.SQL("""
+GRANT EXECUTE ON ALL functions IN SCHEMA public TO {u};
+GRANT SELECT ON ALL tables IN SCHEMA public TO {u};
+GRANT USAGE, SELECT ON ALL sequences IN SCHEMA public TO {u};
+""").format(u=sql.Literal(user))
+    conn.sendQuery(query_public)
+    
+    query_bagactueel = sql.SQL("""
+GRANT USAGE ON SCHEMA bagactueel TO {u};
+GRANT SELECT ON ALL tables IN SCHEMA bagactueel TO {u};
+GRANT USAGE, SELECT ON ALL sequences IN SCHEMA bagactueel TO {u};
+""").format(u=sql.Literal(user))
+    conn.sendQuery(query_bagactueel)
+    
+    query_tile_schema = sql.SQL("""
+GRANT USAGE ON SCHEMA {s} TO {u};
+GRANT SELECT, UPDATE, INSERT ON ALL tables IN SCHEMA {s} TO {u};
+GRANT USAGE, SELECT, UPDATE ON ALL sequences IN SCHEMA {s} TO {u};
+""").format(u=sql.Literal(user), s=sql.Literal(tile_schema))
+    conn.sendQuery(query_tile_schema)
+
+    query_tile_schema = sql.SQL("""
+GRANT USAGE ON SCHEMA {s} TO {u};
+GRANT SELECT, UPDATE, INSERT ON ALL tables IN SCHEMA {s} TO {u};
+GRANT USAGE, SELECT, UPDATE ON ALL sequences IN SCHEMA {s} TO {u};
+""").format(u=sql.Literal(user), s=sql.Literal(tile_index_schema))
+    conn.sendQuery(query_tile_schema)

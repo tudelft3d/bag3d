@@ -24,16 +24,16 @@ def parse_console_args(args):
         help="The number of threads to run.",
         default=3,
         type=int)
-    parser.add_argument(
-        "--get-bag",
-        dest='get_bag',
-        action="store_true",
-        help="Download and restore the BAG extract into the database")
+#     parser.add_argument(
+#         "--get-bag",
+#         dest='get_bag',
+#         action="store_true",
+#         help="Download and restore the BAG extract into the database")
     parser.add_argument(
         "--update-bag",
         dest='update_bag',
         action="store_true",
-        help="Update the BAG in the database")
+        help="Update the BAG in the database. If it does not exists, download and restore the BAG extract into the database")
     parser.add_argument(
         "--update-ahn",
         dest='update_ahn',

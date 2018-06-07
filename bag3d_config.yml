@@ -9,7 +9,7 @@ input_polygons:
     tile_schema: bag_tiles
     user_schema: 
     tile_prefix: t_ 
-    uniqueid: identification
+    uniqueid: identificatie
     extent: /home/bdukai/Development/batch3dfier/example_data/extent_small.geojson
     tile_list: [25gn1_c1, 25gn1_c2, 25gn1_c3, 25gn1_c4]
 
