@@ -25,7 +25,6 @@ def update_tile_index(db, table_index, fields_index):
     Returns
     -------
     nothing
-
     """
     schema = table_index[0]
     table = table_index[1]
@@ -77,7 +76,6 @@ def update_tile_index(db, table_index, fields_index):
                             geom_col=geom_col_q,
                             id_col=id_col_q)
     )
-
     sql_query = sql.SQL("""
             CREATE INDEX IF NOT EXISTS {idx_name} ON {schema}.{table} USING gist (geom_border);
             SELECT populate_geometry_columns({name}::regclass);
@@ -86,7 +84,6 @@ def update_tile_index(db, table_index, fields_index):
                         table=table_q,
                         name=sql.Literal(schema + '.' + table))
     db.sendQuery(sql_query)
-
     db.vacuum(schema, table)
 
 

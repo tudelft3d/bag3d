@@ -24,21 +24,21 @@ input_elevation:
 tile_index:
     polygons:
         schema: tile_index
-        table: bag_index
+        table: bag_index_test
         fields:
-            primary_key: gid
+            primary_key: id
             geometry: geom
-            unit_name: unit
-        file: /data/BAG/tile_index/bag_index.json
+            unit_name: bladnr
+        file: example_data/bag_index_test.json
     elevation: 
         schema: tile_index
         table: ahn_index
         border_table: border_tiles
         fields:
-            primary_key: gid
+            primary_key: id
             geometry: geom
-            unit_name: unit
-        file: /data/AHN3/tile_index/ahn_index.json
+            unit_name: bladnr
+        file: example_data/ahn_index.json
 
 output:
     dir: /tmp/3DBAG
