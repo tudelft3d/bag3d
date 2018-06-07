@@ -71,13 +71,18 @@ def main():
                          cfg['elevation']["schema"], str(cfg["database"]["host"]), 
                          str(cfg["database"]["port"]), cfg["database"]["user"], 
                          doexec=False)
-        footprints.update_tile_index(conn,
-                                     table_index=[cfg['elevation']["schema"], 
-                                                  cfg['elevation']["table"]],
-                                     fields_index=[cfg['elevation']["fields"]["primary_key"], 
-                                                   cfg['elevation']["fields"]["geometry"], 
-                                                   cfg['elevation']["fields"]["unit_name"]]
-                                     )
+    else:
+        # in case the BAG index was imported by some other way
+        cols = conn.get_fields(cfg['polygons']["schema"], 
+                               cfg['polygons']["table"])
+        if 'geom_border' not in cols:
+            footprints.update_tile_index(conn,
+                                         table_index=[cfg['polygons']["schema"], 
+                                                      cfg['polygons']["table"]],
+                                         fields_index=[cfg['polygons']["fields"]["primary_key"], 
+                                                       cfg['polygons']["fields"]["geometry"], 
+                                                       cfg['polygons']["fields"]["unit_name"]]
+                                         )
 
     if args_in['update_bag']:
         logger.info("Updating the BAG database")

@@ -6,7 +6,7 @@
 import logging
 
 import psycopg2
-
+from psycopg2 import sql
 
 logger = logging.getLogger('config.db')
 
@@ -98,6 +98,13 @@ class db(object):
     def check_postgis(self):
         """Create the PostGIS extension if not exitst"""
         self.sendQuery("CREATE EXTENSION IF NOT EXISTS postgis;")
+    
+    def get_fields(self, schema, table):
+        """List the fields in a table"""
+        query = sql.SQL("SELECT * FROM {s}.{t} LIMIT 0;").format(
+            s=sql.Identifier(schema), t=sql.Identifier(table))
+        cols = self.getQuery(query)
+        yield [c[0] for c in cols]
 
     def close(self):
         """Close connection"""

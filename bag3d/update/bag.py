@@ -170,4 +170,3 @@ def import_index(idx, dbname, tile_schema, host, port, user, doexec=True):
                '-skip-failure', '-a_srs', 'EPSG:28992', '-lco', 'FID=id', 
                '-lco', 'GEOMETRY_NAME=geom']
     run_subprocess(command, doexec=doexec)
-
