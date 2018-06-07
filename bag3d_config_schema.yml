@@ -52,7 +52,7 @@ mapping:
                 type: seq
                 matching: all
                 required: True
-                desc: Location of pointcloud files
+                desc: Location of pointcloud files. Provide AHN3 directory first, AHN2 second
                 sequence:
                     - type: str
             dataset_name:

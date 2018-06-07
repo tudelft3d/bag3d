@@ -12,6 +12,7 @@ from bag3d.config import args
 from bag3d.config import db
 from bag3d.config import footprints
 from bag3d.update import bag
+from bag3d.update import ahn
 
 from pprint import pformat
 
@@ -52,6 +53,9 @@ def main():
 
     if args_in['update_ahn']:
         logger.info("Updating AHN files")
+        # well, let's assume the user provided the AHN3 dir first
+        ahn.download(cfg["pc_dir"][0], cfg["pc_dir"][1], 
+                     cfg["elevation"]["file"])
 
     if args_in['import_tile_idx']:
         logger.info("Importing BAG tile index")
