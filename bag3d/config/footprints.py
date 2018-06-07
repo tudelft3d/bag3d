@@ -5,7 +5,10 @@
 The module helps you to create tiles in a BAG (https://www.kadaster.nl/wat-is-de-bag)
 database. These tiles are then used by batch3dfier.
 """
+import logging
 from psycopg2 import sql
+
+logger = logging.getLogger('config.footprints')
 
 
 def update_tile_index(db, table_index, fields_index):
@@ -83,6 +86,7 @@ def update_tile_index(db, table_index, fields_index):
                         schema=schema_q,
                         table=table_q,
                         name=sql.Literal(schema + '.' + table))
+    logger.debug(sql_query.as_string(db.conn).strip().replace('\n', ' '))
     db.sendQuery(sql_query)
     db.vacuum(schema, table)
 
@@ -141,9 +145,8 @@ def create_centroids(db, table_centroid, table_footprint, fields_footprint):
                     sch_tbl=sql.Literal(schema_ctr + '.' + table_ctr),
                     tbl_idx=sql.Identifier(table_ctr + '_geom_idx')
                     )
-
+    logger.debug(sql_query.as_string(db.conn).strip().replace('\n', ' '))
     db.sendQuery(sql_query)
-
     db.vacuum(schema_ctr, table_ctr)
 
 
@@ -222,6 +225,7 @@ def create_views(db, schema_tiles, table_index, fields_index, table_centroid,
 
     # Create schema to store the tiles
     query = sql.SQL("CREATE SCHEMA IF NOT EXISTS {};").format(schema_tiles_q)
+    logger.debug(query.as_string(db.conn).strip().replace('\n', ' '))
     db.sendQuery(query)
 
     # Get footprint index unit names
@@ -276,9 +280,10 @@ def create_views(db, schema_tiles, table_index, fields_index, table_centroid,
                                       field_idx_geom=field_idx_geom_q,
                                       field_ctr_geom=field_ctr_geom_q
                                       )
+        logger.debug(query.as_string(db.conn).strip().replace('\n', ' '))
         db.sendQuery(query)
 
-    return("%s Views created in schema '%s'." % (len(tiles), schema_tiles))
+    logger.debug("%s Views created in schema '%s'." % (len(tiles), schema_tiles))
 
 #     except:
 #         return("Cannot create Views in schema '%s'" % schema_tiles)
