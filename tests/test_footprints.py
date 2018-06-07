@@ -10,18 +10,19 @@ def tile_index(config):
         j = yaml.load(f_in)
     return j["tile_index"]
 
+@pytest.fixture('module')
+def bag_index(tile_index):
+    return [tile_index["polygons"]["schema"], tile_index["polygons"]["table"]]
 
-def test_update_tile_index(batch3dfier_db, tile_index):
+@pytest.fixture('module')
+def bag_fields(tile_index):
+    return [tile_index['polygons']["fields"]["primary_key"], 
+            tile_index['polygons']["fields"]["geometry"], 
+            tile_index['polygons']["fields"]["unit_name"]]
+
+def test_update_tile_index(batch3dfier_db, bag_index, bag_fields):
     batch3dfier_db.sendQuery(
         "ALTER TABLE tile_index.%s DROP COLUMN IF EXISTS geom_border CASCADE;" % tile_index["polygons"]["table"])
-#     batch3dfier_db.sendQuery("DROP TABLE IF EXISTS bag.pand_centroid CASCADE;")
-#     batch3dfier_db.sendQuery("DROP SCHEMA IF EXISTS bag_tiles CASCADE;")
-
-    bag_index = [tile_index["polygons"]["schema"], 
-                 tile_index["polygons"]["table"]]
-    bag_fields = [tile_index['polygons']["fields"]["primary_key"], 
-                  tile_index['polygons']["fields"]["geometry"], 
-                  tile_index['polygons']["fields"]["unit_name"]]
     assert footprints.update_tile_index(
         batch3dfier_db, bag_index, bag_fields) is None
 
@@ -37,11 +38,9 @@ def test_create_centroids(batch3dfier_db):
         fields_footprint) is None
 
 @pytest.mark.skip
-def test_create_views(batch3dfier_db):
+def test_create_views(batch3dfier_db, bag_index, bag_fields):
     table_centroid = ['bag', 'pand_centroid']
     table_footprint = ['bag', 'pand']
-    bag_index = ['tile_index', 'bag_index']
-    bag_fields = ['gid', 'geom', 'unit']
     schema_tiles = 'bag_tiles'
     fields_centroid = ['gid', 'geom']
     fields_footprint = ['gid', 'geom']
@@ -59,9 +58,7 @@ def test_create_views(batch3dfier_db):
         prefix_tiles) == "4 Views created in schema 'bag_tiles'."
 
 @pytest.mark.skip
-def test_partition(batch3dfier_db):
-    bag_index = ['tile_index', 'bag_index']
-    bag_fields = ['gid', 'geom', 'unit']
+def test_partition(batch3dfier_db, bag_index, bag_fields):
     table_footprint = ['bag', 'pand']
     fields_footprint = ['gid', 'geom', 'identification']
     schema_tiles = 'bag_tiles'
