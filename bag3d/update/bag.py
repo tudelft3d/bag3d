@@ -31,6 +31,7 @@ def run_subprocess(command, shell=False, doexec=True):
             logger.error("Process returned with non-zero exit code")
             logger.error(err)
     else:
+        cmd = " ".join(command)
         logger.debug(cmd)
 
 
@@ -57,13 +58,15 @@ def get_latest_BAG(url):
 def setup_BAG(conn, doexec=True):
     """Prepares the BAG database"""
     conn.check_postgis()
+    query = sql.SQL("""
+CREATE TABLE public.bag_updates (id serial constraint id_pkey primary key, last_update timestamp, note text);
+CREATE SCHEMA tile_index;
+""")
     if doexec:
-        conn.sendQuery("""
-        CREATE TABLE public.bag_updates (id serial constraint id_pkey primary key, last_update timestamp, note text);
-        CREATE SCHEMA tile_index;
-        """)
+        logger.debug(conn.print_query(query))
+        conn.sendQuery(query)
     else:
-        pass
+        logger.debug(conn.print_query(query))
 
 
 def run_pg_restore(dbase, doexec=True):
@@ -72,19 +75,19 @@ def run_pg_restore(dbase, doexec=True):
     command = ['psql', '-h', dbase['host'], '-U', dbase['user'],
                '-d', dbase['dbname'], '-w', '-c',
                "'DROP SCHEMA IF EXISTS bagactueel CASCADE;'"]
-    run_subprocess(command, doexec)
+    run_subprocess(command, doexec=doexec)
     
     # Restore from the latest extract
     command = ['pg_restore', '--no-owner', '--no-privileges', '-j', '20',
                '-h', dbase['host'], '-U', dbase['user'], '-d', dbase['dbname'],
                '-w', './data.nlextract.nl/bag/postgis/bag-laatst.backup']
-    run_subprocess(command, doexec)
+    run_subprocess(command, doexec=doexec)
 
 
 def download_BAG(url, doexec=True):
     """Download the latest BAG extract"""
     command = ['wget', '-q', '-r', url] 
-    run_subprocess(command, doexec)
+    run_subprocess(command, doexec=doexec)
 
 def restore_BAG(dbase, doexec=True):
     """Restores the BAG extract into a database"""
@@ -95,7 +98,7 @@ def restore_BAG(dbase, doexec=True):
     except BaseException:
         raise
     
-    setup_BAG(conn, doexec=False)
+    setup_BAG(conn, doexec=doexec)
     
     bag_url = 'http://data.nlextract.nl/bag/postgis/'
     bag_latest = get_latest_BAG(bag_url)
@@ -123,10 +126,11 @@ def restore_BAG(dbase, doexec=True):
         
         # Update timestamp in bag_updates
         query = sql.SQL("""
-        INSERT INTO public.bag_updates (last_update, note)
-        VALUES ({}, 'auto-update by overwriting the bagactueel schema');
+INSERT INTO public.bag_updates (last_update, note)
+VALUES ({}, 'auto-update by overwriting the bagactueel schema');
         """).format(sql.Literal(bag_latest))
-        logger.debug(query.as_string(conn.conn).strip().replace('\n', ' '))
+#         logger.debug(query.as_string(conn.conn).strip().replace('\n', ' '))
+        logger.debug(conn.print_query(query))
         
         if doexec:
             conn.sendQuery(query)
@@ -194,7 +198,7 @@ GRANT EXECUTE ON ALL functions IN SCHEMA public TO {u};
 GRANT SELECT ON ALL tables IN SCHEMA public TO {u};
 GRANT USAGE, SELECT ON ALL sequences IN SCHEMA public TO {u};
 """).format(u=sql.Identifier(user))
-    logger.debug(query_public.as_string(conn.conn).strip().replace('\n', ' '))
+    logger.debug(conn.print_query(query_public))
     conn.sendQuery(query_public)
     
     query_bagactueel = sql.SQL("""
@@ -202,7 +206,7 @@ GRANT USAGE ON SCHEMA bagactueel TO {u};
 GRANT SELECT ON ALL tables IN SCHEMA bagactueel TO {u};
 GRANT USAGE, SELECT ON ALL sequences IN SCHEMA bagactueel TO {u};
 """).format(u=sql.Identifier(user))
-    logger.debug(query_bagactueel.as_string(conn.conn).strip().replace('\n', ' '))
+    logger.debug(conn.print_query(query_bagactueel))
     conn.sendQuery(query_bagactueel)
     
     query_tile_schema = sql.SQL("""
@@ -210,7 +214,7 @@ GRANT USAGE ON SCHEMA {s} TO {u};
 GRANT SELECT, UPDATE, INSERT ON ALL tables IN SCHEMA {s} TO {u};
 GRANT USAGE, SELECT, UPDATE ON ALL sequences IN SCHEMA {s} TO {u};
 """).format(u=sql.Identifier(user), s=sql.Identifier(tile_schema))
-    logger.debug(query_tile_schema.as_string(conn.conn).strip().replace('\n', ' '))
+    logger.debug(conn.print_query(query_tile_schema))
     conn.sendQuery(query_tile_schema)
 
     query_tile_index_schema = sql.SQL("""
@@ -218,5 +222,5 @@ GRANT USAGE ON SCHEMA {s} TO {u};
 GRANT SELECT, UPDATE, INSERT ON ALL tables IN SCHEMA {s} TO {u};
 GRANT USAGE, SELECT, UPDATE ON ALL sequences IN SCHEMA {s} TO {u};
 """).format(u=sql.Identifier(user), s=sql.Identifier(tile_index_schema))
-    logger.debug(query_tile_index_schema.as_string(conn.conn).strip().replace('\n', ' '))
+    logger.debug(conn.print_query(query_tile_index_schema))
     conn.sendQuery(query_tile_index_schema)

@@ -4,6 +4,7 @@
 
 #from subprocess import run
 import logging
+import re
 
 import psycopg2
 from psycopg2 import sql
@@ -64,6 +65,14 @@ class db(object):
             with self.conn.cursor() as cur:
                 cur.execute(query)
                 return cur.fetchall()
+    
+    def print_query(self, query):
+        """Format a SQL query for printing by replacing newlines and tab-spaces"""
+        def repl(matchobj):
+            if matchobj.group(0) == '    ': return ' '
+            else: return ' '
+        s = query.as_string(self.conn).strip()
+        return re.sub(r'[\n    ]{1,}', repl, s)
 
     def vacuum(self, schema, table):
         """Vacuum analyze a table
