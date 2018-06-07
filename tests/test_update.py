@@ -1,4 +1,5 @@
 from datetime import date
+import os.path
 
 import pytest
 import logging
@@ -38,11 +39,12 @@ class TestBAG():
         with caplog.at_level(logging.DEBUG):
             bag.restore_BAG(dbname, doexec=False)
     
-    def test_import_index(self, caplog):
+    def test_import_index(self, caplog, doexec=True):
         with caplog.at_level(logging.DEBUG):
-            bag.import_index("/data/pointcloud/AHN3/ahn_index.json", 
-                                 'bag_test', 
-                                 'tile_index', 
-                                 'localhost', 
-                                 '5432', 
-                                 'bag_admin', doexec=False)
+            p = os.path.join(os.getcwd(), 'example_data', 'bag_index_test.json')
+            bag.import_index(p, 
+                             'batch3dfier_db', 
+                             'tile_index', 
+                             'localhost', 
+                             '5432', 
+                             'batch3dfier', doexec)

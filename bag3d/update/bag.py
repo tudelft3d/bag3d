@@ -18,16 +18,20 @@ from bag3d.config import db
 logger = logging.getLogger('update.bag')
 
 
-def run_subprocess(command, doexec=True):
+def run_subprocess(command, shell=False, doexec=True):
     """Subprocess runner"""
     if doexec:
-        logger.debug(" ".join(command))
-        proc = run(command, stderr=PIPE, stdout=PIPE)
+        cmd = " ".join(command)
+        logger.debug(cmd)
+        if shell:
+            command = cmd
+        proc = run(command, shell=shell, stderr=PIPE, stdout=PIPE)
         err = proc.stderr.decode(locale.getpreferredencoding(do_setlocale=True))
         if proc.returncode != 0:
-            logger.error("Process returned with non-zero exit code", err)
+            logger.error("Process returned with non-zero exit code")
+            logger.error(err)
     else:
-        logger.debug(" ".join(command))
+        logger.debug(cmd)
 
 
 def get_latest_BAG(url):
@@ -163,10 +167,14 @@ def import_index(idx, dbname, tile_schema, host, port, user, doexec=True):
     
     Calls ogr2ogr.
     """
-    pg_conn = 'PG:"dbname={d} active_schema={s} host={h} port={p} user={u}"'.format(
-        d=dbname, s=tile_schema, h=host, p=port, u=user)
+    pg_conn = 'PG:"dbname={d} host={h} port={p} user={u}"'.format(
+        d=dbname, h=host, p=port, u=user)
+    schema = 'SCHEMA=%s' % tile_schema
     i = os.path.abspath(idx)
     command = ['ogr2ogr', '-f', 'PostgreSQL', pg_conn, i, 
-               '-skip-failure', '-a_srs', 'EPSG:28992', '-lco', 'FID=id', 
+               '-skip-failure', '-a_srs', 'EPSG:28992', 
+               '-lco', 'OVERWRITE=yes',
+               '-lco', schema,
+               '-lco', 'FID=id', 
                '-lco', 'GEOMETRY_NAME=geom']
-    run_subprocess(command, doexec=doexec)
+    run_subprocess(command, shell=True, doexec=doexec)
