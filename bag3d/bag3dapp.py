@@ -99,11 +99,6 @@ def main():
                                                        cfg['footprints']["fields"]["uniqueid"]
                                                        ],
                                      prefix_tiles=cfg['prefix_tile_footprint'])
-     
-            # Restore privileges on schema bagactueel
-            bag.grant_access(conn, cfg["database"]["user"], 
-                             cfg['tile_schema'], 
-                             cfg['polygons']["schema"])
             
             logger.info("Importing AHN tile index")
             bag.import_index(cfg['elevation']["file"], cfg["database"]["dbname"], 
@@ -138,6 +133,11 @@ def main():
             logger.info("Importing batch3dfier output into database")
             
             logger.info("Joining 3D tables")
+        
+        if args_in["grant_access"]:
+            bag.grant_access(conn, args_in["grant_access"], 
+                             cfg['tile_schema'], 
+                             cfg['polygons']["schema"])
     
         if args_in['export']:
             logger.info("Exporting 3D BAG")

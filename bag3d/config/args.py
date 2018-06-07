@@ -50,6 +50,11 @@ def parse_console_args(args):
         action="store_true",
         help="Run batch3dfier")
     parser.add_argument(
+        "--grant-access",
+        dest='grant_access',
+        type=str,
+        help="Grant the necessary privileges to a user to operate on a 3DBAG database")
+    parser.add_argument(
         "--export",
         action="store_true",
         help="Export the 3D BAG into files")
@@ -74,6 +79,7 @@ def parse_console_args(args):
     args_in['import_tile_idx'] = args.import_tile_idx
     args_in['run_3dfier'] = args.run_3dfier
     args_in['export'] = args.export
+    args_in['grant_access'] = args.grant_access
     
     return args_in
 

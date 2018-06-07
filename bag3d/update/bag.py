@@ -193,26 +193,30 @@ def grant_access(conn, user, tile_schema, tile_index_schema):
 GRANT EXECUTE ON ALL functions IN SCHEMA public TO {u};
 GRANT SELECT ON ALL tables IN SCHEMA public TO {u};
 GRANT USAGE, SELECT ON ALL sequences IN SCHEMA public TO {u};
-""").format(u=sql.Literal(user))
+""").format(u=sql.Identifier(user))
+    logger.debug(query_public.as_string(conn.conn).strip().replace('\n', ' '))
     conn.sendQuery(query_public)
     
     query_bagactueel = sql.SQL("""
 GRANT USAGE ON SCHEMA bagactueel TO {u};
 GRANT SELECT ON ALL tables IN SCHEMA bagactueel TO {u};
 GRANT USAGE, SELECT ON ALL sequences IN SCHEMA bagactueel TO {u};
-""").format(u=sql.Literal(user))
+""").format(u=sql.Identifier(user))
+    logger.debug(query_bagactueel.as_string(conn.conn).strip().replace('\n', ' '))
     conn.sendQuery(query_bagactueel)
     
     query_tile_schema = sql.SQL("""
 GRANT USAGE ON SCHEMA {s} TO {u};
 GRANT SELECT, UPDATE, INSERT ON ALL tables IN SCHEMA {s} TO {u};
 GRANT USAGE, SELECT, UPDATE ON ALL sequences IN SCHEMA {s} TO {u};
-""").format(u=sql.Literal(user), s=sql.Literal(tile_schema))
+""").format(u=sql.Identifier(user), s=sql.Identifier(tile_schema))
+    logger.debug(query_tile_schema.as_string(conn.conn).strip().replace('\n', ' '))
     conn.sendQuery(query_tile_schema)
 
-    query_tile_schema = sql.SQL("""
+    query_tile_index_schema = sql.SQL("""
 GRANT USAGE ON SCHEMA {s} TO {u};
 GRANT SELECT, UPDATE, INSERT ON ALL tables IN SCHEMA {s} TO {u};
 GRANT USAGE, SELECT, UPDATE ON ALL sequences IN SCHEMA {s} TO {u};
-""").format(u=sql.Literal(user), s=sql.Literal(tile_index_schema))
-    conn.sendQuery(query_tile_schema)
+""").format(u=sql.Identifier(user), s=sql.Identifier(tile_index_schema))
+    logger.debug(query_tile_index_schema.as_string(conn.conn).strip().replace('\n', ' '))
+    conn.sendQuery(query_tile_index_schema)

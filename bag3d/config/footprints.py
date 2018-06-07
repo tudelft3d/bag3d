@@ -239,6 +239,7 @@ def create_views(db, schema_tiles, table_index, fields_index, table_centroid,
         prefix_tiles = ""
     assert isinstance(prefix_tiles, str)
     # Create a BAG tile with equivalent area of an AHN tile
+    queries = ""
     for tile in tiles:
         # !!! the 't_' prefix is hard-coded in config.call3dfier() !!!
         n = prefix_tiles + str(tile)
@@ -280,8 +281,9 @@ def create_views(db, schema_tiles, table_index, fields_index, table_centroid,
                                       field_idx_geom=field_idx_geom_q,
                                       field_ctr_geom=field_ctr_geom_q
                                       )
-        logger.debug(query.as_string(db.conn).strip().replace('\n', ' '))
-        db.sendQuery(query)
+        queries += query
+    logger.debug(queries.as_string(db.conn).strip().replace('\n', ' '))
+    db.sendQuery(queries)
 
     logger.debug("%s Views created in schema '%s'." % (len(tiles), schema_tiles))
 
