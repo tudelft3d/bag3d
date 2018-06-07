@@ -161,7 +161,7 @@ def parse_config(args_in):
     
     cfg['database'] = cfg_stream['database']
 
-    cfg['uniqueid'] = cfg_stream["input_polygons"]['uniqueid']
+    cfg["footprints"] = cfg_stream["input_polygons"]["footprints"]
 
     cfg['prefix_tile_footprint'] = cfg_stream["input_polygons"]["tile_prefix"]
 

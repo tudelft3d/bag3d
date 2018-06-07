@@ -263,7 +263,7 @@ def main():
                     fields_index_pc=cfg['elevation']['fields'],
                     table_index_footprint=cfg['polygons'],
                     fields_index_footprint=cfg['polygons']['fields'],
-                    uniqueid=cfg['uniqueid'],
+                    uniqueid=cfg["footprints"]["fields"]['uniqueid'],
                     extent_ewkb=ewkb,
                     clip_prefix=CLIP_PREFIX,
                     prefix_tile_footprint=cfg['prefix_tile_footprint'],

@@ -23,6 +23,30 @@ mapping:
         desc: Database access for 2D footprints
         type: map
         mapping:
+            footprints:
+                type: map
+                mapping:
+                    schema:
+                        type: str
+                        required: True
+                    table:
+                        type: str
+                        required: True
+                    fields:
+                        type: map
+                        mapping:
+                            primary_key:
+                                type: str
+                                required: True
+                                desc: Name of the primary key field
+                            geometry:
+                                type: str
+                                required: True
+                                desc: Name of the geometry field
+                            uniqueid:
+                                type: str
+                                required: True
+                                desc: Not sure myself
             tile_schema:
                 type: str
                 required: True
@@ -33,10 +57,6 @@ mapping:
             tile_prefix:
                 type: str
                 desc: Prefix prepended to the footprint tile view names. If blank, its assumed that the views are named as the values in field referenced by *tile_index:elevation:fields:unit_name*
-            uniqueid:
-                type: str
-                required: True
-                desc: Not sure myself
             extent:
                 type: str
                 desc: The polygon for clipping the input
