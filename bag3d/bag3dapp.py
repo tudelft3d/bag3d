@@ -10,6 +10,7 @@ import logging, logging.config
 
 from bag3d.config import args
 from bag3d.config import db
+from bag3d.config import footprints
 from bag3d.update import bag
 
 from pprint import pformat
@@ -58,10 +59,25 @@ def main():
                          cfg['polygons']["schema"], str(cfg["database"]["host"]), 
                          str(cfg["database"]["port"]), cfg["database"]["user"], 
                          doexec=False)
+        # Update BAG tiles to include the lower/left boundary
+        footprints.update_tile_index(conn,
+                                     table_index=[cfg['polygons']["schema"], 
+                                                  cfg['polygons']["table"]],
+                                     fields_index=[cfg['polygons']["fields"]["primary_key"], 
+                                                   cfg['polygons']["fields"]["geometry"], 
+                                                   cfg['polygons']["fields"]["unit_name"]]
+                                     )
         bag.import_index(cfg['elevation']["file"], cfg["database"]["dbname"], 
                          cfg['elevation']["schema"], str(cfg["database"]["host"]), 
                          str(cfg["database"]["port"]), cfg["database"]["user"], 
                          doexec=False)
+        footprints.update_tile_index(conn,
+                                     table_index=[cfg['elevation']["schema"], 
+                                                  cfg['elevation']["table"]],
+                                     fields_index=[cfg['elevation']["fields"]["primary_key"], 
+                                                   cfg['elevation']["fields"]["geometry"], 
+                                                   cfg['elevation']["fields"]["unit_name"]]
+                                     )
 
     if args_in['update_bag']:
         logger.info("Updating the BAG database")
