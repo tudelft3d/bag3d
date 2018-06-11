@@ -3,6 +3,7 @@
 
 """Handles the whole flow of updating AHN files and BAG, and generating the 3D BAG"""
 
+import os
 from sys import argv, exit
 
 import yaml
@@ -16,20 +17,25 @@ from bag3d.update import ahn
 
 from pprint import pformat
 
-with open('logging.cfg', 'r') as f:
-    log_conf = yaml.safe_load(f)
-logging.config.dictConfig(log_conf)
-logger = logging.getLogger('bag3dapp')
-
 
 def main():
+    
+    here = os.path.abspath(os.path.dirname(__file__))
+
+    with open(os.path.join(here, 'logging.cfg'), 'r') as f:
+        log_conf = yaml.safe_load(f)
+    logging.config.dictConfig(log_conf)
+    logger = logging.getLogger('bag3dapp')
+    
+    schema = os.path.join(here, 'bag3d_cfg_schema.yml')
+    
     
     logger.debug("Parsing arguments and configuration file")
     
     args_in = args.parse_console_args(argv[1:])
     
     try:
-        cfg = args.parse_config(args_in)
+        cfg = args.parse_config(args_in, schema)
     except:
         exit(1)
     

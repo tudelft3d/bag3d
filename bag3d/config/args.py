@@ -113,11 +113,10 @@ def validate_config(config, schema):
         raise
 
 
-def parse_config(args_in):
+def parse_config(args_in, schema):
     """Process the configuration file"""
     cfg = {}
     
-    schema = os.path.abspath('bag3d_config_schema.yml')
     try:
         validate_config(args_in['cfg_file'], schema)
         logger.info("Configuration file is valid")
