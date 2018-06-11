@@ -1,5 +1,5 @@
-include logging.cfg
-include bag3d_config_schema.yml
+include bag3d/logging.cfg
+include bag3d/bag3d_cfg_schema.yml
 include bag3d_config.yml
 
 include LICENSE.txt
