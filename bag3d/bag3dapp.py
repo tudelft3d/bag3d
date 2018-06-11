@@ -16,7 +16,7 @@ from bag3d.update import ahn
 
 from pprint import pformat
 
-with open('logging.conf', 'r') as f:
+with open('logging.cfg', 'r') as f:
     log_conf = yaml.safe_load(f)
 logging.config.dictConfig(log_conf)
 logger = logging.getLogger('bag3dapp')

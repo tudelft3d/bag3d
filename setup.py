@@ -1,34 +1,32 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+import os
+import codecs
+
 from setuptools import setup
+from setuptools import find_packages
+
+here = os.path.abspath(os.path.dirname(__file__))
+ 
+with codecs.open(os.path.join(here, 'README.rst'), encoding='utf-8') as f:
+    long_description = '\n' + f.read()
 
 setup(name='bag3d',
     version='0.1.0',
     description='A process for generating a 3D BAG',
-    url='https://github.com/balazsdukai/bag3d',
+    long_description=long_description,
+    url='https://github.com/tudelft3d/bag3d',
     author='Balázs Dukai',
-    author_email='balazs.dukai@gmail.com',
+    author_email='b.dukai@tudelft.nl',
     license='GPLv3',
-    packages=['bag3d'],
+    packages=find_packages(),
     classifiers=[
-        # How mature is this project? Common values are
-        #   3 - Alpha
-        #   4 - Beta
-        #   5 - Production/Stable
         'Development Status :: 4 - Beta',
-        
-        # Indicate who your project is intended for
         'Intended Audience :: Science/Research',
         'Topic :: Scientific/Engineering :: GIS',
-        
-        # Pick your license as you wish (should match "license" above)
          'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
-        
-        # Specify the Python versions you support here. In particular, ensure
-        # that you indicate whether you support Python 2, Python 3 or both.
         'Programming Language :: Python :: 3.6',
-        
         'Operating System :: POSIX :: Linux'
     ],
     python_requires='>=3',
