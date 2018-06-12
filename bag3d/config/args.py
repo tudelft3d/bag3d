@@ -58,12 +58,18 @@ def parse_console_args(args):
         "--export",
         action="store_true",
         help="Export the 3D BAG into files")
+    parser.add_argument(
+        "--no-exec",
+        dest="no_exec",
+        action="store_false",
+        help="Control the execution of subprocesses. Used for debugging.")
     parser.set_defaults(get_bag=False)
     parser.set_defaults(update_bag=False)
     parser.set_defaults(update_ahn=False)
     parser.set_defaults(import_tile_idx=False)
     parser.set_defaults(run_3dfier=False)
     parser.set_defaults(export=False)
+    parser.set_defaults(no_exec=True)
 
     args = parser.parse_args(args)
     args_in = {}
@@ -80,6 +86,7 @@ def parse_console_args(args):
     args_in['run_3dfier'] = args.run_3dfier
     args_in['export'] = args.export
     args_in['grant_access'] = args.grant_access
+    args_in['no_exec'] = args.no_exec
     
     return args_in
 

@@ -56,7 +56,7 @@ def main():
             logger.info("Updating BAG database")
             # At this point an empty database should exists, restore_BAG 
             # takes care of the rest
-            bag.restore_BAG(cfg["database"], doexec=False)
+            bag.restore_BAG(cfg["database"], doexec=args_in['no_exec'])
     
         if args_in['update_ahn']:
             logger.info("Updating AHN files")
@@ -74,7 +74,7 @@ def main():
             bag.import_index(cfg['polygons']["file"], cfg["database"]["dbname"], 
                              cfg['polygons']["schema"], str(cfg["database"]["host"]), 
                              str(cfg["database"]["port"]), cfg["database"]["user"], 
-                             doexec=False)
+                             doexec=args_in['no_exec'])
             # Update BAG tiles to include the lower/left boundary
             footprints.update_tile_index(conn,
                                          table_index=[cfg['polygons']["schema"], 
@@ -115,7 +115,7 @@ def main():
             bag.import_index(cfg['elevation']["file"], cfg["database"]["dbname"], 
                              cfg['elevation']["schema"], str(cfg["database"]["host"]), 
                              str(cfg["database"]["port"]), cfg["database"]["user"], 
-                             doexec=False)
+                             doexec=args_in['no_exec'])
             
             
     #     else:
