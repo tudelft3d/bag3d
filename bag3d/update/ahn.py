@@ -42,7 +42,14 @@ def download_ahn_index():
 
 def get_file_date(ahn_dir, ahn_pat, t, f_date_pat, corruptedfiles):
     """Get the file creation date from a las file"""
-    p = os.path.join(ahn_dir, ahn_pat.format(t))
+    try:
+        p = os.path.join(ahn_dir, ahn_pat.format(t))
+    except KeyError:
+        p = os.path.join(ahn_dir, ahn_pat.format(tile=t))
+    except KeyError as e:
+        logger.error("Cannot format %s", ahn_pat)
+        logger.error(e)
+        
     # lasinfo is not compiled with multi-core support on godzilla
     check = subprocess.run(['lasinfo', p, '-nc'], 
                            stdout=subprocess.PIPE, 
@@ -85,6 +92,8 @@ def download(ahn3_dir, ahn2_dir, tile_index_file, ahn3_file_pat, ahn2_file_pat):
     ahn2_dir: path to the directory for the AHN2 files
     tile_index_file: path for the AHN tile index
     """
+    logger.debug("download()", ahn3_dir, ahn2_dir, tile_index_file, ahn3_file_pat, ahn2_file_pat)
+    
     f_idx = os.path.abspath(tile_index_file)
 
     # Get AHN3 index
