@@ -32,7 +32,7 @@ setup(name='bag3d',
     python_requires='>=3',
     keywords='GIS 3DGIS CityGML LiDAR',
     entry_points={
-        'console_scripts': ['bag3d = bag3d.bag3dapp:main']
+        'console_scripts': ['bag3d = bag3d.app:main']
     },
     include_package_data=True,
     zip_safe=False

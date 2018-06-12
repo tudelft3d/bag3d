@@ -1,7 +1,7 @@
 import os.path
 
 import pytest
-import bag3d.bag3dapp
+import bag3d.app
 
 from pprint import pprint
 
@@ -23,9 +23,9 @@ def test_parser(cli_args):
          'threads': 3,
          'update_ahn': False,
          'update_bag': False}
-    args_in = bag3d.bag3dapp.parse_console_args(cli_args)
+    args_in = bag3d.app.parse_console_args(cli_args)
     assert t == args_in
 
 def test_parser_file_not_found():
     with pytest.raises(FileNotFoundError) as e_info:
-        bag3d.bag3dapp.parse_console_args(["../example_data"])
+        bag3d.app.parse_console_args(["../example_data"])

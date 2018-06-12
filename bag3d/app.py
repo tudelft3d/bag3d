@@ -25,7 +25,7 @@ def main():
     with open(os.path.join(here, 'logging.cfg'), 'r') as f:
         log_conf = yaml.safe_load(f)
     logging.config.dictConfig(log_conf)
-    logger = logging.getLogger('bag3dapp')
+    logger = logging.getLogger('app')
     
     schema = os.path.join(here, 'bag3d_cfg_schema.yml')
     
