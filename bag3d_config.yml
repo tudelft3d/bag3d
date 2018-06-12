@@ -24,7 +24,7 @@ input_elevation:
         - /example_data/ahn3
         - /example_data/ahn2/merged
     dataset_name: 
-        - "c_{tile}.laz"
+        - "C_{tile}.LAZ"
         - "{tile}.laz"
 
 tile_index:

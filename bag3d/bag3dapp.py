@@ -56,20 +56,25 @@ def main():
             logger.info("Updating BAG database")
             # At this point an empty database should exists, restore_BAG 
             # takes care of the rest
-            bag.restore_BAG(cfg["database"], doexec=True)
+            bag.restore_BAG(cfg["database"], doexec=False)
     
         if args_in['update_ahn']:
             logger.info("Updating AHN files")
             # well, let's assume the user provided the AHN3 dir first
-            ahn.download(cfg["pc_dir"][0], cfg["pc_dir"][1], 
-                         cfg["elevation"]["file"])
+            ahn3_fp = cfg["input_elevation"]["dataset_name"][0]
+            ahn2_fp = cfg["input_elevation"]["dataset_name"][1]
+            ahn.download(ahn3_dir=cfg["input_elevation"]["dataset_dir"][0], 
+                         ahn2_dir=cfg["input_elevation"]["dataset_dir"][1], 
+                         tile_index_file=cfg["elevation"]["file"],
+                         ahn3_file_pat=ahn3_fp,
+                         ahn2_file_pat=ahn2_fp)
     
         if args_in['import_tile_idx']:
             logger.info("Importing BAG tile index")
             bag.import_index(cfg['polygons']["file"], cfg["database"]["dbname"], 
                              cfg['polygons']["schema"], str(cfg["database"]["host"]), 
                              str(cfg["database"]["port"]), cfg["database"]["user"], 
-                             doexec=True)
+                             doexec=False)
             # Update BAG tiles to include the lower/left boundary
             footprints.update_tile_index(conn,
                                          table_index=[cfg['polygons']["schema"], 
@@ -110,7 +115,7 @@ def main():
             bag.import_index(cfg['elevation']["file"], cfg["database"]["dbname"], 
                              cfg['elevation']["schema"], str(cfg["database"]["host"]), 
                              str(cfg["database"]["port"]), cfg["database"]["user"], 
-                             doexec=True)
+                             doexec=False)
             
             
     #     else:

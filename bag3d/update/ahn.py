@@ -70,7 +70,7 @@ def get_file_date(ahn_dir, ahn_pat, t, f_date_pat, corruptedfiles):
     return d
 
 
-def download(ahn3_dir, ahn2_dir, tile_index_file):
+def download(ahn3_dir, ahn2_dir, tile_index_file, ahn3_file_pat, ahn2_file_pat):
     """Update the AHN3 files in the provided folder
 
     1. Downloads the latest AHN3 index (bladindex) to the local file system
@@ -97,8 +97,8 @@ def download(ahn3_dir, ahn2_dir, tile_index_file):
             has_data_cnt += 1
     
     # Parse download URLs
-    ahn_pat = "C_{}.LAZ"
-    ahn2_pat = "u{}.laz" # in /data/pointcloud/AHN2/uitgefiltered
+    ahn_pat = ahn3_file_pat
+    ahn2_pat = ahn2_file_pat # in /data/pointcloud/AHN2/uitgefiltered
     f_date_pat = re.compile(r"(?<=\sfile creation day/year:).*", 
                             flags=re.IGNORECASE & re.MULTILINE)
     url = "https://geodata.nationaalgeoregister.nl/ahn3/extract/ahn3_laz/C_{}.LAZ"
@@ -122,7 +122,6 @@ def download(ahn3_dir, ahn2_dir, tile_index_file):
         elif dl.returncode == 0:
             downloaded += 1
             add_date = True
-        logger.debug("add_date: %s", add_date)
 
         if add_date:
             d = get_file_date(ahn3_dir, ahn_pat, t, f_date_pat, corruptedfiles)
