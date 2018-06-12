@@ -125,7 +125,7 @@ def parse_config(args_in, schema):
     except pykwalify.errors.PyKwalifyException:
         raise
 
-    cfg['pc_dataset_name'] = cfg_stream["input_elevation"]["dataset_name"]
+    cfg["input_elevation"] = cfg_stream["input_elevation"]
     cfg['pc_dir'] = add_abspath(
         cfg_stream["input_elevation"]["dataset_dir"])
     cfg['polygons'] = cfg_stream['tile_index']['polygons']
