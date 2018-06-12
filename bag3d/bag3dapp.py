@@ -152,6 +152,8 @@ def main():
     
         if args_in['export']:
             logger.info("Exporting 3D BAG")
+    except Exception as e:
+        logger.error(e)
     finally:
         conn.close()
 

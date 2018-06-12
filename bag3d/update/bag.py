@@ -59,8 +59,8 @@ def setup_BAG(conn, doexec=True):
     """Prepares the BAG database"""
     conn.check_postgis()
     query = sql.SQL("""
-CREATE TABLE public.bag_updates (id serial constraint id_pkey primary key, last_update timestamp, note text);
-CREATE SCHEMA tile_index;
+CREATE TABLE IF NOT EXISTS public.bag_updates (id serial constraint id_pkey primary key, last_update timestamp, note text);
+CREATE SCHEMA IF NOT EXISTS tile_index;
 """)
     if doexec:
         logger.debug(conn.print_query(query))
