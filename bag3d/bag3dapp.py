@@ -56,7 +56,7 @@ def main():
             logger.info("Updating BAG database")
             # At this point an empty database should exists, restore_BAG 
             # takes care of the rest
-            bag.restore_BAG(cfg["database"], doexec=False)
+            bag.restore_BAG(cfg["database"], doexec=True)
     
         if args_in['update_ahn']:
             logger.info("Updating AHN files")

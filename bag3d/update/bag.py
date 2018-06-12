@@ -86,7 +86,8 @@ def run_pg_restore(dbase, doexec=True):
 
 def download_BAG(url, doexec=True):
     """Download the latest BAG extract"""
-    command = ['wget', '-q', '-r', url] 
+    dl_url = os.path.join(url, 'bag-laatst.backup')
+    command = ['wget', '-q', '-r', dl_url] 
     run_subprocess(command, doexec=doexec)
 
 def restore_BAG(dbase, doexec=True):
@@ -153,7 +154,6 @@ VALUES ({}, 'auto-update by overwriting the bagactueel schema');
                  schema bagactueel. Rolling back transaction""")
                 return False
             finally:
-                # delete backup file
                 command = ['rm', '-r', '-f', './data.nlextract.nl']
                 run_subprocess(command, doexec=doexec)
                 conn.close()
