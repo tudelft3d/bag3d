@@ -92,7 +92,7 @@ def download(ahn3_dir, ahn2_dir, tile_index_file, ahn3_file_pat, ahn2_file_pat):
     ahn2_dir: path to the directory for the AHN2 files
     tile_index_file: path for the AHN tile index
     """
-    logger.debug("download()", ahn3_dir, ahn2_dir, tile_index_file, ahn3_file_pat, ahn2_file_pat)
+    logger.debug("download() %s", (ahn3_dir, ahn2_dir, tile_index_file, ahn3_file_pat, ahn2_file_pat))
     
     f_idx = os.path.abspath(tile_index_file)
 

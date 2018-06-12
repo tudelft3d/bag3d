@@ -131,14 +131,14 @@ def create_centroids(db, table_centroid, table_footprint, fields_footprint):
     id_col_q = sql.Identifier(id_col)
 
     sql_query = sql.SQL("""
-CREATE TABLE {schema_ctr}.{table_ctr} AS
+CREATE TABLE IF NOT EXISTS {schema_ctr}.{table_ctr} AS
     SELECT {id_col}, st_centroid({geom_col})::geometry(point, 28992) AS geom
     FROM {schema_poly}.{table_poly};
 
 SELECT populate_geometry_columns({sch_tbl}::regclass);
 
 CREATE
-    INDEX {tbl_idx} ON
+    INDEX IF NOT EXISTS {tbl_idx} ON
     {schema_ctr}.{table_ctr}
         USING gist(geom);
 """).format(schema_ctr=schema_ctr_q,
