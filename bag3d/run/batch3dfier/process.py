@@ -18,8 +18,8 @@ import yaml
 from psycopg2 import sql
 from pprint import pformat
 
-from batch3dfier import config
-from batch3dfier import db
+from bag3d.run.batch3dfier import config
+from bag3d.config import db
 
 
 logfile = os.path.join(os.getcwd(), 'batch3dfier.log')

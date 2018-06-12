@@ -11,7 +11,7 @@ from psycopg2 import sql
 import datetime
 import logging
 
-from batch3dfier.batch3dfierapp import parse_config
+import bag3d.run.batch3dfier.process
 
 
 def create_heights_table(db, schema, table):
