@@ -75,7 +75,7 @@ def run_pg_restore(dbase, doexec=True):
     command = ['psql', '-h', dbase['host'], '-U', dbase['user'],
                '-d', dbase['dbname'], '-w', '-c',
                "'DROP SCHEMA IF EXISTS bagactueel CASCADE;'"]
-    run_subprocess(command, doexec=doexec)
+    run_subprocess(command, shell=True, doexec=doexec)
     
     # Restore from the latest extract
     command = ['pg_restore', '--no-owner', '--no-privileges', '-j', '20',
@@ -146,7 +146,7 @@ VALUES ({}, 'auto-update by overwriting the bagactueel schema');
             """)
             try:
                 conn.conn.commit()
-                logger.debug("\nUpdated bag_updates and commented on bagactueel schema.\n")
+                logger.debug("Updated bag_updates and commented on bagactueel schema.")
                 return True
             except:
                 conn.conn.rollback()
