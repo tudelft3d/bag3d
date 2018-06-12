@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Parse configuration"""
+"""Parse arguments and configuration file"""
 
 from sys import exit
 import os.path
@@ -14,7 +14,18 @@ import pykwalify.errors
 logger = logging.getLogger('config.args')
 
 def parse_console_args(args):
-    """Parse command line arguments"""
+    """Parse command line arguments
+    
+    Parameters
+    ----------
+    args : list
+        The list of command line arguments passed to bag3d.app.py
+    
+    Returns
+    -------
+    dict
+        The stored argument values
+    """
     parser = argparse.ArgumentParser(description="Generate a 3D BAG")
     parser.add_argument(
         "path",
@@ -24,11 +35,6 @@ def parse_console_args(args):
         help="The number of threads to run.",
         default=3,
         type=int)
-#     parser.add_argument(
-#         "--get-bag",
-#         dest='get_bag',
-#         action="store_true",
-#         help="Download and restore the BAG extract into the database")
     parser.add_argument(
         "--update-bag",
         dest='update_bag',
@@ -94,7 +100,17 @@ def parse_console_args(args):
 def add_abspath(dirs):
     """Recursively append the absolute path to the paths in a nested list
     
-    If not a list, returns the string with abolute path.
+    If not a list, returns the string with absolute path.
+    
+    Parameters
+    ----------
+    dirs : list of strings, or string
+        List of directory paths
+    
+    Returns
+    -------
+    list
+        List of absolute paths
     """
     if isinstance(dirs, list):
         for i, elem in enumerate(dirs):
@@ -108,7 +124,28 @@ def add_abspath(dirs):
 
 
 def validate_config(config, schema):
-    """Validates the configuration file against the schema"""
+    """Validates the configuration file against the schema
+    
+    The schema is located in bag3d/bag3d_cfg_schema.yml
+    
+    Parameters
+    ----------
+    config : str
+        Path to the configuration file
+    schema : str
+        Path to the schema
+    
+    Raises
+    ------
+    FileNotFoundError
+        If the schema is not found
+    PyKwalifyException
+        If the config file is not valid
+    
+    Returns
+    -------
+    None
+    """
     if not os.path.exists(schema):
         logger.exception('Schema file %s not round', schema)
         raise FileNotFoundError
@@ -121,7 +158,22 @@ def validate_config(config, schema):
 
 
 def parse_config(args_in, schema):
-    """Process the configuration file"""
+    """Process the configuration file
+    
+    Validates the config file and checks a few values
+    
+    Parameters
+    ----------
+    args_in : dict
+        Output of config.parse_console_args()
+    schema : str
+        Path to the config file schema
+    
+    Returns
+    -------
+    dict
+        The configuration parameters
+    """
     cfg = {}
     
     try:

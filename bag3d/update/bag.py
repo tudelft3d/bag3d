@@ -19,7 +19,24 @@ logger = logging.getLogger('update.bag')
 
 
 def run_subprocess(command, shell=False, doexec=True):
-    """Subprocess runner"""
+    """Subprocess runner
+    
+    If subrocess returns non-zero exit code, STDERR is sent to the logger.
+    
+    Parameters
+    ----------
+    command : list of str
+        Command to pass to subprocess.run(). Eg ['wget', '-q', '-r', dl_url]
+    shell : bool
+        Passed to subprocess.run()
+    doexec : bool
+        Execute the subprocess or just print out the concatenated command
+    
+    Returns
+    -------
+    nothing
+        nothing
+    """
     if doexec:
         cmd = " ".join(command)
         logger.debug(cmd)
@@ -36,7 +53,18 @@ def run_subprocess(command, shell=False, doexec=True):
 
 
 def get_latest_BAG(url):
-    """Get the date of the latest BAG extract from NLExtract"""
+    """Get the date of the latest BAG extract from NLExtract
+    
+    Parameters
+    ----------
+    url : str
+        URL to the BAG extract eg http://data.nlextract.nl/bag/postgis/
+    
+    Returns
+    -------
+    datetime.date
+        Date of the latest available BAG extract
+    """
     r = urllib.request.urlopen(url).read()
     soup = BeautifulSoup(r, "lxml")
     
@@ -56,7 +84,22 @@ def get_latest_BAG(url):
 
 
 def setup_BAG(conn, doexec=True):
-    """Prepares the BAG database"""
+    """Prepares the BAG database
+    
+    Creates the *public.bag_updates* table and *tile_index* schema.
+    
+    Parameters
+    ----------
+    conn : :py:class:`bag3d.config.db.db`
+        Open connection
+    doexec : bool
+        Passed to :py:func:`run_subprocess`
+        
+    Returns
+    -------
+    nothing
+        nothing
+    """
     conn.check_postgis()
     query = sql.SQL("""
 CREATE TABLE IF NOT EXISTS public.bag_updates (id serial constraint id_pkey primary key, last_update timestamp, note text);
@@ -70,7 +113,20 @@ CREATE SCHEMA IF NOT EXISTS tile_index;
 
 
 def run_pg_restore(dbase, doexec=True):
-    """Run the pg_restore process"""
+    """Run the pg_restore process
+    
+    Parameters
+    ----------
+    dbase : dict
+        Dict containing the database connection parameters from the config file
+    doexec : bool
+        Passed to :py:func:`run_subprocess`
+    
+    Returns
+    -------
+    nothing
+        nothing
+    """
     # Drop the schema first in order to restore
     command = ['psql', '-h', dbase['host'], '-U', dbase['user'],
                '-d', dbase['dbname'], '-w', '-c',
@@ -85,13 +141,40 @@ def run_pg_restore(dbase, doexec=True):
 
 
 def download_BAG(url, doexec=True):
-    """Download the latest BAG extract"""
+    """Download the latest BAG extract
+    
+    Parameters
+    ----------
+    url : str
+        URL to the BAG extract eg http://data.nlextract.nl/bag/postgis/
+    doexec : bool
+        Passed to :py:func:`run_subprocess`
+    
+    Returns
+    -------
+    nothing
+        nothing
+    """
     dl_url = os.path.join(url, 'bag-laatst.backup')
     command = ['wget', '-q', '-r', dl_url] 
     run_subprocess(command, doexec=doexec)
 
+
 def restore_BAG(dbase, doexec=True):
-    """Restores the BAG extract into a database"""
+    """Restores the BAG extract into a database
+    
+    Parameters
+    ----------
+    dbase : dict
+        Dict containing the database connection parameters from the config file
+    doexec : bool
+        Passed to :py:func:`run_subprocess`
+    
+    Returns
+    -------
+    bool
+        True on success, False on failure
+    """
     try:
         conn = db.db(dbname=dbase['dbname'], host=dbase['host'],
                   port=dbase['port'], user=dbase['user'], 
@@ -169,7 +252,8 @@ VALUES ({}, 'auto-update by overwriting the bagactueel schema');
 def import_index(idx, dbname, tile_schema, host, port, user, doexec=True):
     """Import the tile index into the database
     
-    Calls ogr2ogr.
+    Calls ogr2ogr to import a tile index with EPSG:28992 into the tile_index
+    schema.
     """
     pg_conn = 'PG:"dbname={d} host={h} port={p} user={u}"'.format(
         d=dbname, h=host, p=port, u=user)
@@ -189,9 +273,19 @@ def grant_access(conn, user, tile_schema, tile_index_schema):
     
     Parameters
     ----------
-    conn: db Class connection
-    tile_schema: Schema with the footprint tiles, in config: 'input_polygons:tile_schema'
-    tile_index_schema: Schema with the footprint tile index, in config: 'tile_index:polygons:schema'
+    conn : :py:class:`bag3d.config.db.db`
+        Open connection
+    user : str
+        User to grant the privileges to
+    tile_schema : str
+        Schema with the footprint tiles, in config: 'input_polygons:tile_schema'
+    tile_index_schema : str
+        Schema with the footprint tile index, in config: 'tile_index:polygons:schema'
+    
+    Returns
+    -------
+    nothing
+        nothing
     """
     query_public = sql.SQL("""
 GRANT EXECUTE ON ALL functions IN SCHEMA public TO {u};

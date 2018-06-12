@@ -19,7 +19,7 @@ def update_tile_index(db, table_index, fields_index):
 
     Parameters
     ----------
-    db : db Class instance
+    db : :py:class:`bag3d.config.db.db`
     table_index : list of str
         (schema, table) that contains the tile index polygons.
     fields_index: list of str
@@ -28,6 +28,7 @@ def update_tile_index(db, table_index, fields_index):
     Returns
     -------
     nothing
+        nothing
     """
     schema = table_index[0]
     table = table_index[1]
@@ -103,7 +104,7 @@ def create_centroids(db, table_centroid, table_footprint, fields_footprint):
 
     Parameters
     ----------
-    db : db Class instance
+    db : :py:class:`bag3d.config.db.db`
     table_centroid : list of str
         [schema, table] for the new relation that contains the footprint centroids.
     table_footprint : list of str
@@ -114,6 +115,7 @@ def create_centroids(db, table_centroid, table_footprint, fields_footprint):
     Returns
     -------
     nothing
+        nothing
 
     """
     schema_ctr = table_centroid[0]
@@ -162,7 +164,7 @@ def create_views(db, schema_tiles, table_index, fields_index, table_centroid,
 
     Parameters
     ----------
-    db : db Class instance
+    db : :py:class:`bag3d.config.db.db`
     schema_tiles : str
         Name of the schema where to create the footprint tiles.
     table_index : list of str
@@ -194,6 +196,7 @@ def create_views(db, schema_tiles, table_index, fields_index, table_centroid,
     Returns
     -------
     nothing
+        nothing
 
     """
     schema_tiles_q = sql.Identifier(schema_tiles)
@@ -307,7 +310,7 @@ def partition(db, schema_tiles, table_index, fields_index, table_footprint,
 
     Parameters
     ----------
-    db : db Class instance
+    db : :py:class:`bag3d.config.db.db`
     schema_tiles : str
         Name of the schema where to create the tiles.
     table_index : list of str
@@ -332,6 +335,7 @@ def partition(db, schema_tiles, table_index, fields_index, table_footprint,
     Returns
     -------
     nothing
+        nothing
 
     """
 
