@@ -228,5 +228,12 @@ def parse_config(args_in, schema):
     cfg["footprints"] = cfg_stream["input_polygons"]["footprints"]
 
     cfg['prefix_tile_footprint'] = cfg_stream["input_polygons"]["tile_prefix"]
+    
+    cfg["config"] = {}
+    cfg["config"]["in"] = args_in['cfg_file']
+    d = os.path.dirname(args_in['cfg_file'])
+    cfg["config"]["out_rest"] = os.path.join(d, "bag3d_cfg_rest.yml")
+    cfg["config"]["out_border_ahn2"] = os.path.join(d, "bag3d_cfg_border_ahn2.yml")
+    cfg["config"]["out_border_ahn3"] = os.path.join(d, "bag3d_cfg_border_ahn3.yml")
 
     return(cfg)
