@@ -139,6 +139,10 @@ mapping:
                                 type: str
                                 required: True
                                 desc: Name of the field of the tile index unit names
+                            version:
+                                type: str
+                                required: True
+                                desc: Name of the field that contains the version of the available AHN file. This field is automatically created and populated if --update-ahn and --import-tile-idx are used.
                     file:
                         type: str
     output:

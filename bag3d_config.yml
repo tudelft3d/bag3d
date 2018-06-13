@@ -44,6 +44,7 @@ tile_index:
             primary_key: id
             geometry: geom
             unit_name: bladnr
+            version: ahn_version
         file: example_data/ahn_index.json
 
 output:
