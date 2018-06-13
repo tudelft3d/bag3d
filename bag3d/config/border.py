@@ -15,8 +15,7 @@ import logging
 import pprint
 
 
-logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger("config.border")
 
 config = {
     'db': {
@@ -48,6 +47,61 @@ config = {
         'out_border_ahn3': "/home/bdukai/Data/3DBAG/conf_test_border_ahn3.yml"
         }
     }
+
+
+def create_border_table(conn, idx_schema, idx_table, idx_table_version,
+                        idx_table_geom, border_table, doexec=True):
+    tbl_schema = psycopg2.sql.Identifier(idx_schema)
+    tbl_name = psycopg2.sql.Identifier(idx_table)
+    tbl_version = psycopg2.sql.Identifier(idx_table_version)
+    tbl_geom = psycopg2.sql.Identifier(idx_table_geom)
+    border_table = psycopg2.sql.Identifier(border_table)
+
+    
+    drop_q = psycopg2.sql.SQL("""
+    DROP TABLE IF EXISTS {schema}.{border_table} CASCADE;
+    """).format(schema=tbl_schema, border_table=border_table)
+    logger.debug(conn.print_query(drop_q))
+    
+    create_q = psycopg2.sql.SQL("""
+    CREATE TABLE {schema}.{border_table} AS
+        WITH ahn2 AS (
+        SELECT *
+        FROM {schema}.{table}
+        WHERE {version} = 2
+        ),
+        ahn3 AS (
+        SELECT *
+        FROM {schema}.{table}
+        WHERE {version} = 3
+        )
+        SELECT DISTINCT ahn3.*
+        FROM ahn3, ahn2
+        WHERE st_touches(ahn3.{geom}, ahn2.{geom});
+    """).format(
+            schema=tbl_schema,
+            table=tbl_name,
+            version=tbl_version,
+            geom=tbl_geom,
+            border_table=border_table
+            )
+    logger.debug(conn.print_query(create_q))
+    
+    update_q = psycopg2.sql.SQL("""
+    UPDATE {schema}.{border_table} SET {version} = 2;
+    """).format(
+        schema=tbl_schema,
+        border_table=border_table,
+        version=tbl_version
+        )
+    logger.debug(conn.print_query(update_q))
+
+    if doexec:
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute(drop_q)
+                cur.execute(create_q)
+                cur.execute(update_q)
 
 
 def parse_yml(file):
@@ -238,44 +292,54 @@ def get_non_border_tiles(conn, tbl_schema, tbl_name, border_table, tbl_tile):
     return tiles
 
 
-def main(config):
+def process(conn, config, ahn3_dir, ahn2_dir, export=False):
     conf_file = path.abspath(config['config']['in'])
     conf_rest = path.abspath(config['config']['out_rest'])
     conf_border_ahn2 = path.abspath(config['config']['out_border_ahn2'])
     conf_border_ahn3 = path.abspath(config['config']['out_border_ahn3'])
-    a2_dir = path.abspath(config['ahn2']['dir'])
-    a3_dir = path.abspath(config['ahn3']['dir'])
+    a2_dir = path.abspath(ahn2_dir)
+    a3_dir = path.abspath(ahn3_dir)
     
-    tbl_schema = config['tile_index']['schema']
-    tbl_name = config['tile_index']['table']['name']
-    tbl_tile = config['tile_index']['table']['tile']
-    border_table = config['tile_index']['border_table']
+    tbl_schema = config['elevation']['schema']
+    tbl_name = config['elevation']['table']
+    tbl_tile = config['elevation']['fields']['unit_name']
+    tbl_version = config['elevation']['fields']['version']
+    tbl_geom = config['elevation']['fields']['geometry']
+    border_table = config['elevation']['border_table']
     
-    try:
-        conn = psycopg2.connect(
-            "dbname=%s host=%s port=%s user=%s" %
-            (config['db']['dbname'], config['db']['host'],
-             config['db']['port'], config['db']['user']))
-        logging.debug("Opened database successfully")
-    except BaseException as e:
-        logging.exception("I'm unable to connect to the database. Exiting function.", e)
     
+#     try:
+#         conn = psycopg2.connect(
+#             "dbname=%s host=%s port=%s user=%s" %
+#             (config['db']['dbname'], config['db']['host'],
+#              config['db']['port'], config['db']['user']))
+#         logging.debug("Opened database successfully")
+#     except BaseException as e:
+#         logging.exception("I'm unable to connect to the database. Exiting function.", e)
+    
+    #FIXME: check if they work
+    create_border_table(conn, idx_schema=tbl_schema, 
+                        idx_table=tbl_name, 
+                        idx_table_version=tbl_version, 
+                        idx_table_geom=tbl_geom, 
+                        border_table=border_table)
+
     t_border = get_border_tiles(conn, tbl_schema, border_table, tbl_tile)
     t_rest = get_non_border_tiles(conn, tbl_schema, tbl_name, border_table,
                                  tbl_tile)
     
-    conf_yml = parse_yml(conf_file)
+#     conf_yml = parse_yml(conf_file)
     #TODO: user batch3dfierapp.parse_config_yml() instead
-    bt = set(conf_yml["input_polygons"]["tile_list"]).intersection(set(t_border))
+    bt = set(config['tiles']).intersection(set(t_border))
     if len(bt) > 0:
         w = "Tiles %s are on the border of AHN3 and they might be missing points" % bt
         warnings.warn(w, UserWarning)
         t_border = copy.deepcopy(list(bt))
-        rt = list(set(conf_yml["input_polygons"]["tile_list"]).intersection(set(t_rest)))
+        rt = list(set(config['tiles']).intersection(set(t_rest)))
         t_rest = copy.deepcopy(rt)
         del rt, bt
 
-    
+    #FIXME: change conf_yml to config below
     yml_rest = update_yml(conf_yml, t_rest)
     # re-configure the border tiles with AHN2 only
     yml_border_ahn2 = update_yml(conf_yml, t_border, ahn_version=2, ahn_dir=a2_dir,
@@ -284,11 +348,12 @@ def main(config):
     yml_border_ahn3 = update_yml(conf_yml, t_border, ahn_version=3, ahn_dir=a3_dir,
                             border_table=border_table)
     
-    write_yml(yml_rest, conf_rest)
-    write_yml(yml_border_ahn2, conf_border_ahn2)
-    write_yml(yml_border_ahn3, conf_border_ahn3)
-    
-    conn.close()
+    if export:
+        write_yml(yml_rest, conf_rest)
+        write_yml(yml_border_ahn2, conf_border_ahn2)
+        write_yml(yml_border_ahn3, conf_border_ahn3)
+        
+#     conn.close()
 
 
 if __name__ == '__main__':
