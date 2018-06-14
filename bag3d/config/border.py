@@ -56,7 +56,7 @@ config = {
 
 
 def create_border_table(conn, config, doexec=True):
-    """Creates the table tile_index:elevation:border table in the database
+    """Creates the table tile_index:elevation:border_table in the database
     
     The table tile_index:elevation:border table a subset of tile index with 
     the tiles on the border of AHN3 coverage.
@@ -75,7 +75,7 @@ def create_border_table(conn, config, doexec=True):
     Returns
     -------
     None
-        Creates the table tile_index:elevation:border table in the database
+        Creates the table tile_index:elevation:border_table in the database
     """
     tbl_schema = sql.Identifier(config['elevation']['schema'])
     tbl_name = sql.Identifier(config['elevation']['table'])
@@ -147,20 +147,24 @@ def update_file_date(conn, config, ahn2_dir, ahn2_fp, doexec=True):
         Path to the AHN2 files. Such as in input_elevation:dataset_dir
     ahn2_fp : str
         The filename pattern of AHN2 files. Such as in input_elevation:dataset_name
+    
+    Returns
+    -------
+    None
+        Updates the tile_index:elevation:border_table in the database
+        
     """
     
-    tbl_schema = config['elevation']['schema']
-    tbl_tile = config['elevation']['fields']['unit_name']
-    tbl_version = config['elevation']['fields']['version']
-    border_table = config['elevation']['border_table']
-    
+    tbl_schema = sql.Identifier(config['elevation']['schema'])
+    tbl_tile = sql.Identifier(config['elevation']['fields']['unit_name'])
+    tbl_version = sql.Identifier(config['elevation']['fields']['version'])
+    border_table = sql.Identifier(config['elevation']['border_table'])
     a_date_pat = re.compile(r"(?<=\sfile creation day/year:).*",
                             flags=re.IGNORECASE & re.MULTILINE)
-    
     corruptedfiles = []
     
     tile_q = sql.SQL("""
-    SELECT {tile} from {schema}.{border_table};
+    SELECT {tile} FROM {schema}.{border_table};
     """).format(
         tile=tbl_tile,
         schema=tbl_schema,
@@ -170,47 +174,44 @@ def update_file_date(conn, config, ahn2_dir, ahn2_fp, doexec=True):
     r = conn.getQuery(tile_q)
     tiles = [field[0].lower() for field in r]
     
-
-    
-    with conn:
-        with conn.cursor() as cur:
-            
-    
-            for e, t in enumerate(tiles):
-                d = ahn.get_file_date(ahn2_dir, ahn2_fp, t, a_date_pat, corruptedfiles)
-                if d:
-                    date = d.isoformat()
-                    cur.execute(sql.SQL("""
-                    UPDATE {schema}.{border_table}
-                    SET file_date = {d}
-                    WHERE {tile} = {t}
-                    """).format(
-                            schema=tbl_schema,
-                            border_table=border_table,
-                            d=psycopg2.sql.Literal(date),
-                            tile=tbl_tile,
-                            t=psycopg2.sql.Literal(t)
-                        )
-                    )
-                else:
-                    logger.debug("No file date for tile: %s", t)
-                    date = None
-                    cur.execute(sql.SQL("""
-                    UPDATE {schema}.{border_table}
-                    SET
-                    {version} = NULL,
-                    file_date = {d}
-                    WHERE {tile} = {t}
-                    """).format(
-                            schema=tbl_schema,
-                            border_table=border_table,
-                            version = tbl_version,
-                            d=psycopg2.sql.Literal(date),
-                            tile=tbl_tile,
-                            t=psycopg2.sql.Literal(t)
-                        )
-                    )
-
+    queries = sql.Composed('')
+    for e, t in enumerate(tiles):
+        d = ahn.get_file_date(ahn2_dir, ahn2_fp, t, a_date_pat, corruptedfiles)
+        if d:
+            date = d.isoformat()
+            query = sql.SQL("""
+            UPDATE {schema}.{border_table}
+            SET file_date = {d}
+            WHERE {tile} = {t}
+            """).format(
+                    schema=tbl_schema,
+                    border_table=border_table,
+                    d=psycopg2.sql.Literal(date),
+                    tile=tbl_tile,
+                    t=psycopg2.sql.Literal(t)
+                )
+            queries += query
+        else:
+            logger.debug("No file date for tile: %s", t)
+            date = None
+            query = sql.SQL("""
+            UPDATE {schema}.{border_table}
+            SET
+            {version} = NULL,
+            file_date = {d}
+            WHERE {tile} = {t}
+            """).format(
+                    schema=tbl_schema,
+                    border_table=border_table,
+                    version = tbl_version,
+                    d=psycopg2.sql.Literal(date),
+                    tile=tbl_tile,
+                    t=psycopg2.sql.Literal(t)
+                )
+            queries += query
+    logger.debug(conn.print_query(queries))
+    if doexec:
+        conn.sendQuery(queries)
 
 
 def parse_yml(file):
@@ -401,36 +402,21 @@ def get_non_border_tiles(conn, tbl_schema, tbl_name, border_table, tbl_tile):
     return tiles
 
 
-def process(conn, config, ahn3_dir, ahn2_dir, export=False):
-    conf_file = path.abspath(config['config']['in'])
+def process(conn, config, ahn3_dir, ahn2_dir, ahn2_fp, export=False, 
+            doexec=True):
     conf_rest = path.abspath(config['config']['out_rest'])
     conf_border_ahn2 = path.abspath(config['config']['out_border_ahn2'])
     conf_border_ahn3 = path.abspath(config['config']['out_border_ahn3'])
     a2_dir = path.abspath(ahn2_dir)
     a3_dir = path.abspath(ahn3_dir)
-    
     tbl_schema = config['elevation']['schema']
     tbl_name = config['elevation']['table']
     tbl_tile = config['elevation']['fields']['unit_name']
-    tbl_version = config['elevation']['fields']['version']
-    tbl_geom = config['elevation']['fields']['geometry']
     border_table = config['elevation']['border_table']
-    
-    
-#     try:
-#         conn = psycopg2.connect(
-#             "dbname=%s host=%s port=%s user=%s" %
-#             (config['db']['dbname'], config['db']['host'],
-#              config['db']['port'], config['db']['user']))
-#         logger.debug("Opened database successfully")
-#     except BaseException as e:
-#         logger.exception("I'm unable to connect to the database. Exiting function.", e)
-    
-    #FIXME: check if they work
+
     logger.info("Creating border_table")
     create_border_table(conn, config, doexec=False)
-    
-    #TODO: function to update the file_date for AHN2 tiles in border_table
+    update_file_date(conn, config, a2_dir, ahn2_fp, doexec=False)
 
     t_border = get_border_tiles(conn, tbl_schema, border_table, tbl_tile)
     t_rest = get_non_border_tiles(conn, tbl_schema, tbl_name, border_table,
@@ -459,9 +445,3 @@ def process(conn, config, ahn3_dir, ahn2_dir, export=False):
         write_yml(yml_rest, conf_rest)
         write_yml(yml_border_ahn2, conf_border_ahn2)
         write_yml(yml_border_ahn3, conf_border_ahn3)
-        
-#     conn.close()
-
-
-if __name__ == '__main__':
-    main(config)

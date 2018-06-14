@@ -66,18 +66,17 @@ def cfg():
 
 class TestBorder():
     def test_create_border_table(self, caplog, conn, cfg):
-        tbl_schema = cfg['elevation']['schema']
-        tbl_name = cfg['elevation']['table']
-        tbl_tile = cfg['elevation']['fields']['unit_name']
-        tbl_version = cfg['elevation']['fields']['version']
-        tbl_geom = cfg['elevation']['fields']['geometry']
-        border_table = cfg['elevation']['border_table']
+        doexec = True
+        cfg["elevation"]["border_table"] = "border_tiles2"
         with caplog.at_level(logging.DEBUG):
-            border.create_border_table(conn, idx_schema=tbl_schema, 
-                               idx_table=tbl_name, 
-                               idx_table_version=tbl_version, 
-                               idx_table_geom=tbl_geom, 
-                               border_table=border_table,
-                               doexec=False)
+            border.create_border_table(conn, cfg, doexec=doexec)
+            if doexec:
+                conn.sendQuery("DROP TABLE tile_index.border_tiles2 CASCADE;")
             
+    def test_update_file_date(self, caplog, conn, cfg):
+        with caplog.at_level(logging.DEBUG):
+            border.update_file_date(conn, cfg, 
+                                    cfg["input_elevation"]["dataset_dir"][1], 
+                                    cfg["input_elevation"]["dataset_name"][1], 
+                                    doexec=False)
             
