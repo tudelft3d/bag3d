@@ -51,6 +51,11 @@ def parse_console_args(args):
         action="store_true",
         help="Import the BAG and AHN tile indexes into the BAG database")
     parser.add_argument(
+        "--add-borders",
+        dest='add_borders',
+        action="store_true",
+        help="Create and configure the tiles on the AHN2-3 boundary")
+    parser.add_argument(
         "--run-3dfier",
         dest='run_3dfier',
         action="store_true",
@@ -73,6 +78,7 @@ def parse_console_args(args):
     parser.set_defaults(update_bag=False)
     parser.set_defaults(update_ahn=False)
     parser.set_defaults(import_tile_idx=False)
+    parser.set_defaults(add_borders=False)
     parser.set_defaults(run_3dfier=False)
     parser.set_defaults(export=False)
     parser.set_defaults(no_exec=True)
@@ -89,6 +95,7 @@ def parse_console_args(args):
     args_in['update_bag'] = args.update_bag
     args_in['update_ahn'] = args.update_ahn
     args_in['import_tile_idx'] = args.import_tile_idx
+    args_in['add_borders'] = args.add_borders
     args_in['run_3dfier'] = args.run_3dfier
     args_in['export'] = args.export
     args_in['grant_access'] = args.grant_access

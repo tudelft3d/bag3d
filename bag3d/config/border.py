@@ -176,7 +176,7 @@ def update_file_date(conn, config, ahn2_dir, ahn2_fp, doexec=True):
             query = sql.SQL("""
             UPDATE {schema}.{border_table}
             SET file_date = {d}
-            WHERE {tile} = {t}
+            WHERE {tile} = {t};
             """).format(
                     schema=tbl_schema,
                     border_table=border_table,
@@ -193,7 +193,7 @@ def update_file_date(conn, config, ahn2_dir, ahn2_fp, doexec=True):
             SET
             {version} = NULL,
             file_date = {d}
-            WHERE {tile} = {t}
+            WHERE {tile} = {t};
             """).format(
                     schema=tbl_schema,
                     border_table=border_table,
@@ -399,8 +399,7 @@ def get_non_border_tiles(conn, tbl_schema, tbl_name, border_table, tbl_tile):
     return [row[0] for row in conn.getQuery(query)]
 
 
-def process(conn, config, ahn3_dir, ahn2_dir, ahn2_fp, export=False, 
-            doexec=True):
+def process(conn, config, ahn3_dir, ahn2_dir, export=False):
     """Creates configurations for processing the border tiles
     
     Parameters
@@ -413,13 +412,9 @@ def process(conn, config, ahn3_dir, ahn2_dir, ahn2_fp, export=False,
         Path to the AHN3 files. Such as in input_elevation:dataset_dir
     ahn2_dir : str
         Path to the AHN2 files. Such as in input_elevation:dataset_dir
-    ahn2_fp : str
-        The filename pattern of AHN2 files. Such as in input_elevation:dataset_name
     export : bool
         Write the created configurations to files. The output directory is 
         where the original config file is located
-    doexec : bool
-        Execute the subprocess or just print out the concatenated command
     
     Returns
     -------
@@ -438,10 +433,6 @@ def process(conn, config, ahn3_dir, ahn2_dir, ahn2_fp, export=False,
     tbl_name = config['elevation']['table']
     tbl_tile = config['elevation']['fields']['unit_name']
     border_table = config['elevation']['border_table']
-
-    logger.info("Creating border_table")
-    create_border_table(conn, config, doexec=doexec)
-    update_file_date(conn, config, a2_dir, ahn2_fp, doexec=doexec)
 
     t_border = get_border_tiles(conn, tbl_schema, border_table, tbl_tile)
     t_rest = get_non_border_tiles(conn, tbl_schema, tbl_name, border_table,

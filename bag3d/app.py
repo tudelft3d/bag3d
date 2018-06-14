@@ -121,17 +121,23 @@ def main():
                              cfg['elevation']["schema"], str(cfg["database"]["host"]), 
                              str(cfg["database"]["port"]), cfg["database"]["user"], 
                              doexec=args_in['no_exec'])
+            
+        if args_in['add_borders']:
+            logger.info("Configuring AHN2-3 border tiles")
+            border.create_border_table(conn, cfg, 
+                                       doexec=args_in['no_exec'])
+            border.update_file_date(conn, cfg, ahn2_dir, ahn2_fp, 
+                                    doexec=args_in['no_exec'])
     
         if args_in['run_3dfier']:
-            logger.info("Parsing batch3dfier configuration")
-    
-            logger.info("Configuring AHN2-3 border tiles")
+            logger.info("Configuring batch3dfier")
+            #TODO: need to add tile list preprocessing here
             configs = border.process(conn, cfg, ahn3_dir=ahn3_dir,
-                           ahn2_dir=ahn2_dir, ahn2_fp=ahn2_fp,
-                           export=False, doexec=args_in['no_exec'])
+                                       ahn2_dir=ahn2_dir, ahn2_fp=ahn2_fp,
+                                       export=False, doexec=args_in['no_exec'])
             for cfg in configs:
                 logger.debug(pformat(cfg))
-            
+                
             logger.info("Running batch3dfier")
             
             logger.info("Importing batch3dfier output into database")
