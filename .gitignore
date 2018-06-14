@@ -1,3 +1,7 @@
+# Packaging
+dist
+deploy.sh
+
 # Eclipse
 .settings
 .project

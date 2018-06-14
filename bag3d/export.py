@@ -12,7 +12,7 @@ from psycopg2 import sql
 import datetime
 import logging
 
-import bag3d.run.batch3dfier.process
+import bag3d.batch3dfier.batch3dfier.process
 
 
 def export_csv(cur, csv_out, cfg):

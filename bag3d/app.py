@@ -12,9 +12,11 @@ import logging, logging.config
 from bag3d.config import args
 from bag3d.config import db
 from bag3d.config import footprints
+from bag3d.config import border
+from bag3d.config import batch3dfier
 from bag3d.update import bag
 from bag3d.update import ahn
-from bag3d.config import border
+from bag3d.batch3dfier import process
 
 from pprint import pformat
 
@@ -29,15 +31,13 @@ def main():
     logger = logging.getLogger('app')
     
     schema = os.path.join(here, 'bag3d_cfg_schema.yml')
-    
-    
-    logger.debug("Parsing arguments and configuration file")
-    
     args_in = args.parse_console_args(argv[1:])
     
     try:
         cfg = args.parse_config(args_in, schema)
-    except:
+    except Exception as e:
+        logger.exception("Couldn't parse configuration file")
+        logger.exception(e)
         exit(1)
     
     logger.debug(pformat(cfg))
@@ -49,7 +49,8 @@ def main():
             port=str(cfg["database"]["port"]),
             user=cfg["database"]["user"],
             password=cfg["database"]["pw"])
-    except:
+    except Exception as e:
+        logger.exception(e)
         exit(1)
     
     try:
@@ -136,8 +137,15 @@ def main():
                                      export=False)
             for cfg in configs:
                 logger.debug(pformat(cfg))
-                
-            logger.info("Running batch3dfier")
+            
+            clip_prefix = "_clip3dfy_"
+            logger.debug("clip_prefix is %s", clip_prefix)
+            
+            for cfg in configs:
+                cfg_out = batch3dfier.configure_tiles(conn, cfg, clip_prefix)
+                logger.debug(cfg_out)
+                logger.info("Running batch3dfier")
+                #process.run(conn, cfg_out, doexec=args_in['no_exec'])
             
             logger.info("Importing batch3dfier output into database")
             

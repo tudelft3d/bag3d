@@ -194,6 +194,8 @@ def parse_config(args_in, schema):
     cfg["input_elevation"] = cfg_stream["input_elevation"]
     cfg['pc_dir'] = add_abspath(
         cfg_stream["input_elevation"]["dataset_dir"])
+    cfg['tile_index'] = cfg_stream['tile_index']
+    #FIXME: remove this below --v
     cfg['polygons'] = cfg_stream['tile_index']['polygons']
     cfg['elevation'] = cfg_stream['tile_index']['elevation']
 
@@ -212,6 +214,8 @@ def parse_config(args_in, schema):
 
     cfg['path_3dfier'] = cfg_stream["path_3dfier"]
 
+    cfg["input_polygons"] = cfg_stream["input_polygons"]
+    #FIXME: sanitzie this below --v
     try:
         # in case user gave " " or "" for 'extent'
         if len(cfg_stream["input_polygons"]["extent"]) <= 1:
