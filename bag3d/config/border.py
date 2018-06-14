@@ -3,9 +3,7 @@
 
 """Configure the batch3dfier processes for the tiles on AHN2 and AHN3 border"""
 
-
 from os import path
-from sys import exit
 import warnings
 import copy
 import re
@@ -15,44 +13,40 @@ import yaml
 import psycopg2
 from psycopg2 import sql
 
-from bag3d.config import db
 from bag3d.update import ahn
-
-import pprint
-
 
 logger = logging.getLogger("config.border")
 
-config = {
-    'db': {
-        'dbname': "bag_test",
-        'host': "localhost",
-        'port': "55555",
-        'user': "bag_admin"
-        },
-    'tile_index': {
-        'schema': "tile_index",
-        'table': {
-            'name': "ahn_index",
-            'version': "ahn_version",
-            'geom': "geom",
-            'tile': "bladnr"
-            },
-        'border_table': 'border_tiles'
-        },
-    'ahn2': {
-        'dir': "/data/pointcloud/AHN2/merged"
-        },
-    'ahn3': {
-        'dir': "/data/pointcloud/AHN3/as_downloaded"
-        },
-    'config': {
-        'in': "/home/bdukai/Data/3DBAG/batch3dfy_bag_test_area.yml",
-        'out_rest': "/home/bdukai/Data/3DBAG/conf_test_rest.yml",
-        'out_border_ahn2': "/home/bdukai/Data/3DBAG/conf_test_border_ahn2.yml",
-        'out_border_ahn3': "/home/bdukai/Data/3DBAG/conf_test_border_ahn3.yml"
-        }
-    }
+# config = {
+#     'db': {
+#         'dbname': "bag_test",
+#         'host': "localhost",
+#         'port': "55555",
+#         'user': "bag_admin"
+#         },
+#     'tile_index': {
+#         'schema': "tile_index",
+#         'table': {
+#             'name': "ahn_index",
+#             'version': "ahn_version",
+#             'geom': "geom",
+#             'tile': "bladnr"
+#             },
+#         'border_table': 'border_tiles'
+#         },
+#     'ahn2': {
+#         'dir': "/data/pointcloud/AHN2/merged"
+#         },
+#     'ahn3': {
+#         'dir': "/data/pointcloud/AHN3/as_downloaded"
+#         },
+#     'config': {
+#         'in': "/home/bdukai/Data/3DBAG/batch3dfy_bag_test_area.yml",
+#         'out_rest': "/home/bdukai/Data/3DBAG/conf_test_rest.yml",
+#         'out_border_ahn2': "/home/bdukai/Data/3DBAG/conf_test_border_ahn2.yml",
+#         'out_border_ahn3': "/home/bdukai/Data/3DBAG/conf_test_border_ahn3.yml"
+#         }
+#     }
 
 
 def create_border_table(conn, config, doexec=True):
@@ -214,19 +208,22 @@ def update_file_date(conn, config, ahn2_dir, ahn2_fp, doexec=True):
         conn.sendQuery(queries)
 
 
-def parse_yml(file):
-    """Parse a YAML config file"""
-    try:
-        stream = open(file, "r")
-        cfg_stream = yaml.load(stream)
-    except FileNotFoundError as e:
-        logger.exception("Config file not found at %s", file)
-        exit(1)
-    return cfg_stream
+# def parse_yml(file):
+#     """Parse a YAML config file"""
+#     try:
+#         stream = open(file, "r")
+#         cfg_stream = yaml.load(stream)
+#     except FileNotFoundError as e:
+#         logger.exception("Config file not found at %s", file)
+#         raise
+#     return cfg_stream
 
 
-def update_out_relations(cfg, ahn_version, ahn_dir, border_table):
+def update_output(cfg, ahn_version, ahn_dir, border_table):
     """Update the output parameters in the config file for processing border tiles
+    
+    Assumes that input_elevation:dataset_dir has at least 2 entries, one of
+    them is the AHN2 directory.
     
     Parameters
     ----------
@@ -252,7 +249,7 @@ def update_out_relations(cfg, ahn_version, ahn_dir, border_table):
     except ValueError as e:
         logger.error("Cannot find %s in input_elevation:dataset_dir \
         of batch3dfier config", ahn_dir)
-        exit(1)
+        raise
     # configure to use AHN2 only
     # schema is not expected to change for border_table
     cfg["elevation"]["table"] = border_table
@@ -269,21 +266,36 @@ def update_out_relations(cfg, ahn_version, ahn_dir, border_table):
         cfg["output"]["schema"] = "public"
         cfg["output"]["table"] = "heights" + sfx
         cfg["output"]["bag3d_table"] = "bag3d" + sfx
-    
     return cfg
 
 
-def update_yml(yml, tile_list, ahn_version=None, ahn_dir=None, border_table=None):
-    """Update the tile_list in the YAML config and write file
+def update_tile_list(config, tile_list, ahn_version=None, 
+                     ahn_dir=None, border_table=None):
+    """Update the tile_list in the config
     
-    Assumes that input_elevation:dataset_dir has at least 2 entries, one of
-    them is the AHN2 directory.
+    Parameters
+    ----------
+    config : dict
+        bag3d configuration parameters
+    tile_list : list
+        List of tiles to process
+    ahn_version : int
+        Version of AHN
+    ahn_dir : str
+        Path to AHN files
+    border_table : str
+        Name of the border table
+    
+    Returns
+    -------
+    dict
+        The updated configuration
     """
-    c = copy.deepcopy(yml)
+    c = copy.deepcopy(config)
     c["input_polygons"]["tile_list"] = tile_list
     
     if ahn_version:
-        c = update_out_relations(c, ahn_version, ahn_dir, border_table)
+        c = update_output(c, ahn_version, ahn_dir, border_table)
     else:
         sfx = "_rest"
         d = c["output"]["dir"]
@@ -308,7 +320,7 @@ def write_yml(yml, file):
         yaml.safe_dump(yml, stream)
     except FileNotFoundError as e:
         logger.exception("Config file not found at %s", file)
-        exit(1)
+        raise
 
 
 def get_border_tiles(conn, tbl_schema, border_table, tbl_tile):
