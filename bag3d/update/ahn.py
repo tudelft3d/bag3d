@@ -119,8 +119,9 @@ def download(ahn3_dir, ahn2_dir, tile_index_file, ahn3_file_pat, ahn2_file_pat):
     for i, tile in ahn_idx.items():
         logger.debug("Downloading file # %s out of %s", str(i), str(len(ahn_idx)))
         t = tile.upper()
-        dl = subprocess.run(['wget', '-nc', '-P', ahn3_dir, 
-                             url.format(t)],
+        command = ['wget', '-nc', '-P', ahn3_dir, url.format(t)]
+        logger.debug(command)
+        dl = subprocess.run(command,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE)
         err = dl.stderr.decode(locale.getpreferredencoding(do_setlocale=True))
