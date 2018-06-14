@@ -12,8 +12,13 @@ here = os.path.abspath(os.path.dirname(__file__))
 with codecs.open(os.path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = '\n' + f.read()
 
+about = {}
+
+with open(os.path.join(here, "bag3d", "__version__.py")) as f:
+    exec (f.read(), about)
+
 setup(name='bag3d',
-    version='0.1.0',
+    version=about['__version__'],
     description='A process for generating a 3D BAG',
     long_description=long_description,
     url='https://github.com/tudelft3d/bag3d',
