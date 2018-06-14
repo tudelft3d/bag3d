@@ -226,6 +226,24 @@ def parse_yml(file):
 
 
 def update_out_relations(cfg, ahn_version, ahn_dir, border_table):
+    """Update the output parameters in the config file for processing border tiles
+    
+    Parameters
+    ----------
+    cfg : dict
+        bag3d configuration parameters
+    ahn_version : int
+        Version of AHN
+    ahn_dir : str
+        Path to AHN files
+    border_table : str
+        Name of the border table
+    
+    Returns
+    -------
+    dict
+        The updated configuration
+    """
     sfx = "_border_ahn" + str(ahn_version)
     try:
         name_idx = cfg["input_elevation"]["dataset_dir"].index(ahn_dir)
@@ -237,12 +255,11 @@ def update_out_relations(cfg, ahn_version, ahn_dir, border_table):
         exit(1)
     # configure to use AHN2 only
     # schema is not expected to change for border_table
-    cfg["tile_index"]["elevation"]["table"] = border_table
+    cfg["elevation"]["table"] = border_table
     cfg["input_elevation"]["dataset_dir"] = ahn_dir
     d = cfg["output"]["dir"]
     dname = path.join(path.dirname(d), path.basename(d) + sfx)
     cfg["output"]["dir"] = dname
-    # FIXME: where to put and how to handle this bag3d_table?
     if cfg["output"]["table"]:
         t = cfg["output"]["table"]
         cfg["output"]["table"] = t + sfx
@@ -281,59 +298,7 @@ def update_yml(yml, tile_list, ahn_version=None, ahn_dir=None, border_table=None
             c["output"]["schema"] = "public"
             c["output"]["table"] = "heights" + sfx
             c["output"]["bag3d_table"] = "bag3d" + sfx
-    
     return c
-    
-#     if ahn_version == 2:
-#         try:
-#             name_idx = c["input_elevation"]["dataset_dir"].index(ahn_dir)
-#             n = c["input_elevation"]["dataset_name"][name_idx]
-#             c["input_elevation"]["dataset_name"] = n
-#         except ValueError as e:
-#             logger.error("Cannot find %s in input_elevation:dataset_dir \
-#             of batch3dfier config", ahn_dir)
-#             exit(1)
-#         # configure to use AHN2 only
-#         # schema is not expected to change for border_table
-#         c["tile_index"]["elevation"]["table"] = border_table
-#         c["input_elevation"]["dataset_dir"] = ahn_dir
-#         d = c["output"]["dir"]
-#         dname = path.join(path.dirname(d), path.basename(d) + "_border_ahn2")
-#         c["output"]["dir"] = dname
-#         # FIXME: where to put and how to handle this bag3d_table?
-#         if c["output"]["table"]:
-#             sfx = "_border_ahn2"
-#             t = c["output"]["table"]
-#             c["output"]["table"] = t + sfx
-#             tb = c["output"]["bag3d_table"]
-#             c["output"]["bag3d_table"] = tb + sfx
-#         else:
-#             c["output"]["schema"] = "public"
-#             c["output"]["table"] = "heights_border_ahn2"
-#             c["output"]["bag3d_table"] = "bag3d_border_ahn2"
-#     elif ahn_version == 3:
-#         try:
-#             name_idx = c["input_elevation"]["dataset_dir"].index(ahn_dir)
-#             n = c["input_elevation"]["dataset_name"][name_idx]
-#             c["input_elevation"]["dataset_name"] = n
-#         except ValueError as e:
-#             logger.error("Cannot find %s in input_elevation:dataset_dir \
-#             of batch3dfier config", ahn_dir)
-#             exit(1)
-#         c["tile_index"]["elevation"]["table"] = border_table
-#         c["input_elevation"]["dataset_dir"] = ahn_dir
-#         d = c["output"]["dir"]
-#         dname = path.join(path.dirname(d), path.basename(d) + "_border_ahn3")
-#         c["output"]["dir"] = dname
-#         # FIXME: where to put and how to handle this bag3d_table?
-#         if c["output"]["table"]:
-#             t = c["output"]["table"]
-#             tb = c["output"]["bag3d_table"]
-#             c["output"]["bag3d_table"] = tb + "_border_ahn3"
-#         else:
-#             c["output"]["schema"] = "public"
-#             c["output"]["table"] = "heights_border_ahn3"
-#             c["output"]["bag3d_table"] = "bag3d_border_ahn3"
 
 
 def write_yml(yml, file):

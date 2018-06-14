@@ -157,6 +157,7 @@ mapping:
                 type: str
             bag3d_table:
                 type: str
+                desc: Name of the table that stored the 3D BAG in the database
     path_3dfier:
         type: str
         required: True
