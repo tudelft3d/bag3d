@@ -401,6 +401,34 @@ def get_non_border_tiles(conn, tbl_schema, tbl_name, border_table, tbl_tile):
 
 def process(conn, config, ahn3_dir, ahn2_dir, ahn2_fp, export=False, 
             doexec=True):
+    """Creates configurations for processing the border tiles
+    
+    Parameters
+    ----------
+    conn : :py:class:`bag3d.config.db.db`
+        Open connection
+    config : dict
+        bag3d configuration parameters
+    ahn3_dir : str
+        Path to the AHN3 files. Such as in input_elevation:dataset_dir
+    ahn2_dir : str
+        Path to the AHN2 files. Such as in input_elevation:dataset_dir
+    ahn2_fp : str
+        The filename pattern of AHN2 files. Such as in input_elevation:dataset_name
+    export : bool
+        Write the created configurations to files. The output directory is 
+        where the original config file is located
+    doexec : bool
+        Execute the subprocess or just print out the concatenated command
+    
+    Returns
+    -------
+    list of dict
+        List of the updated configurations in this order:
+        1. Config for the non-border tiles
+        2. Config for the border tiles with AHN2 data
+        3. Config for the border tiles with AHN3 data
+    """
     conf_rest = path.abspath(config['config']['out_rest'])
     conf_border_ahn2 = path.abspath(config['config']['out_border_ahn2'])
     conf_border_ahn3 = path.abspath(config['config']['out_border_ahn3'])
@@ -412,15 +440,12 @@ def process(conn, config, ahn3_dir, ahn2_dir, ahn2_fp, export=False,
     border_table = config['elevation']['border_table']
 
     logger.info("Creating border_table")
-    create_border_table(conn, config, doexec=False)
-    update_file_date(conn, config, a2_dir, ahn2_fp, doexec=False)
+    create_border_table(conn, config, doexec=doexec)
+    update_file_date(conn, config, a2_dir, ahn2_fp, doexec=doexec)
 
     t_border = get_border_tiles(conn, tbl_schema, border_table, tbl_tile)
     t_rest = get_non_border_tiles(conn, tbl_schema, tbl_name, border_table,
                                  tbl_tile)
-    
-#     conf_yml = parse_yml(conf_file)
-    #TODO: user batch3dfierapp.parse_config_yml() instead
     bt = set(config['tiles']).intersection(set(t_border))
     if len(bt) > 0:
         w = "Tiles %s are on the border of AHN3 and they might be missing points" % bt
@@ -430,15 +455,17 @@ def process(conn, config, ahn3_dir, ahn2_dir, ahn2_fp, export=False,
         t_rest = copy.deepcopy(rt)
         del rt, bt
 
-    yml_rest = update_yml(config, t_rest)
+    yml_rest = update_tile_list(config, t_rest)
     # re-configure the border tiles with AHN2 only
-    yml_border_ahn2 = update_yml(config, t_border, ahn_version=2, ahn_dir=a2_dir,
-                            border_table=border_table)
+    yml_border_ahn2 = update_tile_list(config, t_border, ahn_version=2, 
+                                       ahn_dir=a2_dir,
+                                       border_table=border_table)
     # and with AHN3 only
-    yml_border_ahn3 = update_yml(config, t_border, ahn_version=3, ahn_dir=a3_dir,
-                            border_table=border_table)
-    
+    yml_border_ahn3 = update_tile_list(config, t_border, ahn_version=3, 
+                                       ahn_dir=a3_dir,
+                                       border_table=border_table)
     if export:
         write_yml(yml_rest, conf_rest)
         write_yml(yml_border_ahn2, conf_border_ahn2)
         write_yml(yml_border_ahn3, conf_border_ahn3)
+    return [yml_rest, yml_border_ahn2, yml_border_ahn3]

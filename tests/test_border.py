@@ -79,4 +79,3 @@ class TestBorder():
                                     cfg["input_elevation"]["dataset_dir"][1], 
                                     cfg["input_elevation"]["dataset_name"][1], 
                                     doexec=False)
-            

@@ -14,6 +14,7 @@ from bag3d.config import db
 from bag3d.config import footprints
 from bag3d.update import bag
 from bag3d.update import ahn
+from bag3d.config import border
 
 from pprint import pformat
 
@@ -52,6 +53,12 @@ def main():
         exit(1)
     
     try:
+        # well, let's assume the user provided the AHN3 dir first
+        ahn3_fp = cfg["input_elevation"]["dataset_name"][0]
+        ahn2_fp = cfg["input_elevation"]["dataset_name"][1]
+        ahn3_dir = cfg["input_elevation"]["dataset_dir"][0]
+        ahn2_dir = cfg["input_elevation"]["dataset_dir"][1]
+        
         if args_in['update_bag']:
             logger.info("Updating BAG database")
             # At this point an empty database should exists, restore_BAG 
@@ -60,11 +67,9 @@ def main():
     
         if args_in['update_ahn']:
             logger.info("Updating AHN files")
-            # well, let's assume the user provided the AHN3 dir first
-            ahn3_fp = cfg["input_elevation"]["dataset_name"][0]
-            ahn2_fp = cfg["input_elevation"]["dataset_name"][1]
-            ahn.download(ahn3_dir=cfg["input_elevation"]["dataset_dir"][0], 
-                         ahn2_dir=cfg["input_elevation"]["dataset_dir"][1], 
+
+            ahn.download(ahn3_dir=ahn3_dir, 
+                         ahn2_dir=ahn2_dir, 
                          tile_index_file=cfg["elevation"]["file"],
                          ahn3_file_pat=ahn3_fp,
                          ahn2_file_pat=ahn2_fp)
@@ -116,28 +121,16 @@ def main():
                              cfg['elevation']["schema"], str(cfg["database"]["host"]), 
                              str(cfg["database"]["port"]), cfg["database"]["user"], 
                              doexec=args_in['no_exec'])
-            
-            
-    #     else:
-    #         # in case the BAG index was imported by some other way
-    #         cols = conn.get_fields(cfg['polygons']["schema"], 
-    #                                cfg['polygons']["table"])
-    #         if 'geom_border' not in cols:
-    #             footprints.update_tile_index(conn,
-    #                                          table_index=[cfg['polygons']["schema"], 
-    #                                                       cfg['polygons']["table"]],
-    #                                          fields_index=[cfg['polygons']["fields"]["primary_key"], 
-    #                                                        cfg['polygons']["fields"]["geometry"], 
-    #                                                        cfg['polygons']["fields"]["unit_name"]]
-    #                                          )
-    #     if args_in['update_bag']:
-    #         logger.info("Updating the BAG database")
-    
     
         if args_in['run_3dfier']:
             logger.info("Parsing batch3dfier configuration")
     
             logger.info("Configuring AHN2-3 border tiles")
+            configs = border.process(conn, cfg, ahn3_dir=ahn3_dir,
+                           ahn2_dir=ahn2_dir, ahn2_fp=ahn2_fp,
+                           export=False, doexec=args_in['no_exec'])
+            for cfg in configs:
+                logger.debug(pformat(cfg))
             
             logger.info("Running batch3dfier")
             
