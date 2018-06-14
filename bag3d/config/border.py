@@ -294,7 +294,7 @@ def update_tile_list(config, tile_list, ahn_version=None,
         The updated configuration
     """
     c = copy.deepcopy(config)
-    c["input_polygons"]["tile_list"] = tile_list
+    c["tile_list"] = tile_list
     
     if ahn_version:
         c = update_output(c, ahn_version, ahn_dir, border_table)

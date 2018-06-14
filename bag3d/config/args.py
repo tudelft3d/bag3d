@@ -197,13 +197,18 @@ def parse_config(args_in, schema):
     cfg['polygons'] = cfg_stream['tile_index']['polygons']
     cfg['elevation'] = cfg_stream['tile_index']['elevation']
 
-    cfg['output_dir'] = os.path.abspath(cfg_stream["output"]["dir"])
-    if not os.path.exists(cfg['output_dir']):
-        os.makedirs(cfg['output_dir'], exist_ok=True)
+#     cfg['output_dir'] = os.path.abspath(cfg_stream["output"]["dir"])
+#     if not os.path.exists(cfg['output_dir']):
+#         os.makedirs(cfg['output_dir'], exist_ok=True)
+#     
+#     cfg['out_schema'] = cfg_stream["output"]["schema"]
+#     cfg['out_table'] = cfg_stream["output"]["table"]
+#     cfg['bag3d_table'] = cfg_stream["output"]["bag3d_table"]
     
-    cfg['out_schema'] = cfg_stream["output"]["schema"]
-    cfg['out_table'] = cfg_stream["output"]["table"]
-    cfg['bag3d_table'] = cfg_stream["output"]["bag3d_table"]
+    cfg["output"] = cfg_stream["output"]
+    cfg["output"]["dir"] = os.path.abspath(cfg_stream["output"]["dir"])
+    if not os.path.exists(cfg["output"]["dir"]):
+        os.makedirs(cfg["output"]["dir"], exist_ok=True)
 
     cfg['path_3dfier'] = cfg_stream["path_3dfier"]
 
