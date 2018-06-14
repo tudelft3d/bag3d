@@ -324,32 +324,59 @@ def write_yml(yml, file):
 
 
 def get_border_tiles(conn, tbl_schema, border_table, tbl_tile):
-    """Get the border tile names as a list"""
+    """Get the border tile names as a list
+    
+    Parameters
+    ----------
+    conn : :py:class:`bag3d.config.db.db`
+        Open connection
+    tbl_schema : str
+        The value of tile_index:elevation:schema
+    border_table : str
+        The value of tile_index:elevation:border_table
+    tbl_tile : str
+        The value of tile_index:elevation:fields:unit_name
+    
+    Returns
+    -------
+    list
+        List of tile names that are on the border of AHN3 and AHN2 coverage
+    """
     
     query = sql.SQL("""
-    SELECT
-        {tile}
-    FROM
-        {schema}.{border_table};
+    SELECT {tile} FROM {schema}.{border_table};
     """).format(
-        tile=psycopg2.sql.Identifier(tbl_tile),
-        schema=psycopg2.sql.Identifier(tbl_schema),
-        border_table=psycopg2.sql.Identifier(border_table)
+        tile=sql.Identifier(tbl_tile),
+        schema=sql.Identifier(tbl_schema),
+        border_table=sql.Identifier(border_table)
         )
-    
-    with conn:
-        with conn.cursor() as cur:
-            cur.execute(query)
-            r = cur.fetchall()
-            tiles = [row[0] for row in r]
-    
-    return tiles
+    logger.debug(conn.print_query(query))
+    return [row[0] for row in conn.getQuery(query)]
 
 
 def get_non_border_tiles(conn, tbl_schema, tbl_name, border_table, tbl_tile):
-    """Get the non-border tile names as a list"""
+    """Get the non-border tile names as a list
+    
+    Parameters
+    ----------
+    conn : :py:class:`bag3d.config.db.db`
+        Open connection
+    tbl_schema : str
+        The value of tile_index:elevation:schema
+    tbl_name : str
+        The value of tile_index:elevation:table
+    border_table : str
+        The value of tile_index:elevation:border_table
+    tbl_tile : str
+        The value of tile_index:elevation:fields:unit_name
+    
+    Returns
+    -------
+    list
+        List of tile names that are not on the border of AHN3 and AHN2 coverage
+    """
     query = sql.SQL("""
-    SELECT
+    SELECT 
         a.a_bladnr AS bladnr
     FROM
         (
@@ -361,22 +388,15 @@ def get_non_border_tiles(conn, tbl_schema, tbl_name, border_table, tbl_tile):
             LEFT JOIN {schema}.{border_table} b ON
                 a.{tile} = b.{tile}
         ) a
-    WHERE
+    WHERE 
         a.b_bladnr IS NULL;
     """).format(
-        tile=psycopg2.sql.Identifier(tbl_tile),
-        schema=psycopg2.sql.Identifier(tbl_schema),
-        table=psycopg2.sql.Identifier(tbl_name),
-        border_table=psycopg2.sql.Identifier(border_table)
+        tile=sql.Identifier(tbl_tile),
+        schema=sql.Identifier(tbl_schema),
+        table=sql.Identifier(tbl_name),
+        border_table=sql.Identifier(border_table)
         )
-    
-    with conn:
-        with conn.cursor() as cur:
-            cur.execute(query)
-            r = cur.fetchall()
-            tiles = [row[0] for row in r]
-            
-    return tiles
+    return [row[0] for row in conn.getQuery(query)]
 
 
 def process(conn, config, ahn3_dir, ahn2_dir, ahn2_fp, export=False, 
