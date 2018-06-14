@@ -133,8 +133,8 @@ def main():
             logger.info("Configuring batch3dfier")
             #TODO: need to add tile list preprocessing here
             configs = border.process(conn, cfg, ahn3_dir=ahn3_dir,
-                                       ahn2_dir=ahn2_dir, ahn2_fp=ahn2_fp,
-                                       export=False, doexec=args_in['no_exec'])
+                                       ahn2_dir=ahn2_dir, export=False, 
+                                       doexec=args_in['no_exec'])
             for cfg in configs:
                 logger.debug(pformat(cfg))
                 

@@ -52,12 +52,14 @@ logger = logging.getLogger("config.border")
 def create_border_table(conn, config, doexec=True):
     """Creates the table tile_index:elevation:border_table in the database
     
-    The table tile_index:elevation:border table a subset of tile index with 
+    The table tile_index:elevation:border_table a subset of tile index with 
     the tiles on the border of AHN3 coverage.
     AHN3 does not cover the whole Netherlands, AHN2 does. The tiles on the 
     border of AHN3 coverage only partially contain points, clipped at natural
     boundaries (eg a river). Therefore these tiles need to be identified and 
     processed separately.
+    
+    If border_table exists, it will drop it first.
     
     Parameters
     ----------
