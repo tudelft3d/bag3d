@@ -190,10 +190,15 @@ def parse_config(args_in, schema):
             cfg_stream = yaml.load(stream)
     except pykwalify.errors.PyKwalifyException:
         raise
-
+    
+    cfg["threads"] = int(args_in["threads"])
     cfg["input_elevation"] = cfg_stream["input_elevation"]
-    cfg['pc_dir'] = add_abspath(
+    cfg["input_elevation"]["dataset_dir"] = add_abspath(
         cfg_stream["input_elevation"]["dataset_dir"])
+    #FIXME: remove this below --v
+    cfg["pc_dir"] = add_abspath(
+        cfg_stream["input_elevation"]["dataset_dir"])
+    
     cfg['tile_index'] = cfg_stream['tile_index']
     #FIXME: remove this below --v
     cfg['polygons'] = cfg_stream['tile_index']['polygons']
@@ -248,8 +253,14 @@ def parse_config(args_in, schema):
     cfg["config"] = {}
     cfg["config"]["in"] = args_in['cfg_file']
     d = os.path.dirname(args_in['cfg_file'])
-    cfg["config"]["out_rest"] = os.path.join(d, "bag3d_cfg_rest.yml")
-    cfg["config"]["out_border_ahn2"] = os.path.join(d, "bag3d_cfg_border_ahn2.yml")
-    cfg["config"]["out_border_ahn3"] = os.path.join(d, "bag3d_cfg_border_ahn3.yml")
+    rest_dir = os.path.join(d, "cfg_rest")
+    ahn2_dir = os.path.join(d, "cfg_ahn2")
+    ahn3_dir = os.path.join(d, "cfg_ahn3")
+    cfg["config"]["out_rest"] = os.path.join(rest_dir, 
+                                             "bag3d_cfg_rest.yml")
+    cfg["config"]["out_border_ahn2"] = os.path.join(ahn2_dir, 
+                                                    "bag3d_cfg_border_ahn2.yml")
+    cfg["config"]["out_border_ahn3"] = os.path.join(ahn3_dir, 
+                                                    "bag3d_cfg_border_ahn3.yml")
 
-    return(cfg)
+    return cfg

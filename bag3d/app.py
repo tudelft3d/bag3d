@@ -145,7 +145,7 @@ def main():
                 cfg_out = batch3dfier.configure_tiles(conn, cfg, clip_prefix)
                 logger.debug(cfg_out)
                 logger.info("Running batch3dfier")
-                #process.run(conn, cfg_out, doexec=args_in['no_exec'])
+                process.run(conn, cfg_out, doexec=args_in['no_exec'])
             
             logger.info("Importing batch3dfier output into database")
             

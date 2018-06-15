@@ -755,7 +755,7 @@ def configure_tiles(conn, config, clip_prefix):
         The configuration with the configured tile list. The following elements
         are added to the config:
         - `clip_prefix` : 
-        - `tile_out` : 
+        - `tile_out` : name of the tile
         - extent_ewkb : ewkb of the extent polygon
         - tile_list is overwritten, either based on the provided extent or 
         the provided tile names are substituted with the names of the tile 

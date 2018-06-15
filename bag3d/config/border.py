@@ -404,6 +404,8 @@ def get_non_border_tiles(conn, tbl_schema, tbl_name, border_table, tbl_tile):
 def process(conn, config, ahn3_dir, ahn2_dir, export=False):
     """Creates configurations for processing the border tiles
     
+    For every configuration, updates config:in to the relevant path
+    
     Parameters
     ----------
     conn : :py:class:`bag3d.config.db.db`
@@ -449,14 +451,18 @@ def process(conn, config, ahn3_dir, ahn2_dir, export=False):
         del rt, bt
 
     yml_rest = update_tile_list(config, t_rest)
+    yml_rest["config"]["in"] = conf_rest
     # re-configure the border tiles with AHN2 only
     yml_border_ahn2 = update_tile_list(config, t_border, ahn_version=2, 
                                        ahn_dir=a2_dir,
                                        border_table=border_table)
+    yml_border_ahn2["config"]["in"] = conf_border_ahn2
     # and with AHN3 only
     yml_border_ahn3 = update_tile_list(config, t_border, ahn_version=3, 
                                        ahn_dir=a3_dir,
                                        border_table=border_table)
+    yml_border_ahn3["config"]["in"] = conf_border_ahn3
+    
     if export:
         write_yml(yml_rest, conf_rest)
         write_yml(yml_border_ahn2, conf_border_ahn2)
