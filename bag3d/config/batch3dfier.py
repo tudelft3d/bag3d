@@ -617,7 +617,6 @@ def union_2Dtiles(db, user_schema, tiles_clipped, clip_prefix, fields_view):
                                UNION ALL """).format(fields=fields_q,
                                                      user_schema=user_schema,
                                                      view=view)
-
         sql_query = sql_query + sql_subquery
     # The last statement
     tile = tiles_clipped[-1]
@@ -629,9 +628,8 @@ def union_2Dtiles(db, user_schema, tiles_clipped, clip_prefix, fields_view):
                                        user_schema=user_schema,
                                        view=view)
     sql_query = sql_query + sql_subquery
-
+    logger.debug(db.print_query(sql_query))
     db.sendQuery(sql_query)
-
     try:
         db.conn.commit()
         print("View {} created in schema {}.".format(u, user_schema))
@@ -639,7 +637,7 @@ def union_2Dtiles(db, user_schema, tiles_clipped, clip_prefix, fields_view):
         print("Cannot create view {}.{}".format(user_schema, u))
         db.conn.rollback()
         return(False)
-    return(u)
+    return u
 
 
 def get_view_fields(db, user_schema, tile_views):
@@ -706,7 +704,7 @@ def parse_sql_select_fields(table, fields):
     for f in fields:
         s.append(sql.SQL('.').join([sql.Identifier(table), sql.Identifier(f)]))
     sql_fields = sql.SQL(', ').join(s)
-    return(sql_fields)
+    return sql_fields
 
 
 def drop_2Dtiles(db, user_schema, views_to_drop):
@@ -726,34 +724,51 @@ def drop_2Dtiles(db, user_schema, views_to_drop):
     Returns
     -------
     bool
+        True on success, False on failure
 
     """
     user_schema = sql.Identifier(user_schema)
 
     for view in views_to_drop:
         view = sql.Identifier(view)
+        queries = sql.Composed('')
         query = sql.SQL("DROP VIEW IF EXISTS {user_schema}.{view} CASCADE;").format(
             user_schema=user_schema, view=view)
-        db.sendQuery(query)
+        queries += query
+    logger.debug(db.print_query(queries))
     try:
-        db.conn.commit()
-        print("Dropped {} in schema {}.".format(views_to_drop, user_schema))
-        # sql.Identifier("tile_index").as_string(dbs.conn)
+        db.sendQuery(queries)
+        logger.debug("Dropped {} in schema {}.".format(views_to_drop, user_schema))
         return True
-    except BaseException:
-        print("Cannot drop views ", views_to_drop)
-        db.conn.rollback()
+    except BaseException as e:
+        logger.error("Cannot drop views ", views_to_drop)
+        logger.exception(e)
         return False
 
 
 def configure_tiles(conn, config, clip_prefix):
-    """Configure the tile list based on the input parameter"""
+    """Configure the tile list based on the input parameter
+    
+    Returns
+    -------
+    dict
+        The configuration with the configured tile list. The following elements
+        are added to the config:
+        - `clip_prefix` : 
+        - `tile_out` : 
+        - extent_ewkb : ewkb of the extent polygon
+        - tile_list is overwritten, either based on the provided extent or 
+        the provided tile names are substituted with the names of the tile 
+        views in input_polygons:tile_schema
+    """
     config["clip_prefix"] = clip_prefix
     config["tile_out"] = None
+    config["extent_ewkb"] = None
     # TODO: assert that CREATE/DROP allowed on TILE_SCHEMA and/or USER_SCHEMA
     if config["input_polygons"]["extent"]:
         poly, ewkb = extent_to_ewkb(conn, config['tile_index']['polygons'], 
                                     config["input_polygons"]["extent"])
+        config["extent_ewkb"] = ewkb
         tiles = get_2Dtiles(conn, config['tile_index']['polygons'], 
                             config['tile_index']['polygons']['fields'], ewkb)
         # Get view names for tiles
@@ -777,7 +792,7 @@ def configure_tiles(conn, config, clip_prefix):
                                        config["input_polygons"]['user_schema'], 
                                        tiles_clipped, clip_prefix, view_fields)
             config["tile_out"] = "output_batch3dfier"
-            config["input_polygons"]["tile_list"] = union_view
+            config["input_polygons"]["tile_list"] = [union_view]
         else:
             config["input_polygons"]["tile_list"] = tiles_clipped
 
