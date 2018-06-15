@@ -20,16 +20,9 @@ from bag3d.batch3dfier import process
 
 from pprint import pformat
 
+logger = logging.getLogger('app')
 
-def main(cli_args):
-    
-    here = os.path.abspath(os.path.dirname(__file__))
-
-    with open(os.path.join(here, 'logging.cfg'), 'r') as f:
-        log_conf = yaml.safe_load(f)
-    logging.config.dictConfig(log_conf)
-    logger = logging.getLogger('app')
-    
+def app(cli_args, here):
     schema = os.path.join(here, 'bag3d_cfg_schema.yml')
     args_in = args.parse_console_args(cli_args[1:])
     
@@ -162,7 +155,3 @@ def main(cli_args):
         logger.exception(e)
     finally:
         conn.close()
-
-if __name__ == '__main__':
-    cli_args = sys.argv
-    main(cli_args)
