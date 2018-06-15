@@ -32,7 +32,7 @@ def run(conn, config, doexec=True):
     
     tiles = config["input_polygons"]["tile_list"]
     
-    cfg_dir = os.path.dirname(["config"]["in"])
+    cfg_dir = os.path.dirname(config["config"]["in"])
     
     pc_name_map = batch3dfier.pc_name_dict(config["input_elevation"]["dataset_dir"], 
                                            config["input_elevation"]["dataset_name"])
@@ -69,22 +69,22 @@ def run(conn, config, doexec=True):
                 tile = q.get()
                 queueLock.release()
                 logger.debug("%s processing %s" % (threadName, tile))
-                t = config.call_3dfier(
+                t = batch3dfier.call_3dfier(
                     db=conn,
                     tile=tile,
-                    schema_tiles=config['user_schema'],
-                    table_index_pc=config['elevation'],
-                    fields_index_pc=config['elevation']['fields'],
-                    table_index_footprint=config['polygons'],
-                    fields_index_footprint=config['polygons']['fields'],
-                    uniqueid=config["footprints"]["fields"]['uniqueid'],
+                    schema_tiles=config["input_polygons"]['user_schema'],
+                    table_index_pc=config["tile_index"]['elevation'],
+                    fields_index_pc=config["tile_index"]['elevation']['fields'],
+                    table_index_footprint=config["tile_index"]['polygons'],
+                    fields_index_footprint=config["tile_index"]['polygons']['fields'],
+                    uniqueid=config["input_polygons"]["footprints"]["fields"]['uniqueid'],
                     extent_ewkb=config["extent_ewkb"],
                     clip_prefix=config["clip_prefix"],
-                    prefix_tile_footprint=config['prefix_tile_footprint'],
+                    prefix_tile_footprint=config["input_polygons"]['tile_prefix'],
                     yml_dir=cfg_dir,
                     tile_out=config["tile_out"],
-                    output_format=config['output_format'],
-                    output_dir=config['output_dir'],
+                    output_format='CSV-BUILDINGS-MULTIPLE',
+                    output_dir=config['output']['dir'],
                     path_3dfier=config['path_3dfier'],
                     thread=threadName,
                     pc_file_index=pc_file_idx,
@@ -126,14 +126,17 @@ def run(conn, config, doexec=True):
         t.join()
 
     # Drop temporary views that reference the clipped extent
-    to_drop = [tile for tile in tiles if 
-               config["clip_prefix"] in tile or 
-               config["tile_out"] in tile]
-    if to_drop:
-        config.drop_2Dtiles(
-            conn,
-            config["input_polygons"]['user_schema'],
-            views_to_drop=to_drop)
+    try:
+        to_drop = [tile for tile in tiles if 
+                   config["clip_prefix"] in tile or 
+                   config["tile_out"] in tile]
+        if to_drop:
+            batch3dfier.drop_2Dtiles(
+                conn,
+                config["input_polygons"]['user_schema'],
+                views_to_drop=to_drop)
+    except TypeError:
+        logger.debug("No views to drop")
 
 #     # Delete temporary config files
 #     yml_config = [

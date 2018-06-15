@@ -4,7 +4,8 @@
 
 import os.path
 import re
-from subprocess import call
+from itertools import chain
+from pprint import pformat
 
 from shapely.geometry import shape
 from shapely import geos
@@ -13,7 +14,6 @@ import fiona
 import logging
 
 from bag3d.update import bag
-
 
 logger = logging.getLogger('config.batch3dfier')
 
@@ -63,7 +63,10 @@ def call_3dfier(db, tile, schema_tiles,
                              prefix_tile_footprint=prefix_tile_footprint)
     logger.debug("call_3dfier:pc_tiles: %s", pc_tiles)
 #     pc_path = find_pc_files(pc_tiles, pc_dir, pc_dataset_name, pc_tile_case)
-    pc_path = [t for tile in pc_tiles for t in pc_file_index[tile]]
+#     pc_path = [t for tile in pc_tiles for t in pc_file_index[tile]]
+    tileset = {i for i in pc_tiles}
+    p = [pc_file_index[tile] for tile in pc_file_index.keys() & tileset]
+    pc_path = list(chain.from_iterable(p))
     logger.debug("call_3dfier:pc_path: %s", pc_path)
     # prepare output file name
     if not tile_out:
@@ -96,8 +99,7 @@ def call_3dfier(db, tile, schema_tiles,
         else:
             output_path = os.path.join(output_dir, tile_out)
         # Run 3dfier
-        command = (path_3dfier + " {yml} -o {out}").format(
-            yml=yml_path, out=output_path)
+        command = [path_3dfier, yml_path, "-o", output_path]
         try:
             bag.run_subprocess(command, shell=True, doexec=doexec)
         except BaseException as e:
@@ -182,7 +184,13 @@ output:
 
 
 def pc_name_dict(pc_dir, dataset_name):
-    """Map dataset_dir to dataset_name"""
+    """Map dataset_dir to dataset_name
+    
+    Returns
+    -------
+    dict
+        dataset_dir mapped to dataset_name
+    """
     pc_name_map = {}
     if isinstance(pc_dir, list):
         for i, elem in enumerate(pc_dir):
@@ -196,7 +204,7 @@ def pc_name_dict(pc_dir, dataset_name):
                         raise ValueError('Lists deeper than 2 levels are not supported in dataset_dir')
     else:
         pc_name_map[pc_dir] = {'name': dataset_name, 'priority': 0}
-        
+    logger.debug("pc_name_dict() out: %s", pformat(pc_name_map))
     return pc_name_map
 
 
@@ -223,7 +231,7 @@ def pc_file_index(pc_name_map):
     Returns
     -------
     dict
-        {pc_tile_name: [path to pc_file1, path to pc_file2, ...]}
+        {pc_tile_name: [path/to/pc_file1, path/to/pc_file2, ...]}
     """
     f_idx = {}
     pri = []
@@ -265,6 +273,7 @@ def pc_file_index(pc_name_map):
                 f = {**file_index, **f_idx[dirname]}
                 file_index = f
         pri.append(d[1]['priority'])
+    logger.debug("pc_file_index() out: %s", file_index)
     return file_index
 
 
@@ -353,8 +362,8 @@ def find_pc_tiles(db, table_index_pc, fields_index_pc,
 
         resultset = db.getQuery(query)
         tiles = [tile[0].lower() for tile in resultset]
-
-    return(tiles)
+    logger.debug("find_pc_tiles() out: %s", tiles)
+    return tiles
 
 
 def extent_to_ewkb(db, table_index, file):
