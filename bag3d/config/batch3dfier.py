@@ -81,8 +81,7 @@ def call_3dfier(db, tile, schema_tiles,
         yml_path = os.path.join(yml_dir, yml_name)
         config = yamlr(dbname=db.dbname, host=db.host, user=db.user,
                        pw=db.password, schema_tiles=schema_tiles,
-                       bag_tile=tile, pc_path=pc_path,
-                       output_format=output_format, uniqueid=uniqueid)
+                       bag_tile=tile, pc_path=pc_path, uniqueid=uniqueid)
         # Write temporary config file
         try:
             with open(yml_path, "w") as text_file:
@@ -118,7 +117,7 @@ def call_3dfier(db, tile, schema_tiles,
 
 
 def yamlr(dbname, host, user, pw, schema_tiles,
-          bag_tile, pc_path, output_format, uniqueid):
+          bag_tile, pc_path, uniqueid):
     """Parse the YAML config file for 3dfier.
 
     Parameters
@@ -152,9 +151,16 @@ input_polygons:
 
 lifting_options:
   Building:
-    height_roof: percentile-90
-    height_floor: percentile-10
-    lod: 1
+    roof:
+      height: percentile-95
+      use_LAS_classes:
+        - 1
+        - 2
+    ground:
+      height: percentile-10
+      use_LAS_classes:
+        - 3
+        - 6
 
 input_elevation:
   - datasets:
@@ -163,14 +169,9 @@ input_elevation:
     thinning: 0
 
 options:
-  building_radius_vertex_elevation: 2.0
+  building_radius_vertex_elevation: 3.0
   radius_vertex_elevation: 1.0
   threshold_jump_edges: 0.5
-
-output:
-  format: {output_format}
-  building_floor: true
-  vertical_exaggeration: 0
         """.format(dbname=dbname,
                    host=host,
                    user=user,
@@ -178,8 +179,7 @@ output:
                    schema_tiles=schema_tiles,
                    bag_tile=bag_tile,
                    uniqueid=uniqueid,
-                   pc_path=pc_dataset,
-                   output_format=output_format)
+                   pc_path=pc_dataset)
     return(config)
 
 
