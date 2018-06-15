@@ -256,6 +256,8 @@ def parse_config(args_in, schema):
     rest_dir = os.path.join(d, "cfg_rest")
     ahn2_dir = os.path.join(d, "cfg_ahn2")
     ahn3_dir = os.path.join(d, "cfg_ahn3")
+    for d in [rest_dir, ahn2_dir, ahn3_dir]:
+        os.makedirs(d)
     cfg["config"]["out_rest"] = os.path.join(rest_dir, 
                                              "bag3d_cfg_rest.yml")
     cfg["config"]["out_border_ahn2"] = os.path.join(ahn2_dir, 

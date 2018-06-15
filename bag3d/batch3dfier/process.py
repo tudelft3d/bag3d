@@ -3,7 +3,6 @@
 
 """The batch3dfier application."""
 
-
 import os
 import queue
 import threading
@@ -11,41 +10,16 @@ import time
 from shutil import rmtree
 import logging
 
-
 from bag3d.config import batch3dfier
-
 
 logger = logging.getLogger('batch3dfier.process')
 
-
 def run(conn, config, doexec=True):
-    # Prefix for naming the clipped/united views. This value shouldn't be a
-    # substring in the pointcloud file names.
-    
-    # used in call3dfier()
-    #union_view = None
-    #tiles_clipped = None
-
-    #FIXME: implement that connection pool
-    #conn = config['dbase']
-    #tiles = config['tiles']
-    
     tiles = config["input_polygons"]["tile_list"]
-    
     cfg_dir = os.path.dirname(config["config"]["in"])
-    
     pc_name_map = batch3dfier.pc_name_dict(config["input_elevation"]["dataset_dir"], 
                                            config["input_elevation"]["dataset_name"])
     pc_file_idx = batch3dfier.pc_file_index(pc_name_map)
-
-
-    # =========================================================================
-    # Process multiple threads
-    # reference: http://www.tutorialspoint.com/python3/python_multithreading.htm
-    # =========================================================================
-    #logger.debug("tile_views: %s", tile_views)
-    #logger.debug("pc_file_idx: %s", pformat(pc_file_idx))
-
 
     exitFlag = 0
     tiles_skipped = []
@@ -61,7 +35,7 @@ def run(conn, config, doexec=True):
 
         def run(self):
             process_data(self.name, self.q)
-
+            
     def process_data(threadName, q):
         while not exitFlag:
             queueLock.acquire()
@@ -103,14 +77,12 @@ def run(conn, config, doexec=True):
     workQueue = queue.Queue(0)
     threads = []
     threadID = 1
-
     # Create new threads
     for tName in threadList:
         thread = myThread(threadID, tName, workQueue)
         thread.start()
         threads.append(thread)
         threadID += 1
-
     # Fill the queue
     queueLock.acquire()
     for tile in tiles:
@@ -137,26 +109,11 @@ def run(conn, config, doexec=True):
                 views_to_drop=to_drop)
     except TypeError:
         logger.debug("No views to drop")
-
-#     # Delete temporary config files
-#     yml_config = [
-#         os.path.join(
-#             args_in['cfg_dir'],
-#             t +
-#             "_config.yml") for t in threadList]
-#     command = ["rm", "-rf", cfg_dir]
-#     for c in yml_config:
-#         command = command + " " + c
-#     call(command, shell=True)
-    
     rmtree(cfg_dir, ignore_errors=True)
-
-    # =========================================================================
+    
     # Reporting
-    # =========================================================================
     tiles = set(tiles)
     tiles_skipped = set(tiles_skipped)
     logger.info("Total number of tiles processed: %s",
                  str(len(tiles.difference(tiles_skipped))))
     logger.info("Tiles skipped: %s", tiles_skipped)
-

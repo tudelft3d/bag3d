@@ -4,7 +4,7 @@
 """Handles the whole flow of updating AHN files and BAG, and generating the 3D BAG"""
 
 import os
-from sys import argv, exit
+import sys
 
 import yaml
 import logging, logging.config
@@ -21,7 +21,7 @@ from bag3d.batch3dfier import process
 from pprint import pformat
 
 
-def main():
+def main(cli_args):
     
     here = os.path.abspath(os.path.dirname(__file__))
 
@@ -31,14 +31,14 @@ def main():
     logger = logging.getLogger('app')
     
     schema = os.path.join(here, 'bag3d_cfg_schema.yml')
-    args_in = args.parse_console_args(argv[1:])
+    args_in = args.parse_console_args(cli_args[1:])
     
     try:
         cfg = args.parse_config(args_in, schema)
     except Exception as e:
         logger.exception("Couldn't parse configuration file")
         logger.exception(e)
-        exit(1)
+        sys.exit(1)
     
     logger.debug(pformat(cfg))
     
@@ -51,7 +51,7 @@ def main():
             password=cfg["database"]["pw"])
     except Exception as e:
         logger.exception(e)
-        exit(1)
+        sys.exit(1)
     
     try:
         # well, let's assume the user provided the AHN3 dir first
@@ -164,4 +164,5 @@ def main():
         conn.close()
 
 if __name__ == '__main__':
-    main()
+    cli_args = sys.argv
+    main(cli_args)

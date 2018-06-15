@@ -405,8 +405,7 @@ def extent_to_ewkb(db, table_index, file):
         # set SRID for polygon
         geos.lgeos.GEOSSetSRID(poly._geom, srid)
         ewkb = poly.wkb_hex
-
-    return([poly, ewkb])
+    return [poly, ewkb]
 
 
 def get_2Dtiles(db, table_index, fields_index, ewkb):
@@ -450,10 +449,8 @@ def get_2Dtiles(db, table_index, fields_index, ewkb):
                             ewkb=ewkb_q)
     resultset = db.getQuery(query)
     tiles = [tile[0] for tile in resultset]
-
     logger.debug("Nr. of tiles in clip extent: " + str(len(tiles)))
-
-    return(tiles)
+    return tiles
 
 
 def get_2Dtile_area(db, table_index):
@@ -483,9 +480,7 @@ def get_2Dtile_area(db, table_index):
                 FROM {schema}.{table}
                 LIMIT 1;
                 """).format(schema=schema, table=table)
-    area = db.getQuery(query)[0][0]
-
-    return(area)
+    return db.getQuery(query)[0][0]
 
 
 def get_2Dtile_views(db, schema_tiles, tiles):
@@ -552,6 +547,7 @@ def clip_2Dtiles(db, user_schema, schema_tiles, tiles, poly, clip_prefix,
     fields_all = fields_view['all']
     field_geom_q = sql.Identifier(fields_view['geometry'])
 
+    #FIXME: append all queries into a single string
     for tile in tiles:
         t = clip_prefix + tile
         tiles_clipped.append(t)
@@ -750,8 +746,7 @@ def drop_2Dtiles(db, user_schema, views_to_drop):
         logger.debug("Dropped {} in schema {}.".format(views_to_drop, user_schema))
         return True
     except BaseException as e:
-        logger.error("Cannot drop views ", views_to_drop)
-        logger.exception(e)
+        logger.exception("Cannot drop views ", views_to_drop)
         return False
 
 
