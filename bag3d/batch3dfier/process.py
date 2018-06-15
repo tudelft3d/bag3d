@@ -69,7 +69,6 @@ def run(conn, config, doexec=True):
                     out_paths.append(t['out_path'])
             else:
                 queueLock.release()
-                time.sleep(1)
 
     # Prep
     threadList = ["Thread-" + str(t + 1) for t in range(config['threads'])]

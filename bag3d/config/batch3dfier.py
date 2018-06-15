@@ -103,11 +103,11 @@ def call_3dfier(db, tile, schema_tiles,
         try:
             bag.run_subprocess(command, shell=True, doexec=doexec)
         except BaseException as e:
-            logger.exception("\nCannot run 3dfier on tile " + tile)
+            logger.exception("Cannot run 3dfier on tile " + tile)
             tile_skipped = tile
     else:
         logger.debug(
-            "\nPointcloud file(s) " +
+            "Pointcloud file(s) " +
             str(pc_tiles) +
             " not available. Skipping tile.\n")
         tile_skipped = tile

@@ -17,6 +17,7 @@ from bag3d.config import batch3dfier
 from bag3d.update import bag
 from bag3d.update import ahn
 from bag3d.batch3dfier import process
+from bag3d import importer
 
 from pprint import pformat
 
@@ -126,23 +127,28 @@ def app(cli_args, here):
         if args_in['run_3dfier']:
             logger.info("Configuring batch3dfier")
             #TODO: need to add tile list preprocessing here
-            configs = border.process(conn, cfg, ahn3_dir, ahn2_dir, 
+            cfg_rest, cfg_ahn2, cfg_ahn3 = border.process(conn, cfg, ahn3_dir, ahn2_dir, 
                                      export=False)
-            for cfg in configs:
+            for c in [cfg_rest, cfg_ahn2, cfg_ahn3]:
                 logger.debug(pformat(cfg))
             
             clip_prefix = "_clip3dfy_"
             logger.debug("clip_prefix is %s", clip_prefix)
             
-            for cfg in configs:
-                cfg_out = batch3dfier.configure_tiles(conn, cfg, clip_prefix)
+            for c in [cfg_rest, cfg_ahn2, cfg_ahn3]:
+                cfg_out = batch3dfier.configure_tiles(conn, c, clip_prefix)
                 logger.debug(cfg_out)
                 logger.info("Running batch3dfier")
                 process.run(conn, cfg_out, doexec=args_in['no_exec'])
             
-            logger.info("Importing batch3dfier output into database")
+                logger.info("Importing batch3dfier output into database")
+                importer.import_csv(cfg_out)
             
             logger.info("Joining 3D tables")
+            importer.unite_border_tiles(conn, cfg["output"]["schema"], 
+                                        cfg_ahn2["output"]["bag3d_table"], 
+                                        cfg_ahn3["output"]["bag3d_table"])
+            importer.create_bag3d_table(conn, cfg["output"]["schema"])
         
         if args_in["grant_access"]:
             bag.grant_access(conn, args_in["grant_access"], 

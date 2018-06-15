@@ -7,11 +7,12 @@ import sys
 from subprocess import run
 
 import argparse
+import psycopg2
 from psycopg2 import sql
 import datetime
 import logging
 
-import bag3d.batch3dfier.batch3dfier.process
+logger = logging.getLogger('import')
 
 
 def create_heights_table(db, schema, table):
@@ -45,13 +46,13 @@ def create_heights_table(db, schema, table):
         ahn_version smallint
         );
     """).format(schema=schema_q, table=table_q)
+    logger.debug(db.print_query(query))
     try:
         db.sendQuery(query)
-        logging.debug("Created heights table")
         return True
-    except:
-        logging.error(query.as_string(db.conn))
-        sys.exit(1)
+    except Exception as e:
+        logger.exception(e)
+        raise
         return False
 
 
@@ -76,7 +77,6 @@ def csv2db(cfg, out_paths):
         Paths of the CSV files
     """
     db = cfg["dbase"]
-    
     schema_pc_q = sql.Identifier(cfg['elevation']['schema'])
     table_pc_q = sql.Identifier(cfg['elevation']['table'])
     field_pc_unit_q = sql.Identifier(cfg['elevation']['fields']['unit_name'])
@@ -85,7 +85,6 @@ def csv2db(cfg, out_paths):
     table_out_q = sql.Identifier(cfg['out_table'])
     
     table_idx = sql.Identifier(cfg['out_schema'] + "_id_idx")
-    
     a = create_heights_table(db, cfg['out_schema'], cfg['out_table'])
     
     if a:
@@ -148,8 +147,8 @@ ahn_file_date,ahn_version/' %s" % path
                                table=table_out_q)
         )
     else:
-        logging.error("csv2db: exit because create_heights_table returned False")
-        sys.exit(1)
+        logger.error("csv2db: exit because create_heights_table returned False")
+        raise
 
 
 def create_bag3d_relations(cfg):
@@ -242,71 +241,110 @@ def create_bag3d_relations(cfg):
     db.sendQuery(query)
 
 
-def run(args_in, cfg):
+def import_csv(cfg):
     """Import the batch3dfier CSV output into the BAG database"""
     
     # Get CSV files in dir
-    for root, dir, filenames in os.walk(args_in['csv_dir'], topdown=True):
+    for root, dir, filenames in os.walk(cfg['output']['dir'], topdown=True):
         csv_files = [f for f in filenames if os.path.splitext(f)[1].lower() == ".csv"]
-        out_paths = [os.path.join(args_in['csv_dir'], f) for f in csv_files]
+        out_paths = [os.path.join(cfg['output']['dir'], f) for f in csv_files]
     try:
-        logging.debug("out_paths: %s", out_paths)
-        logging.info("There are {} CSV files in the directory".format(len(csv_files)))
+        logger.debug("out_paths: %s", out_paths)
+        logger.info("There are {} CSV files in the directory".format(len(csv_files)))
     except UnboundLocalError as e:
-        logging.exception("Couln't find any CSVs in %s", args_in['csv_dir'])
-        sys.exit(1)
-
+        logger.exception("Couln't find any CSVs in %s", cfg['output']['dir'])
+        raise
     csv2db(cfg, out_paths)
-    
     # TODO: add option for dropping the relations if exist
     create_bag3d_relations(cfg)
 
 
 # --------------------- Unite tiles
 
-import psycopg2, psycopg2.sql
 
 
-config = {
-    'db': {
-        'dbname': "bag_test",
-        'host': "localhost",
-        'port': "55555",
-        'user': "bag_admin"
-        },
-    'tile_index': {
-        'schema': "tile_index",
-        'table': {
-            'name': "ahn_index",
-            'version': "ahn_version",
-            'geom': "geom",
-            'tile': "bladnr"
-            },
-        'border_table': 'border_tiles'
-        },
-    'ahn2': {
-        'dir': "/data/pointcloud/AHN2/merged"
-        },
-    'ahn3': {
-        'dir': "/data/pointcloud/AHN3/as_downloaded"
-        },
-    'config': {
-        'in': "/home/bdukai/Data/3DBAG/batch3dfy_bag_test_area.yml",
-        'out_rest': "/home/bdukai/Data/3DBAG/conf_test_rest.yml",
-        'out_border_ahn2': "/home/bdukai/Data/3DBAG/conf_test_border_ahn2.yml",
-        'out_border_ahn3': "/home/bdukai/Data/3DBAG/conf_test_border_ahn3.yml"
-        }
-    }
 
-
-def unite_tiles():
-    """Unite border tiles with the rest"""
+# config = {
+#     'db': {
+#         'dbname': "bag_test",
+#         'host': "localhost",
+#         'port': "55555",
+#         'user': "bag_admin"
+#         },
+#     'tile_index': {
+#         'schema': "tile_index",
+#         'table': {
+#             'name': "ahn_index",
+#             'version': "ahn_version",
+#             'geom': "geom",
+#             'tile': "bladnr"
+#             },
+#         'border_table': 'border_tiles'
+#         },
+#     'ahn2': {
+#         'dir': "/data/pointcloud/AHN2/merged"
+#         },
+#     'ahn3': {
+#         'dir': "/data/pointcloud/AHN3/as_downloaded"
+#         },
+#     'config': {
+#         'in': "/home/bdukai/Data/3DBAG/batch3dfy_bag_test_area.yml",
+#         'out_rest': "/home/bdukai/Data/3DBAG/conf_test_rest.yml",
+#         'out_border_ahn2': "/home/bdukai/Data/3DBAG/conf_test_border_ahn2.yml",
+#         'out_border_ahn3': "/home/bdukai/Data/3DBAG/conf_test_border_ahn3.yml"
+#         }
+#     }
 
 
 def unite_border_tiles(conn, schema, border_ahn2, border_ahn3):
-    """Unite the tiles on the AHN2 and AHN3 border"""
+    """Unite the border tiles on the AHN2 and AHN3 border
     
-    query = psycopg2.sql.SQL("""
+    Creates a view 'bag3d_border_union' in schema. The view has the following
+    condition on the imported CSV files:
+    
+    WHERE
+            a."ground-0.00" IS NOT NULL
+        AND a."ground-0.10" IS NOT NULL
+        AND a."ground-0.20" IS NOT NULL
+        AND a."ground-0.30" IS NOT NULL
+        AND a."ground-0.40" IS NOT NULL
+        AND a."ground-0.50" IS NOT NULL
+        AND a."roof-0.00" IS NOT NULL
+        AND a."roof-0.10" IS NOT NULL
+        AND a."roof-0.25" IS NOT NULL
+        AND a."roof-0.50" IS NOT NULL
+        AND a."roof-0.75" IS NOT NULL
+        AND a."roof-0.90" IS NOT NULL
+        AND a."roof-0.95" IS NOT NULL
+        AND a."roof-0.99" IS NOT NULL
+    
+    Note
+    ----
+    BAG field name 'identificatie' is hardcoded
+    
+    Parameters
+    ----------
+    conn : :py:class:`bag3d.config.db.db`
+        Open connection
+    schema : str
+        Value from output:schema
+    border_ahn2 : str
+        Value from output:bag3d_table in case of AHN2 border tiles
+    border_ahn2 : str
+        Value from output:bag3d_table in case of AHN3 border tiles
+    
+    Raises
+    ------
+    BaseException
+        If cannot create the view
+    
+    Returns
+    -------
+    None
+        Creates a view in database
+    """
+    
+    query = sql.SQL("""
     CREATE OR REPLACE VIEW {schema}.bag3d_border_union AS
     WITH border_ahn3_notnull AS(
         SELECT
@@ -356,20 +394,43 @@ def unite_border_tiles(conn, schema, border_ahn2, border_ahn3):
         a.identificatie = ANY(b.identificatie)
     ;
     """).format(
-        schema=psycopg2.sql.Identifier(schema),
-        border_ahn3=psycopg2.sql.Identifier(border_ahn3),
-        border_ahn2=psycopg2.sql.Identifier(border_ahn2)
+        schema=sql.Identifier(schema),
+        border_ahn3=sql.Identifier(border_ahn3),
+        border_ahn2=sql.Identifier(border_ahn2)
         )
-    
-    with conn:
-        with conn.cursor() as cur:
-            cur.execute(query)
+    logger.debug(conn.print_query(query))
+    try:
+        conn.sendQuery(query)
+    except BaseException as e:
+        logger.exception(e)
+        raise
 
 
 def create_bag3d_table(conn, schema):
-    """Unite the border tiles with the rest"""
+    """Unite the border tiles with the rest
     
-    query = psycopg2.sql.SQL("""
+    Persists and indexes the table 'bag3d' by uniting the border tiles with the rest
+     and drops the view 'bag3d_border_union'.
+    
+    Parameters
+    ----------
+    conn : :py:class:`bag3d.config.db.db`
+        Open connection
+    schema : str
+        Value from output:schema
+    
+    Raises
+    ------
+    BaseException
+        If cannot create the table
+    
+    Returns
+    -------
+    None
+        Creates a table in database
+    """
+    
+    query = sql.SQL("""
     CREATE TABLE {schema}.bag3d AS
     SELECT *
     FROM {schema}.bag3d_rest
@@ -382,8 +443,10 @@ def create_bag3d_table(conn, schema):
     COMMENT ON TABLE {schema}.bag3d IS 'The 3D BAG';
     
     DROP VIEW {schema}.bag3d_border_union;
-    """).format(schema=psycopg2.sql.Identifier(schema))
-    
-    with conn:
-        with conn.cursor() as cur:
-            cur.execute(query)
+    """).format(schema=sql.Identifier(schema))
+    logger.debug(conn.print_query(query))
+    try:
+        conn.sendQuery(query)
+    except BaseException as e:
+        logger.exception(e)
+        raise
