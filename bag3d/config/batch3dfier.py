@@ -83,6 +83,7 @@ def call_3dfier(db, tile, schema_tiles,
                        pw=db.password, schema_tiles=schema_tiles,
                        bag_tile=tile, pc_path=pc_path, uniqueid=uniqueid)
         # Write temporary config file
+        logger.debug(config)
         try:
             with open(yml_path, "w") as text_file:
                 text_file.write(config)
@@ -98,7 +99,8 @@ def call_3dfier(db, tile, schema_tiles,
         else:
             output_path = os.path.join(output_dir, tile_out)
         # Run 3dfier
-        command = [path_3dfier, yml_path, "-o", output_path]
+        command = [path_3dfier, yml_path, "--CSV-BUILDINGS-MULTIPLE", 
+                   output_path]
         try:
             bag.run_subprocess(command, shell=True, doexec=doexec)
         except BaseException as e:
@@ -142,10 +144,26 @@ def yamlr(dbname, host, user, pw, schema_tiles,
     # !!! Do not correct the indentation of the config template, otherwise it
     # results in 'YAML::TypedBadConversion<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >'
     # because every line is indented as here
+    if pw:
+        d = 'PG:dbname={dbname} host={host} user={user} password={pw} schemas={schema_tiles} tables={bag_tile}'
+        dns = d.format(dbname=dbname,
+               host=host,
+               user=user,
+               pw=pw,
+               schema_tiles=schema_tiles,
+               bag_tile=bag_tile)
+    else:
+        d = 'PG:dbname={dbname} host={host} user={user} schemas={schema_tiles} tables={bag_tile}'
+        dns = d.format(dbname=dbname,
+               host=host,
+               user=user,
+               schema_tiles=schema_tiles,
+               bag_tile=bag_tile)
+
     config = """
 input_polygons:
   - datasets:
-      - "PG:dbname={dbname} host={host} user={user} password={pw} schemas={schema_tiles} tables={bag_tile}"
+      - "{dns}"
     uniqueid: {uniqueid}
     lifting: Building
 
@@ -172,12 +190,7 @@ options:
   building_radius_vertex_elevation: 3.0
   radius_vertex_elevation: 1.0
   threshold_jump_edges: 0.5
-        """.format(dbname=dbname,
-                   host=host,
-                   user=user,
-                   pw=pw,
-                   schema_tiles=schema_tiles,
-                   bag_tile=bag_tile,
+        """.format(dns=dns,
                    uniqueid=uniqueid,
                    pc_path=pc_dataset)
     return(config)
@@ -273,7 +286,7 @@ def pc_file_index(pc_name_map):
                 f = {**file_index, **f_idx[dirname]}
                 file_index = f
         pri.append(d[1]['priority'])
-    logger.debug("pc_file_index() out: %s", file_index)
+    #logger.debug("pc_file_index() out: %s", file_index)
     return file_index
 
 

@@ -15,7 +15,7 @@ import logging
 logger = logging.getLogger('import')
 
 
-def create_heights_table(db, schema, table):
+def create_heights_table(conn, schema, table):
     """Create a postgres table that can store the content of 3dfier CSV-BUILDINGS-MULTIPLE
     
     Note
@@ -46,9 +46,9 @@ def create_heights_table(db, schema, table):
         ahn_version smallint
         );
     """).format(schema=schema_q, table=table_q)
-    logger.debug(db.print_query(query))
+    logger.debug(conn.print_query(query))
     try:
-        db.sendQuery(query)
+        conn.sendQuery(query)
         return True
     except Exception as e:
         logger.exception(e)
@@ -56,7 +56,7 @@ def create_heights_table(db, schema, table):
         return False
 
 
-def csv2db(cfg, out_paths):
+def csv2db(conn, cfg, out_paths):
     """Create a table with multiple height info per BAG building footprint
     
     Note
@@ -76,21 +76,20 @@ def csv2db(cfg, out_paths):
     out_paths: list of strings
         Paths of the CSV files
     """
-    db = cfg["dbase"]
-    schema_pc_q = sql.Identifier(cfg['elevation']['schema'])
-    table_pc_q = sql.Identifier(cfg['elevation']['table'])
-    field_pc_unit_q = sql.Identifier(cfg['elevation']['fields']['unit_name'])
+    schema_pc_q = sql.Identifier(cfg['tile_index']['elevation']['schema'])
+    table_pc_q = sql.Identifier(cfg['tile_index']['elevation']['table'])
+    field_pc_unit_q = sql.Identifier(cfg['tile_index']['elevation']['fields']['unit_name'])
     
-    schema_out_q = sql.Identifier(cfg['out_schema'])
-    table_out_q = sql.Identifier(cfg['out_table'])
+    schema_out_q = sql.Identifier(cfg['output']['schema'])
+    table_out_q = sql.Identifier(cfg['output']['table'])
     
-    table_idx = sql.Identifier(cfg['out_schema'] + "_id_idx")
-    a = create_heights_table(db, cfg['out_schema'], cfg['out_table'])
+    table_idx = sql.Identifier(cfg['output']['schema'] + "_id_idx")
+    a = create_heights_table(conn, cfg['output']['schema'], cfg['output']['table'])
     
     if a:
-        with db.conn:
-            with db.conn.cursor() as cur:
-                tbl = ".".join([cfg['out_schema'], cfg['out_table']])
+        with conn.conn:
+            with conn.conn.cursor() as cur:
+                tbl = ".".join([cfg['output']['schema'], cfg['output']['table']])
                 for path in out_paths:
                     csv_file = os.path.split(path)[1]
                     fname = os.path.splitext(csv_file)[0]
@@ -133,14 +132,14 @@ ahn_file_date,ahn_version/' %s" % path
                         next(f_in) # skip header
                         cur.copy_from(f_in, tbl, sep=',', null='-99.99')
                         
-        db.sendQuery(
+        conn.sendQuery(
             sql.SQL("""CREATE INDEX IF NOT EXISTS {table}
                     ON {schema_q}.{table_q} (id);
                     """).format(schema_q=schema_out_q,
                                 table_q=table_out_q,
                                 table=table_idx)
         )
-        db.sendQuery(
+        conn.sendQuery(
             sql.SQL("""COMMENT ON TABLE {schema}.{table} IS
                     'Building heights generated with 3dfier.';
                     """).format(schema=schema_out_q,
@@ -151,12 +150,15 @@ ahn_file_date,ahn_version/' %s" % path
         raise
 
 
-def create_bag3d_relations(cfg):
+def create_bag3d_relations(conn, cfg):
     """Creates the necessary postgres tables and views for the 3D BAG"""
-    db = cfg["dbase"]
     
-    bag3d_table_q = sql.Identifier(cfg['bag3d_table'])
-    heights_table_q = sql.Identifier(cfg['out_table'])
+    bag3d_table_q = sql.Identifier(cfg['output']['bag3d_table'])
+    heights_table_q = sql.Identifier(cfg['output']['table'])
+    
+    drop_q = sql.SQL("DROP TABLE IF EXISTS bagactueel.{bag3d} CASCADE;").format(
+        bag3d=bag3d_table_q)
+    conn.sendQuery(drop_q)
     
     query = sql.SQL("""
     CREATE TABLE bagactueel.{bag3d} AS
@@ -195,36 +197,36 @@ def create_bag3d_relations(cfg):
     """).format(bag3d=bag3d_table_q, heights=heights_table_q)
     # the type of bagactueel.pand.identificatie can change between different 
     # BAG extracts (numeric or varchar)
-    db.sendQuery(query)
+    conn.sendQuery(query)
     
-    idx = sql.Identifier(cfg['bag3d_table'] + "_identificatie_idx")
+    idx = sql.Identifier(cfg['output']['bag3d_table'] + "_identificatie_idx")
     query = sql.SQL("""
     CREATE INDEX {idx} ON bagactueel.{bag3d} (identificatie);
     """).format(idx=idx, bag3d=bag3d_table_q)
-    db.sendQuery(query)
+    conn.sendQuery(query)
     
-    idx = sql.Identifier(cfg['bag3d_table'] + "_geovlak_idx")
+    idx = sql.Identifier(cfg['output']['bag3d_table'] + "_geovlak_idx")
     query = sql.SQL("""
     CREATE INDEX {idx} ON bagactueel.{bag3d} USING GIST (geovlak);
     """).format(idx=idx, bag3d=bag3d_table_q)
-    db.sendQuery(query)
+    conn.sendQuery(query)
     
     query = sql.SQL("""
     SELECT populate_geometry_columns('bagactueel.{bag3d}'::regclass);
     """).format(bag3d=bag3d_table_q)
-    db.sendQuery(query)
+    conn.sendQuery(query)
     
     query = sql.SQL("""
     COMMENT ON TABLE bagactueel.{bag3d} IS 'The 3D BAG';
     """).format(bag3d=bag3d_table_q)
-    db.sendQuery(query)
+    conn.sendQuery(query)
     
     query = sql.SQL("""
     DROP TABLE bagactueel.{heights} CASCADE;
     """).format(heights=heights_table_q)
-    db.sendQuery(query)
+    conn.sendQuery(query)
     
-    viewname = sql.Identifier(cfg['bag3d_table'] + "_valid_height")
+    viewname = sql.Identifier(cfg['output']['bag3d_table'] + "_valid_height")
     query = sql.SQL("""
     CREATE OR REPLACE VIEW bagactueel.{viewname} AS
     SELECT *
@@ -232,16 +234,16 @@ def create_bag3d_relations(cfg):
     WHERE bouwjaar <= date_part('YEAR', ahn_file_date) 
     AND begindatumtijdvakgeldigheid < ahn_file_date;
     """).format(bag3d=bag3d_table_q, viewname=viewname)
-    db.sendQuery(query)
+    conn.sendQuery(query)
     
     query = sql.SQL("""
     COMMENT ON VIEW bagactueel.{viewname} IS \
     'The BAG footprints where the building was built before the AHN3 was created';
     """).format(viewname=viewname)
-    db.sendQuery(query)
+    conn.sendQuery(query)
 
 
-def import_csv(cfg):
+def import_csv(conn, cfg):
     """Import the batch3dfier CSV output into the BAG database"""
     
     # Get CSV files in dir
@@ -254,9 +256,9 @@ def import_csv(cfg):
     except UnboundLocalError as e:
         logger.exception("Couln't find any CSVs in %s", cfg['output']['dir'])
         raise
-    csv2db(cfg, out_paths)
+    csv2db(conn, cfg, out_paths)
     # TODO: add option for dropping the relations if exist
-    create_bag3d_relations(cfg)
+    create_bag3d_relations(conn, cfg)
 
 
 # --------------------- Unite tiles

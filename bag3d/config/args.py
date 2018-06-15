@@ -242,7 +242,8 @@ def parse_config(args_in, schema):
     USER_SCHEMA = cfg_stream["input_polygons"]["user_schema"]
     if (USER_SCHEMA is None) or (EXTENT_FILE is None):
         logger.debug("user_schema or extent is None")
-        cfg['user_schema'] = cfg['tile_schema']
+        cfg["input_polygons"]['user_schema'] = cfg["input_polygons"]['tile_schema']
+
     
     cfg['database'] = cfg_stream['database']
 
@@ -257,7 +258,7 @@ def parse_config(args_in, schema):
     ahn2_dir = os.path.join(d, "cfg_ahn2")
     ahn3_dir = os.path.join(d, "cfg_ahn3")
     for d in [rest_dir, ahn2_dir, ahn3_dir]:
-        os.makedirs(d)
+        os.makedirs(d, exist_ok=True)
     cfg["config"]["out_rest"] = os.path.join(rest_dir, 
                                              "bag3d_cfg_rest.yml")
     cfg["config"]["out_border_ahn2"] = os.path.join(ahn2_dir, 
