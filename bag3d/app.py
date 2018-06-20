@@ -129,15 +129,12 @@ def app(cli_args, here):
             #TODO: need to add tile list preprocessing here
             cfg_rest, cfg_ahn2, cfg_ahn3 = border.process(conn, cfg, ahn3_dir, ahn2_dir, 
                                      export=False)
-            for c in [cfg_rest, cfg_ahn2, cfg_ahn3]:
-                logger.debug(pformat(cfg))
-            
             clip_prefix = "_clip3dfy_"
             logger.debug("clip_prefix is %s", clip_prefix)
             
             for c in [cfg_rest, cfg_ahn2, cfg_ahn3]:
                 cfg_out = batch3dfier.configure_tiles(conn, c, clip_prefix)
-                logger.debug(cfg_out)
+                logger.debug(pformat(cfg_out))
                 if not os.path.exists(cfg_out["output"]["dir"]):
                     os.makedirs(cfg_out["output"]["dir"], exist_ok=True)
                 logger.debug("Created %s", cfg_out["output"]["dir"])

@@ -71,9 +71,6 @@ def call_3dfier(db, tile, schema_tiles,
     # prepare output file name
     if not tile_out:
         tile_out = tile.replace(clip_prefix, '', 1)
-
-    # Call 3dfier ------------------------------------------------------------
-
     if pc_path:
         # Needs a YAML per thread so one doesn't overwrite it while the other
         # uses it

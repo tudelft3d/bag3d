@@ -39,7 +39,6 @@ def run_subprocess(command, shell=False, doexec=True):
     """
     if doexec:
         cmd = " ".join(command)
-        logger.debug(cmd)
         if shell:
             command = cmd
         proc = run(command, shell=shell, stderr=PIPE, stdout=PIPE)
@@ -49,7 +48,7 @@ def run_subprocess(command, shell=False, doexec=True):
             logger.error(err)
     else:
         cmd = " ".join(command)
-        logger.debug(cmd)
+        logger.debug("Not executing", cmd)
 
 
 def get_latest_BAG(url):
