@@ -459,6 +459,10 @@ def create_bag3d_table(conn, schema):
         conn.sendQuery(query_i)
         logger.debug(conn.print_query(query_d))
         conn.sendQuery(query_d)
+    except psycopg2.IntegrityError as e:
+        logger.exception("There are overlapping footprints in the border and non-border tiles, possibly because some tiles were processed in a batch where they do not belong.")
+        logger.exception(e)
+        raise
     except BaseException as e:
         logger.exception(e)
         raise

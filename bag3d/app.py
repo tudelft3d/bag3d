@@ -18,6 +18,7 @@ from bag3d.update import bag
 from bag3d.update import ahn
 from bag3d.batch3dfier import process
 from bag3d import importer
+from bag3d import exporter
 
 from pprint import pformat
 
@@ -141,7 +142,7 @@ def app(cli_args, here):
                 logger.debug("Created %s", cfg_out["output"]["dir"])
                 
                 logger.info("Running batch3dfier")
-                process.run(conn, cfg_out, doexec=False)
+                process.run(conn, cfg_out, doexec=args_in['no_exec'])
 #                 process.run(conn, cfg_out, doexec=args_in['no_exec'])
             
                 logger.info("Importing batch3dfier output into database")
@@ -160,6 +161,10 @@ def app(cli_args, here):
     
         if args_in['export']:
             logger.info("Exporting 3D BAG")
+            exporter.csv(conn, cfg, cfg["output"]["dir"])
+            exporter.gpkg(conn, cfg, cfg["output"]["dir"], args_in['no_exec'])
+            exporter.postgis(conn, cfg, cfg["output"]["dir"], args_in['no_exec'])
+            
     except Exception as e:
         logger.exception(e)
     finally:

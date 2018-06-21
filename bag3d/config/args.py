@@ -214,8 +214,7 @@ def parse_config(args_in, schema):
     
     cfg["output"] = cfg_stream["output"]
     cfg["output"]["dir"] = os.path.abspath(cfg_stream["output"]["dir"])
-    if not os.path.exists(cfg["output"]["dir"]):
-        os.makedirs(cfg["output"]["dir"], exist_ok=True)
+    os.makedirs(cfg["output"]["dir"], exist_ok=True)
 
     cfg['path_3dfier'] = cfg_stream["path_3dfier"]
 
