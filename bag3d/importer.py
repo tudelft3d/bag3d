@@ -87,50 +87,50 @@ def csv2db(conn, cfg, out_paths):
     a = create_heights_table(conn, cfg['output']['schema'], cfg['output']['table'])
     
     if a:
-        with conn.conn:
-            with conn.conn.cursor() as cur:
-                tbl = ".".join([cfg['output']['schema'], cfg['output']['table']])
-                for path in out_paths:
-                    csv_file = os.path.split(path)[1]
-                    fname = os.path.splitext(csv_file)[0]
-                    tile = fname.replace(cfg['prefix_tile_footprint'], '', 1)
-                    tile_q = sql.Literal(tile)
-                    
-                    query = sql.SQL("""SELECT file_date, ahn_version
-                                        FROM {schema}.{table}
-                                        WHERE {unit_name} = {tile};
-                                    """).format(schema=schema_pc_q,
-                                               table=table_pc_q,
-                                               unit_name=field_pc_unit_q,
-                                               tile=tile_q)
-                    cur.execute(query)
-                    resultset = cur.fetchall()
-                    # the AHN3 file creation date that is stored in the tile index
-                    if resultset[0][0] and resultset[0][1]:
-                        ahn_file_date = resultset[0][0].isoformat()
-                        ahn_version = resultset[0][1]
-                    else:
-                        ahn_file_date = -99.99
-                        ahn_version = -99.99
-                    
-                    # Need to do some linux text-fu so that the whole csv file can
-                    # be imported with COPY instead of row-wise edit and import
-                    # in python (suuuper slow)
-                    # Watch out for trailing commas from the CSV (until #58 is fixed in 3dfier)
-                    cmd_add_ahn = "gawk -i inplace -F',' 'BEGIN { OFS = \",\" } {$16=\"%s,%s\"; print}' %s" % (
-                        ahn_file_date, 
-                        ahn_version,
-                        path)
-                    run(cmd_add_ahn, shell=True)
-                    cmd_header = "sed -i '1s/.*/id,ground-0.00,ground-0.10,ground-0.20,\
-ground-0.30,ground-0.40,ground-0.50,roof-0.00,roof-0.10,\
-roof-0.25,roof-0.50,roof-0.75,roof-0.90,roof-0.95,roof-0.99,\
-ahn_file_date,ahn_version/' %s" % path
-                    run(cmd_header, shell=True)
-                    
-                    with open(path, "r") as f_in:
-                        next(f_in) # skip header
-                        cur.copy_from(f_in, tbl, sep=',', null='-99.99')
+        tbl = ".".join([cfg['output']['schema'], cfg['output']['table']])
+        with conn.conn.cursor() as cur:
+            for path in out_paths:
+                csv_file = os.path.split(path)[1]
+                fname = os.path.splitext(csv_file)[0]
+                tile = fname.replace(cfg['prefix_tile_footprint'], '', 1)
+                tile_q = sql.Literal(tile)
+                
+                query = sql.SQL("""SELECT file_date, ahn_version
+                                    FROM {schema}.{table}
+                                    WHERE {unit_name} = {tile};
+                                """).format(schema=schema_pc_q,
+                                           table=table_pc_q,
+                                           unit_name=field_pc_unit_q,
+                                           tile=tile_q)
+                logger.debug(conn.print_query(query))
+                resultset = conn.getQuery(query)
+                logger.debug(resultset)
+                # the AHN3 file creation date that is stored in the tile index
+                try:
+                    ahn_file_date = resultset[0][0].isoformat()
+                    ahn_version = resultset[0][1]
+                except IndexError:
+                    ahn_file_date = -99.99
+                    ahn_version = -99.99
+                
+                # Need to do some linux text-fu so that the whole csv file can
+                # be imported with COPY instead of row-wise edit and import
+                # in python (suuuper slow)
+                # Watch out for trailing commas from the CSV (until #58 is fixed in 3dfier)
+                cmd_add_ahn = "gawk -i inplace -F',' 'BEGIN { OFS = \",\" } {$16=\"%s,%s\"; print}' %s" % (
+                    ahn_file_date, 
+                    ahn_version,
+                    path)
+                run(cmd_add_ahn, shell=True)
+                cmd_header = "sed -i '1s/.*/id,ground-0.00,ground-0.10,ground-0.20,\
+    ground-0.30,ground-0.40,ground-0.50,roof-0.00,roof-0.10,\
+    roof-0.25,roof-0.50,roof-0.75,roof-0.90,roof-0.95,roof-0.99,\
+    ahn_file_date,ahn_version/' %s" % path
+                run(cmd_header, shell=True)
+                
+                with open(path, "r") as f_in:
+                    next(f_in) # skip header
+                    cur.copy_from(f_in, tbl, sep=',', null='-99.99')
                         
         conn.sendQuery(
             sql.SQL("""CREATE INDEX IF NOT EXISTS {table}
@@ -432,23 +432,33 @@ def create_bag3d_table(conn, schema):
         Creates a table in database
     """
     
-    query = sql.SQL("""
+    query_t = sql.SQL("""
     CREATE TABLE {schema}.bag3d AS
     SELECT *
     FROM {schema}.bag3d_rest
+    WHERE ahn_version IS NOT NULL
     UNION
     SELECT *
-    FROM {schema}.bag3d_border_union;
+    FROM {schema}.bag3d_border_union
+    WHERE ahn_version IS NOT NULL;
+    """).format(schema=sql.Identifier(schema))
     
+    query_i = sql.SQL("""
     CREATE INDEX bag3d_geom_idx ON {schema}.bag3d USING gist (geovlak);
     ALTER TABLE {schema}.bag3d ADD PRIMARY KEY (gid);
     COMMENT ON TABLE {schema}.bag3d IS 'The 3D BAG';
-    
+    """).format(schema=sql.Identifier(schema))
+
+    query_d = sql.SQL("""
     DROP VIEW {schema}.bag3d_border_union;
     """).format(schema=sql.Identifier(schema))
-    logger.debug(conn.print_query(query))
     try:
-        conn.sendQuery(query)
+        logger.debug(conn.print_query(query_t))
+        conn.sendQuery(query_t)
+        logger.debug(conn.print_query(query_i))
+        conn.sendQuery(query_i)
+        logger.debug(conn.print_query(query_d))
+        conn.sendQuery(query_d)
     except BaseException as e:
         logger.exception(e)
         raise

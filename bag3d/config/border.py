@@ -294,7 +294,8 @@ def update_tile_list(config, tile_list, ahn_version=None,
         The updated configuration
     """
     c = copy.deepcopy(config)
-    c["tile_list"] = tile_list
+    tl = list(set(tile_list).intersection(set(config["input_polygons"]["tile_list"])))
+    c["input_polygons"]["tile_list"] = tl
     
     if ahn_version:
         c = update_output(c, ahn_version, ahn_dir, border_table)
@@ -353,7 +354,9 @@ def get_border_tiles(conn, tbl_schema, border_table, tbl_tile):
         border_table=sql.Identifier(border_table)
         )
     logger.debug(conn.print_query(query))
-    return [row[0] for row in conn.getQuery(query)]
+    r = [row[0] for row in conn.getQuery(query)]
+    logger.debug("%s", r)
+    return r
 
 
 def get_non_border_tiles(conn, tbl_schema, tbl_name, border_table, tbl_tile):
@@ -379,7 +382,7 @@ def get_non_border_tiles(conn, tbl_schema, tbl_name, border_table, tbl_tile):
     """
     query = sql.SQL("""
     SELECT 
-        a.a_bladnr AS bladnr
+        sub.a_bladnr
     FROM
         (
             SELECT
@@ -389,16 +392,19 @@ def get_non_border_tiles(conn, tbl_schema, tbl_name, border_table, tbl_tile):
                 {schema}.{table} a
             LEFT JOIN {schema}.{border_table} b ON
                 a.{tile} = b.{tile}
-        ) a
+        ) sub
     WHERE 
-        a.b_bladnr IS NULL;
+        sub.b_bladnr IS NULL;
     """).format(
         tile=sql.Identifier(tbl_tile),
         schema=sql.Identifier(tbl_schema),
         table=sql.Identifier(tbl_name),
         border_table=sql.Identifier(border_table)
         )
-    return [row[0] for row in conn.getQuery(query)]
+    logger.debug(conn.print_query(query))
+    r = [row[0] for row in conn.getQuery(query)]
+    logger.debug("%s", r)
+    return r
 
 
 def process(conn, config, ahn3_dir, ahn2_dir, export=False):

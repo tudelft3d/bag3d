@@ -134,13 +134,15 @@ def app(cli_args, here):
             
             for c in [cfg_rest, cfg_ahn2, cfg_ahn3]:
                 cfg_out = batch3dfier.configure_tiles(conn, c, clip_prefix)
-                logger.debug(pformat(cfg_out))
+                logger.debug("%s, %s", c, pformat(cfg_out))
+                #logger.debug("%s, %s", (c, pformat(cfg_out)))
                 if not os.path.exists(cfg_out["output"]["dir"]):
                     os.makedirs(cfg_out["output"]["dir"], exist_ok=True)
                 logger.debug("Created %s", cfg_out["output"]["dir"])
                 
                 logger.info("Running batch3dfier")
-                process.run(conn, cfg_out, doexec=args_in['no_exec'])
+                process.run(conn, cfg_out, doexec=False)
+#                 process.run(conn, cfg_out, doexec=args_in['no_exec'])
             
                 logger.info("Importing batch3dfier output into database")
                 importer.import_csv(conn, cfg_out)
