@@ -73,11 +73,11 @@ def create_border_table(conn, config, doexec=True):
     None
         Creates the table tile_index:elevation:border_table in the database
     """
-    tbl_schema = sql.Identifier(config['elevation']['schema'])
-    tbl_name = sql.Identifier(config['elevation']['table'])
-    tbl_version = sql.Identifier(config['elevation']['fields']['version'])
-    tbl_geom = sql.Identifier(config['elevation']['fields']['geometry'])
-    border_table = sql.Identifier(config['elevation']['border_table'])
+    tbl_schema = sql.Identifier(config["tile_index"]['elevation']['schema'])
+    tbl_name = sql.Identifier(config["tile_index"]['elevation']['table'])
+    tbl_version = sql.Identifier(config["tile_index"]['elevation']['fields']['version'])
+    tbl_geom = sql.Identifier(config["tile_index"]['elevation']['fields']['geometry'])
+    border_table = sql.Identifier(config["tile_index"]['elevation']['border_table'])
 
     drop_q = sql.SQL("""
     DROP TABLE IF EXISTS {schema}.{border_table} CASCADE;
@@ -151,10 +151,10 @@ def update_file_date(conn, config, ahn2_dir, ahn2_fp, doexec=True):
         
     """
     
-    tbl_schema = sql.Identifier(config['elevation']['schema'])
-    tbl_tile = sql.Identifier(config['elevation']['fields']['unit_name'])
-    tbl_version = sql.Identifier(config['elevation']['fields']['version'])
-    border_table = sql.Identifier(config['elevation']['border_table'])
+    tbl_schema = sql.Identifier(config["tile_index"]['elevation']['schema'])
+    tbl_tile = sql.Identifier(config["tile_index"]['elevation']['fields']['unit_name'])
+    tbl_version = sql.Identifier(config["tile_index"]['elevation']['fields']['version'])
+    border_table = sql.Identifier(config["tile_index"]['elevation']['border_table'])
     a_date_pat = re.compile(r"(?<=\sfile creation day/year:).*",
                             flags=re.IGNORECASE & re.MULTILINE)
     corruptedfiles = []
@@ -220,12 +220,13 @@ def update_file_date(conn, config, ahn2_dir, ahn2_fp, doexec=True):
 #         raise
 #     return cfg_stream
 
-
 def update_output(cfg, ahn_version, ahn_dir, border_table):
     """Update the output parameters in the config file for processing border tiles
     
     Assumes that input_elevation:dataset_dir has at least 2 entries, one of
     them is the AHN2 directory.
+    Updates the tile_index:elevation:table so that AHN2 tiles use the
+    border_tiles index, and AHN3 tiles use the normal AHN tile index.
     
     Parameters
     ----------
@@ -254,7 +255,9 @@ def update_output(cfg, ahn_version, ahn_dir, border_table):
         raise
     # configure to use AHN2 only
     # schema is not expected to change for border_table
-    cfg["elevation"]["table"] = border_table
+    if ahn_version == 2:
+        cfg["tile_index"]["elevation"]["table"] = border_table
+    
     cfg["input_elevation"]["dataset_dir"] = ahn_dir
     d = cfg["output"]["dir"]
     dname = path.join(path.dirname(d), path.basename(d) + sfx)
@@ -439,10 +442,10 @@ def process(conn, config, ahn3_dir, ahn2_dir, export=False):
     conf_border_ahn3 = path.abspath(config['config']['out_border_ahn3'])
     a2_dir = path.abspath(ahn2_dir)
     a3_dir = path.abspath(ahn3_dir)
-    tbl_schema = config['elevation']['schema']
-    tbl_name = config['elevation']['table']
-    tbl_tile = config['elevation']['fields']['unit_name']
-    border_table = config['elevation']['border_table']
+    tbl_schema = config["tile_index"]['elevation']['schema']
+    tbl_name = config["tile_index"]['elevation']['table']
+    tbl_tile = config["tile_index"]['elevation']['fields']['unit_name']
+    border_table = config["tile_index"]['elevation']['border_table']
 
     t_border = get_border_tiles(conn, tbl_schema, border_table, tbl_tile)
     t_rest = get_non_border_tiles(conn, tbl_schema, tbl_name, border_table,

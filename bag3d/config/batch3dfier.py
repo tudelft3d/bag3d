@@ -61,13 +61,9 @@ def call_3dfier(db, tile, schema_tiles,
                              table_index_footprint, fields_index_footprint,
                              extent_ewkb, tile_footprint=tile,
                              prefix_tile_footprint=prefix_tile_footprint)
-    logger.debug("call_3dfier:pc_tiles: %s", pc_tiles)
-#     pc_path = find_pc_files(pc_tiles, pc_dir, pc_dataset_name, pc_tile_case)
-#     pc_path = [t for tile in pc_tiles for t in pc_file_index[tile]]
     tileset = {i for i in pc_tiles}
     p = [pc_file_index[tile] for tile in pc_file_index.keys() & tileset]
     pc_path = list(chain.from_iterable(p))
-    logger.debug("call_3dfier:pc_path: %s", pc_path)
     # prepare output file name
     if not tile_out:
         tile_out = tile.replace(clip_prefix, '', 1)
@@ -99,6 +95,7 @@ def call_3dfier(db, tile, schema_tiles,
         command = [path_3dfier, yml_path, "--CSV-BUILDINGS-MULTIPLE", 
                    output_path]
         try:
+            logger.debug(" ".join(command))
             bag.run_subprocess(command, shell=True, doexec=doexec)
         except BaseException as e:
             logger.exception("Cannot run 3dfier on tile " + tile)

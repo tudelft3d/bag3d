@@ -123,9 +123,9 @@ def csv2db(conn, cfg, out_paths):
                     path)
                 run(cmd_add_ahn, shell=True)
                 cmd_header = "sed -i '1s/.*/id,ground-0.00,ground-0.10,ground-0.20,\
-    ground-0.30,ground-0.40,ground-0.50,roof-0.00,roof-0.10,\
-    roof-0.25,roof-0.50,roof-0.75,roof-0.90,roof-0.95,roof-0.99,\
-    ahn_file_date,ahn_version/' %s" % path
+ground-0.30,ground-0.40,ground-0.50,roof-0.00,roof-0.10,\
+roof-0.25,roof-0.50,roof-0.75,roof-0.90,roof-0.95,roof-0.99,\
+ahn_file_date,ahn_version/' %s" % path
                 run(cmd_header, shell=True)
                 
                 with open(path, "r") as f_in:
