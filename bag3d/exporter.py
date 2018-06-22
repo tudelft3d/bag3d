@@ -94,17 +94,19 @@ def gpkg(conn, config, out_dir, doexec=True):
     d = os.path.join(out_dir, "gpkg")
     os.makedirs(d, exist_ok=True)
     f = os.path.join(d, x)
-    command = "ogr2ogr -f GPKG {f} \
-    PG:'dbname={db} \
-    host={h} \
-    user={u} \
-    password={pw} \
-    schemas=bagactueel tables={bag3d}'".format(f=f,
-                                             db=conn.dbname,
-                                             h=conn.host,
-                                             pw=conn.password,
-                                             u=conn.user,
-                                             bag3d=bag3d)
+    if conn.password:
+        dns = "PG:'dbname={db} host={h} user={u} password={pw} \
+        schemas=bagactueel tables={bag3d}'".format(db=conn.dbname,
+                                                 h=conn.host,
+                                                 pw=conn.password,
+                                                 u=conn.user,
+                                                 bag3d=bag3d)
+    else:
+        dns = "PG:'dbname={db} host={h} user={u} schemas=bagactueel \
+        tables={bag3d}'".format(db=conn.dbname, h=conn.host, 
+                                pw=conn.password, u=conn.user, bag3d=bag3d)
+    command = ["ogr2ogr", "-f", "GPKG", f, dns]
+    logger.info("Exporting GPKG")
     bag.run_subprocess(command, shell=True, doexec=doexec)
     
 def postgis(conn, config, out_dir, doexec=True):
@@ -152,43 +154,21 @@ def postgis(conn, config, out_dir, doexec=True):
     postgis_dir = os.path.join(out_dir, "postgis")
     os.makedirs(postgis_dir, exist_ok=True)
     # PostGIS schema (required because of the pandstatus custom data type)
-    command = "pg_dump \
---host {h} \
---port {p} \
---username {u} \
---no-password \
---format custom \
---no-owner \
---compress 7 \
---encoding UTF8 \
---verbose \
---schema-only \
---schema bagactueel \
---file {f} \
-bag".format(h=conn.host,
-            p=conn.port,
-            u=conn.user,
-            f=os.path.join(postgis_dir,"bagactueel_schema.backup"))
+    f = os.path.join(postgis_dir,"bagactueel_schema.backup")
+    command = ["pg_dump", "--host", conn.host, "--port", conn.port,
+               "--username", conn.user, "--no-password", "--format", 
+               "custom", "--no-owner", "--compress", "7", "--encoding", 
+               "UTF8", "--verbose", "--schema-only", "--schema", "bagactueel",
+                "--file", f, conn.dbname]
     bag.run_subprocess(command, shell=True, doexec=doexec)
     
-    # The 3D BAG (building heights + footprint geom)
-    x =  "bag3d_{d}.backup".format(d=date)
-    command = "pg_dump \
---host {h} \
---port {p} \
---username {u} \
---no-password \
---format custom \
---no-owner \
---compress 7 \
---encoding UTF8 \
---verbose \
---file {f} \
---table bagactueel.{bag3d} \
-bag".format(h=conn.host,
-            p=conn.port,
-            u=conn.user,
-            f=os.path.join(postgis_dir, x),
-            bag3d=bag3d)
+    # The 3D BAG (building heights + footprint geom)s
+    f = os.path.join(postgis_dir, "bag3d_{d}.backup".format(d=date))
+    tbl = "bagactueel.%s" % bag3d
+    command = ["pg_dump", "--host", conn.host, "--port", conn.port,
+               "--username", conn.user, "--no-password", "--format", 
+               "custom", "--no-owner", "--compress", "7", "--encoding", 
+               "UTF8", "--verbose", "--file", f, "--table", tbl, conn.dbname]
+    logger.info("Exporting PostGIS backup")
     bag.run_subprocess(command, shell=True, doexec=doexec)
 

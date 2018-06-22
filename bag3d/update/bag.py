@@ -41,14 +41,14 @@ def run_subprocess(command, shell=False, doexec=True):
         cmd = " ".join(command)
         if shell:
             command = cmd
+        logger.debug(command)
         proc = run(command, shell=shell, stderr=PIPE, stdout=PIPE)
         err = proc.stderr.decode(locale.getpreferredencoding(do_setlocale=True))
         if proc.returncode != 0:
             logger.error("Process returned with non-zero exit code")
             logger.error(err)
     else:
-        cmd = " ".join(command)
-        logger.debug("Not executing %s", cmd)
+        logger.debug("Not executing %s", command)
 
 
 def get_latest_BAG(url):
