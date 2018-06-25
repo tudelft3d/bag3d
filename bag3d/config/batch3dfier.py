@@ -57,11 +57,10 @@ def call_3dfier(db, tile, schema_tiles,
         was found in 'dataset_dir' (YAML)
 
     """
-    pc_tiles = find_pc_tiles(db, table_index_pc, fields_index_pc,
+    tileset, ahn_version = find_pc_tiles(db, table_index_pc, fields_index_pc,
                              table_index_footprint, fields_index_footprint,
                              extent_ewkb, tile_footprint=tile,
                              prefix_tile_footprint=prefix_tile_footprint)
-    tileset = {i for i in pc_tiles}
     p = [pc_file_index[tile] for tile in pc_file_index.keys() & tileset]
     pc_path = list(chain.from_iterable(p))
     # prepare output file name
@@ -74,7 +73,8 @@ def call_3dfier(db, tile, schema_tiles,
         yml_path = os.path.join(yml_dir, yml_name)
         config = yamlr(dbname=db.dbname, host=db.host, user=db.user,
                        pw=db.password, schema_tiles=schema_tiles,
-                       bag_tile=tile, pc_path=pc_path, uniqueid=uniqueid)
+                       bag_tile=tile, pc_path=pc_path, uniqueid=uniqueid,
+                       ahn_version=ahn_version)
         # Write temporary config file
         logger.debug(config)
         try:
@@ -98,13 +98,11 @@ def call_3dfier(db, tile, schema_tiles,
             logger.debug(" ".join(command))
             bag.run_subprocess(command, shell=True, doexec=doexec)
         except BaseException as e:
-            logger.exception("Cannot run 3dfier on tile " + tile)
+            logger.exception("Cannot run 3dfier on tile %s", tile)
             tile_skipped = tile
     else:
-        logger.debug(
-            "Pointcloud file(s) " +
-            str(pc_tiles) +
-            " not available. Skipping tile.\n")
+        logger.debug("Pointcloud file(s) %s not available. Skipping tile.",
+                     str(tileset))
         tile_skipped = tile
         return({'tile_skipped': tile_skipped,
                 'out_path': None})
@@ -113,17 +111,19 @@ def call_3dfier(db, tile, schema_tiles,
 
 
 def yamlr(dbname, host, user, pw, schema_tiles,
-          bag_tile, pc_path, uniqueid):
+          bag_tile, pc_path, uniqueid, ahn_version):
     """Parse the YAML config file for 3dfier.
 
     Parameters
     ----------
-    See batch3dfier_config.yml.
-
+    ahn_version : set
+        Version of the latest available AHN point cloud for the current tile
+        
+    For the rest, see bag3d_config.yml.
 
     Returns
     -------
-    string
+    str
         the YAML config file for 3dfier
 
     """
@@ -153,6 +153,12 @@ def yamlr(dbname, host, user, pw, schema_tiles,
                user=user,
                schema_tiles=schema_tiles,
                bag_tile=bag_tile)
+    if ahn_version == set([2]):
+        lasb = [1]
+    elif ahn_version == set([3]):
+        lasb = [6]
+    elif ahn_version == set([2,3]):
+        lasb = [1,6]
 
     config = """
 input_polygons:
@@ -165,14 +171,10 @@ lifting_options:
   Building:
     roof:
       height: percentile-95
-      use_LAS_classes:
-        - 1
-        - 2
+      use_LAS_classes: {las_building}
     ground:
       height: percentile-10
-      use_LAS_classes:
-        - 3
-        - 6
+      use_LAS_classes: [2]
 
 input_elevation:
   - datasets:
@@ -186,8 +188,9 @@ options:
   threshold_jump_edges: 0.5
         """.format(dns=dns,
                    uniqueid=uniqueid,
-                   pc_path=pc_dataset)
-    return(config)
+                   pc_path=pc_dataset,
+                   las_building=lasb)
+    return config
 
 
 def pc_name_dict(pc_dir, dataset_name):
@@ -324,6 +327,11 @@ def find_pc_tiles(db, table_index_pc, fields_index_pc,
     prefix_tile_footprint : str or None
         Prefix prepended to the footprint tile view names. If None, the views are named as
         the values in fields_index_fooptrint['unit_name'].
+    
+    Returns
+    -------
+    tuple
+        Contains (set of AHN tile names, set of versions of the AHN tiles)
 
     """
     if extent_ewkb:
@@ -346,31 +354,36 @@ def find_pc_tiles(db, table_index_pc, fields_index_pc,
         tile_q = sql.Literal(tile_footprint)
 
         query = sql.SQL("""
-                            SELECT
-                            {table_pc}.{field_pc_unit}
-                        FROM
-                            {schema_pc}.{table_pc},
-                            {schema_ftpr}.{table_ftpr}
-                        WHERE
-                            {table_ftpr}.{field_ftpr_unit} = {tile}
-                            AND st_intersects(
-                                {table_pc}.{field_pc_geom},
-                                {table_ftpr}.{field_ftpr_geom}
-                            );
-                        """).format(table_pc=table_pc_q,
-                                    field_pc_unit=field_pc_unit_q,
-                                    schema_pc=schema_pc_q,
-                                    schema_ftpr=schema_ftpr_q,
-                                    table_ftpr=table_ftpr_q,
-                                    field_ftpr_unit=field_ftpr_unit_q,
-                                    tile=tile_q,
-                                    field_pc_geom=field_pc_geom_q,
-                                    field_ftpr_geom=field_ftpr_geom_q)
+        SELECT
+            {table_pc}.{field_pc_unit}
+            ,{table_pc}.ahn_version
+        FROM
+            {schema_pc}.{table_pc},
+            {schema_ftpr}.{table_ftpr}
+        WHERE
+            {table_ftpr}.{field_ftpr_unit} = {tile}
+            AND st_intersects(
+                {table_pc}.{field_pc_geom},
+                {table_ftpr}.{field_ftpr_geom}
+            );
+        """).format(table_pc=table_pc_q,
+                    field_pc_unit=field_pc_unit_q,
+                    schema_pc=schema_pc_q,
+                    schema_ftpr=schema_ftpr_q,
+                    table_ftpr=table_ftpr_q,
+                    field_ftpr_unit=field_ftpr_unit_q,
+                    tile=tile_q,
+                    field_pc_geom=field_pc_geom_q,
+                    field_ftpr_geom=field_ftpr_geom_q)
 
         resultset = db.getQuery(query)
-        tiles = [tile[0].lower() for tile in resultset]
+        tiles = []
+        ahn_version = []
+        for tile in resultset:
+            tiles.append(tile[0].lower())
+            ahn_version.append(int(tile[1]))
     logger.debug("find_pc_tiles() out: %s", tiles)
-    return tiles
+    return (set(tiles), set(ahn_version))
 
 
 def extent_to_ewkb(db, table_index, file):
