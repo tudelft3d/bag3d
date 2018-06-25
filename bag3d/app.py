@@ -127,9 +127,9 @@ def app(cli_args, here):
     
         if args_in['run_3dfier']:
             logger.info("Configuring batch3dfier")
-            #TODO: need to add tile list preprocessing here
-            cfg_rest, cfg_ahn2, cfg_ahn3 = border.process(conn, cfg, ahn3_dir, ahn2_dir, 
-                                     export=False)
+            cfg_rest, cfg_ahn2, cfg_ahn3 = border.process(conn, cfg, ahn3_dir, 
+                                                          ahn2_dir, 
+                                                          export=False)
             clip_prefix = "_clip3dfy_"
             logger.debug("clip_prefix is %s", clip_prefix)
             

@@ -57,11 +57,12 @@ def call_3dfier(db, tile, schema_tiles,
         was found in 'dataset_dir' (YAML)
 
     """
-    tileset, ahn_version = find_pc_tiles(db, table_index_pc, fields_index_pc,
+    tiles = find_pc_tiles(db, table_index_pc, fields_index_pc,
                              table_index_footprint, fields_index_footprint,
                              extent_ewkb, tile_footprint=tile,
                              prefix_tile_footprint=prefix_tile_footprint)
-    p = [pc_file_index[tile] for tile in pc_file_index.keys() & tileset]
+    p = [pc_file_index[tile] for tile in pc_file_index.keys() & tiles.keys()]
+    ahn_version = set([tiles[v] for v in pc_file_index.keys() & tiles.keys()])
     pc_path = list(chain.from_iterable(p))
     # prepare output file name
     if not tile_out:
@@ -102,7 +103,7 @@ def call_3dfier(db, tile, schema_tiles,
             tile_skipped = tile
     else:
         logger.debug("Pointcloud file(s) %s not available. Skipping tile.",
-                     str(tileset))
+                     str(tiles.keys()))
         tile_skipped = tile
         return({'tile_skipped': tile_skipped,
                 'out_path': None})
@@ -283,7 +284,7 @@ def pc_file_index(pc_name_map):
                 f = {**file_index, **f_idx[dirname]}
                 file_index = f
         pri.append(d[1]['priority'])
-    #logger.debug("pc_file_index() out: %s", file_index)
+    logger.debug(file_index)
     return file_index
 
 
@@ -316,7 +317,7 @@ def pc_file_index(pc_name_map):
 #     return tiles
 
 
-def find_pc_tiles(db, table_index_pc, fields_index_pc,
+def find_pc_tiles(conn, table_index_pc, fields_index_pc,
                   table_index_footprint=None, fields_index_footprint=None,
                   extent_ewkb=None, tile_footprint=None,
                   prefix_tile_footprint=None):
@@ -330,12 +331,13 @@ def find_pc_tiles(db, table_index_pc, fields_index_pc,
     
     Returns
     -------
-    tuple
-        Contains (set of AHN tile names, set of versions of the AHN tiles)
+    dict
+        Contains the AHN tile name as key, the AHN version of the tile as value
+        Eg. {'37hn1': 3, '37hz1': 2}
 
     """
     if extent_ewkb:
-        tiles = get_2Dtiles(db, table_index_pc, fields_index_pc, extent_ewkb)
+        tiles = get_2Dtiles(conn, table_index_pc, fields_index_pc, extent_ewkb)
     else:
         schema_pc_q = sql.Identifier(table_index_pc['schema'])
         table_pc_q = sql.Identifier(table_index_pc['table'])
@@ -375,15 +377,17 @@ def find_pc_tiles(db, table_index_pc, fields_index_pc,
                     tile=tile_q,
                     field_pc_geom=field_pc_geom_q,
                     field_ftpr_geom=field_ftpr_geom_q)
-
-        resultset = db.getQuery(query)
-        tiles = []
-        ahn_version = []
+        logger.debug(conn.print_query(query))
+        resultset = conn.getQuery(query)
+        tiles = {}
         for tile in resultset:
-            tiles.append(tile[0].lower())
-            ahn_version.append(int(tile[1]))
-    logger.debug("find_pc_tiles() out: %s", tiles)
-    return (set(tiles), set(ahn_version))
+            tile_id = tile[0].lower()
+            if id not in tiles:
+                tiles[tile_id] = int(tile[1])
+            else:
+                logger.error("tile ID %s is duplicate", tile_id)
+    logger.debug(tiles)
+    return tiles
 
 
 def extent_to_ewkb(db, table_index, file):
