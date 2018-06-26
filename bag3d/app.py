@@ -152,7 +152,8 @@ def app(cli_args, here):
             importer.unite_border_tiles(conn, cfg["output"]["schema"], 
                                         cfg_ahn2["output"]["bag3d_table"], 
                                         cfg_ahn3["output"]["bag3d_table"])
-            importer.create_bag3d_table(conn, cfg["output"]["schema"])
+            importer.create_bag3d_table(conn, cfg["output"]["schema"],
+                                        cfg["output"]["bag3d_table"])
         
         if args_in["grant_access"]:
             bag.grant_access(conn, args_in["grant_access"], 

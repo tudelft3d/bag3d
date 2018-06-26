@@ -17,37 +17,6 @@ from bag3d.update import ahn
 
 logger = logging.getLogger("config.border")
 
-# config = {
-#     'db': {
-#         'dbname': "bag_test",
-#         'host': "localhost",
-#         'port': "55555",
-#         'user': "bag_admin"
-#         },
-#     'tile_index': {
-#         'schema': "tile_index",
-#         'table': {
-#             'name': "ahn_index",
-#             'version': "ahn_version",
-#             'geom': "geom",
-#             'tile': "bladnr"
-#             },
-#         'border_table': 'border_tiles'
-#         },
-#     'ahn2': {
-#         'dir': "/data/pointcloud/AHN2/merged"
-#         },
-#     'ahn3': {
-#         'dir': "/data/pointcloud/AHN3/as_downloaded"
-#         },
-#     'config': {
-#         'in': "/home/bdukai/Data/3DBAG/batch3dfy_bag_test_area.yml",
-#         'out_rest': "/home/bdukai/Data/3DBAG/conf_test_rest.yml",
-#         'out_border_ahn2': "/home/bdukai/Data/3DBAG/conf_test_border_ahn2.yml",
-#         'out_border_ahn3': "/home/bdukai/Data/3DBAG/conf_test_border_ahn3.yml"
-#         }
-#     }
-
 
 def create_border_table(conn, config, doexec=True):
     """Creates the table tile_index:elevation:border_table in the database
@@ -209,16 +178,6 @@ def update_file_date(conn, config, ahn2_dir, ahn2_fp, doexec=True):
     if doexec:
         conn.sendQuery(queries)
 
-
-# def parse_yml(file):
-#     """Parse a YAML config file"""
-#     try:
-#         stream = open(file, "r")
-#         cfg_stream = yaml.load(stream)
-#     except FileNotFoundError as e:
-#         logger.exception("Config file not found at %s", file)
-#         raise
-#     return cfg_stream
 
 def update_output(cfg, ahn_version, ahn_dir, border_table):
     """Update the output parameters in the config file for processing border tiles

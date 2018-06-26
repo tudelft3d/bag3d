@@ -1,3 +1,7 @@
+******
+3D BAG
+******
+
 3D BAG quality expectations
 ###########################
 
@@ -33,3 +37,17 @@ Accountability
 * Logging into the `bagactueel.bag3d_log` table.
 
 * Data quality testing summary into the `bagactueel.bag3d_info` table.
+
+3D BAG quality testing
+######################
+
++ randomly sample 1-5% of buildings, take the AHN raster, compute the height 
+percentiles and compare those to the 3D BAG
+
+Because I will remove the tile-tile intersection so that when complete tiles
+are provided as input extent, the 9 neighbouring tiles won't get dragged in 
+the computation:
+
++ randomly sample 1-5% buildings that intersect the borders of the tile polygons
+and perform the same percentile comparison as above
+

@@ -408,7 +408,7 @@ def unite_border_tiles(conn, schema, border_ahn2, border_ahn3):
         raise
 
 
-def create_bag3d_table(conn, schema):
+def create_bag3d_table(conn, schema, name):
     """Unite the border tiles with the rest
     
     Persists and indexes the table 'bag3d' by uniting the border tiles with the 
@@ -422,6 +422,8 @@ def create_bag3d_table(conn, schema):
         Open connection
     schema : str
         Value from output:schema
+    name : str
+        Name of the new table
     
     Raises
     ------
@@ -433,13 +435,13 @@ def create_bag3d_table(conn, schema):
     None
         Creates a table in database
     """
-    drop_q = sql.SQL("DROP TABLE IF EXISTS {schema}.bag3d CASCADE;").format(
+    drop_q = sql.SQL("DROP TABLE IF EXISTS {schema}.{bag3d} CASCADE;").format(
         schema=sql.Identifier(schema))
     
     query_t = sql.SQL("""
-    CREATE TABLE {schema}.bag3d AS
+    CREATE TABLE {schema}.{bag3d} AS
     SELECT *
-    FROM {schema}.bag3d_rest
+    FROM {schema}.{bag3d_rest}
     WHERE ahn_version IS NOT NULL
     UNION
     SELECT *
@@ -448,15 +450,17 @@ def create_bag3d_table(conn, schema):
     """).format(schema=sql.Identifier(schema))
     
     query_i = sql.SQL("""
-    CREATE INDEX bag3d_geom_idx ON {schema}.bag3d USING gist (geovlak);
-    ALTER TABLE {schema}.bag3d ADD PRIMARY KEY (gid);
-    COMMENT ON TABLE {schema}.bag3d IS 'The 3D BAG';
-    """).format(schema=sql.Identifier(schema))
+    CREATE INDEX bag3d_geom_idx ON {schema}.{bag3d} USING gist (geovlak);
+    ALTER TABLE {schema}.{bag3d} ADD PRIMARY KEY (gid);
+    COMMENT ON TABLE {schema}.{bag3d} IS 'The 3D BAG';
+    """).format(schema=sql.Identifier(schema),
+                bag3d=sql.Identifier(name),
+                bag3d_rest=sql.Identifier(name+"_rest"))
 
     query_d = sql.SQL("""
     DROP VIEW {schema}.bag3d_border_union;
     """).format(schema=sql.Identifier(schema))
-    # TODO: drop pand_centroid if nothing depends on it, *border* tables
+    # TODO: drop *border* tables
     try:
         logger.debug(conn.print_query(drop_q))
         conn.sendQuery(drop_q)

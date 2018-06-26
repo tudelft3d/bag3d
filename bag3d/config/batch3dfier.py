@@ -55,7 +55,6 @@ def call_3dfier(db, tile, schema_tiles,
     list
         The tiles that are skipped because no corresponding pointcloud file
         was found in 'dataset_dir' (YAML)
-
     """
     tiles = find_pc_tiles(db, table_index_pc, fields_index_pc,
                              table_index_footprint, fields_index_footprint,
@@ -107,8 +106,7 @@ def call_3dfier(db, tile, schema_tiles,
         tile_skipped = tile
         return({'tile_skipped': tile_skipped,
                 'out_path': None})
-    return({'tile_skipped': None,
-            'out_path': output_path})
+    return {'tile_skipped': None, 'out_path': output_path}
 
 
 def yamlr(dbname, host, user, pw, schema_tiles,
@@ -119,14 +117,11 @@ def yamlr(dbname, host, user, pw, schema_tiles,
     ----------
     ahn_version : set
         Version of the latest available AHN point cloud for the current tile
-        
-    For the rest, see bag3d_config.yml.
 
     Returns
     -------
     str
         the YAML config file for 3dfier
-
     """
 
     pc_dataset = ""
@@ -238,6 +233,12 @@ def pc_file_index(pc_name_map):
     Tile name and file name matching is case insensitive. Furthermore, the match
     is governed by the file name patterns provided in 'input_elevation: dataset_name'.
     
+    Note
+    ----
+    Nested priority eg [1, [2, 2, 2], 3] is not used currently, because 
+    3dfier doesn't consider vertically split point clouds.
+    See `Issue #61 <https://github.com/tudelft3d/3dfier/issues/61>`_
+    
     
     Returns
     -------
@@ -288,43 +289,16 @@ def pc_file_index(pc_name_map):
     return file_index
 
 
-# def find_pc_files(pc_tiles, pc_dir, pc_dataset_name, pc_tile_case):
-#     """Find pointcloud files in the file system when given a list of pointcloud tile names
-#     """
-#     tiles = format_tile_name(pc_tiles, pc_dataset_name, pc_tile_case)
-#     
-#     # use the tile list in tiles to parse the pointcloud file names
-#     pc_path = [os.path.join(pc_dir, pc_tile) for pc_tile in tiles]
-# 
-#     if all([os.path.isfile(p) for p in pc_path]):
-#         return(pc_path)
-#     else:
-#         return(None)
-# 
-# 
-# def format_tile_name(pc_tiles, pc_dataset_name, pc_tile_case):
-#     """Format the tile names according to input_elvation:dataset_name and :tile_case"""
-#         # Prepare AHN file names -------------------------------------------------
-#     if pc_tile_case == "upper":
-#         tiles = [pc_dataset_name.format(tile=t.upper()) for t in pc_tiles]
-#     elif pc_tile_case == "lower":
-#         tiles = [pc_dataset_name.format(tile=t.lower()) for t in pc_tiles]
-#     elif pc_tile_case == "mixed":
-#         tiles = [pc_dataset_name.format(tile=t) for t in pc_tiles]
-#     else:
-#         raise "Please provide one of the allowed values for pc_tile_case."
-#     
-#     return tiles
-
-
 def find_pc_tiles(conn, table_index_pc, fields_index_pc,
                   table_index_footprint=None, fields_index_footprint=None,
                   extent_ewkb=None, tile_footprint=None,
                   prefix_tile_footprint=None):
-    """Find pointcloud tiles in tile index that intersect the extent or the footprint tile.
+    """Find point cloud tiles in tile index that intersect the extent or the footprint tile.
 
     Parameters
     ----------
+    conn : :py:class:`bag3d.config.db.db`
+        Open connection
     prefix_tile_footprint : str or None
         Prefix prepended to the footprint tile view names. If None, the views are named as
         the values in fields_index_fooptrint['unit_name'].
@@ -494,7 +468,7 @@ def get_2Dtile_area(db, table_index):
     Returns
     -------
     float
-
+        Area of a tile
     """
     schema = sql.Identifier(table_index['schema'])
     table = sql.Identifier(table_index['table'])
@@ -524,7 +498,6 @@ def get_2Dtile_views(db, schema_tiles, tiles):
     -------
     list
         Name of the view that contain the tile ID as substring.
-
     """
     # Get View names for the tiles
     tstr = ["%" + str(tile) + "%" for tile in tiles]
@@ -562,7 +535,6 @@ def clip_2Dtiles(db, user_schema, schema_tiles, tiles, poly, clip_prefix,
     -------
     list
         Name of the views of the clipped tiles.
-
     """
     user_schema = sql.Identifier(user_schema)
     schema_tiles = sql.Identifier(schema_tiles)
@@ -678,8 +650,8 @@ def get_view_fields(db, user_schema, tile_views):
 
     Returns
     -------
-    {'all' : list, 'geometry' : str}
-
+    dict
+        {'all' : list, 'geometry' : str}
     """
     if len(tile_views) > 0:
         schema_q = sql.Literal(user_schema)
@@ -727,7 +699,6 @@ def parse_sql_select_fields(table, fields):
     Returns
     -------
     psycopg2.sql.Composable
-
     """
     s = []
     for f in fields:
@@ -754,7 +725,6 @@ def drop_2Dtiles(db, user_schema, views_to_drop):
     -------
     bool
         True on success, False on failure
-
     """
     user_schema = sql.Identifier(user_schema)
 
@@ -776,6 +746,15 @@ def drop_2Dtiles(db, user_schema, views_to_drop):
 
 def configure_tiles(conn, config, clip_prefix):
     """Configure the tile list based on the input parameter
+    
+    Parameters
+    ----------
+    conn : :py:class:`bag3d.config.db.db`
+        Open connection
+    config : dict
+        bag3d configuration
+    clip_prefix : str
+        Prefix to prepend to VIEW names when an extent is used
     
     Returns
     -------
