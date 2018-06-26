@@ -8,7 +8,7 @@ database:
 input_polygons:
     footprints:
         schema: bagactueel
-        table: pand
+        table: pandactueelbestaand
         fields:
             primary_key: gid
             geometry: geom

@@ -411,8 +411,10 @@ def unite_border_tiles(conn, schema, border_ahn2, border_ahn3):
 def create_bag3d_table(conn, schema):
     """Unite the border tiles with the rest
     
-    Persists and indexes the table 'bag3d' by uniting the border tiles with the rest
-     and drops the view 'bag3d_border_union'.
+    Persists and indexes the table 'bag3d' by uniting the border tiles with the 
+    rest. 
+    Drops the table 'bag3d' if exists before the operation.
+    Drops the view 'bag3d_border_union'.
     
     Parameters
     ----------
@@ -431,6 +433,8 @@ def create_bag3d_table(conn, schema):
     None
         Creates a table in database
     """
+    drop_q = sql.SQL("DROP TABLE IF EXISTS {schema}.bag3d CASCADE;").format(
+        schema=sql.Identifier(schema))
     
     query_t = sql.SQL("""
     CREATE TABLE {schema}.bag3d AS
@@ -452,7 +456,10 @@ def create_bag3d_table(conn, schema):
     query_d = sql.SQL("""
     DROP VIEW {schema}.bag3d_border_union;
     """).format(schema=sql.Identifier(schema))
+    # TODO: drop pand_centroid if nothing depends on it, *border* tables
     try:
+        logger.debug(conn.print_query(drop_q))
+        conn.sendQuery(drop_q)
         logger.debug(conn.print_query(query_t))
         conn.sendQuery(query_t)
         logger.debug(conn.print_query(query_i))

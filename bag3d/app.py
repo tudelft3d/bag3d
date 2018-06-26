@@ -143,7 +143,7 @@ def app(cli_args, here):
                 
                 logger.info("Running batch3dfier")
                 process.run(conn, cfg_out, doexec=args_in['no_exec'])
-#                 process.run(conn, cfg_out, doexec=args_in['no_exec'])
+#                 process.run(conn, cfg_out, doexec=False)
             
                 logger.info("Importing batch3dfier output into database")
                 importer.import_csv(conn, cfg_out)
