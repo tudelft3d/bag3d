@@ -46,6 +46,7 @@ tile_index:
             unit_name: bladnr
             version: ahn_version
         file: example_data/ahn_index.json
+    identical: True
 
 output:
     dir: /tmp/3DBAG

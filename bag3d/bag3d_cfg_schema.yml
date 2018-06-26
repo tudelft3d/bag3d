@@ -145,6 +145,10 @@ mapping:
                                 desc: Name of the field that contains the version of the available AHN file. This field is automatically created and populated if --update-ahn and --import-tile-idx are used.
                     file:
                         type: str
+            identical:
+                type: bool
+                required: True
+                desc: Are the footprint and elevation tiles identical? Eg. when the AHN tile index is used for tiling the BAG as well.
     output:
         type: map
         mapping:

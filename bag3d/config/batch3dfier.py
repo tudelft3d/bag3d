@@ -19,7 +19,7 @@ logger = logging.getLogger('config.batch3dfier')
 
 
 def call_3dfier(db, tile, schema_tiles,
-                table_index_pc, fields_index_pc,
+                table_index_pc, fields_index_pc, idx_identical,
                 table_index_footprint, fields_index_footprint, uniqueid,
                 extent_ewkb, clip_prefix, prefix_tile_footprint,
                 yml_dir, tile_out, output_format, output_dir,
@@ -56,7 +56,7 @@ def call_3dfier(db, tile, schema_tiles,
         The tiles that are skipped because no corresponding pointcloud file
         was found in 'dataset_dir' (YAML)
     """
-    tiles = find_pc_tiles(db, table_index_pc, fields_index_pc,
+    tiles = find_pc_tiles(db, table_index_pc, fields_index_pc, idx_identical,
                              table_index_footprint, fields_index_footprint,
                              extent_ewkb, tile_footprint=tile,
                              prefix_tile_footprint=prefix_tile_footprint)
@@ -289,7 +289,7 @@ def pc_file_index(pc_name_map):
     return file_index
 
 
-def find_pc_tiles(conn, table_index_pc, fields_index_pc,
+def find_pc_tiles(conn, table_index_pc, fields_index_pc, idx_identical,
                   table_index_footprint=None, fields_index_footprint=None,
                   extent_ewkb=None, tile_footprint=None,
                   prefix_tile_footprint=None):
@@ -310,8 +310,39 @@ def find_pc_tiles(conn, table_index_pc, fields_index_pc,
         Eg. {'37hn1': 3, '37hz1': 2}
 
     """
+    
     if extent_ewkb:
         tiles = get_2Dtiles(conn, table_index_pc, fields_index_pc, extent_ewkb)
+    elif idx_identical:
+        schema_pc_q = sql.Identifier(table_index_pc['schema'])
+        table_pc_q = sql.Identifier(table_index_pc['table'])
+        field_pc_unit_q = sql.Identifier(fields_index_pc['unit_name'])
+        # because the footprint and elevation tile IDs are identical
+        if prefix_tile_footprint:
+            tile_footprint = tile_footprint.replace(
+                prefix_tile_footprint, '', 1)
+        tile_q = sql.Literal(tile_footprint)
+        
+        query = sql.SQL("""
+        SELECT
+            {table_pc}.{field_pc_unit}
+            ,{table_pc}.ahn_version
+        FROM
+            {schema_pc}.{table_pc}
+        WHERE {table_pc}.{field_pc_unit} = {tile};
+        """).format(table_pc=table_pc_q,
+                    field_pc_unit=field_pc_unit_q,
+                    schema_pc=schema_pc_q,
+                    tile=tile_q)
+        logger.debug(conn.print_query(query))
+        resultset = conn.getQuery(query)
+        tiles = {}
+        for tile in resultset:
+            tile_id = tile[0].lower()
+            if id not in tiles:
+                tiles[tile_id] = int(tile[1])
+            else:
+                logger.error("tile ID %s is duplicate", tile_id)
     else:
         schema_pc_q = sql.Identifier(table_index_pc['schema'])
         table_pc_q = sql.Identifier(table_index_pc['table'])
@@ -326,7 +357,6 @@ def find_pc_tiles(conn, table_index_pc, fields_index_pc,
         if prefix_tile_footprint:
             tile_footprint = tile_footprint.replace(
                 prefix_tile_footprint, '', 1)
-
         tile_q = sql.Literal(tile_footprint)
 
         query = sql.SQL("""

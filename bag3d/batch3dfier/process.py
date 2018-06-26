@@ -49,6 +49,7 @@ def run(conn, config, doexec=True):
                     schema_tiles=config["input_polygons"]['user_schema'],
                     table_index_pc=config["tile_index"]['elevation'],
                     fields_index_pc=config["tile_index"]['elevation']['fields'],
+                    idx_identical=config["tile_index"]["identical"],
                     table_index_footprint=config["tile_index"]['polygons'],
                     fields_index_footprint=config["tile_index"]['polygons']['fields'],
                     uniqueid=config["input_polygons"]["footprints"]["fields"]['uniqueid'],
