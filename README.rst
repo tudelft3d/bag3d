@@ -2,52 +2,22 @@
 3D BAG
 ******
 
-3D BAG quality expectations
-###########################
+|Licence| |Python 3.6| |PostgreSQL 10|
 
-These quality expectations describe the 3D-part of the 3D BAG. The quality of the BAG itself is not discussed here.
+This is application for generating a 3D version of the Dutch `Basisregistraties Adressen en Gebouwen (BAG) <https://www.kadaster.nl/wat-is-de-bag>`_ dataset. It is designed to regularly run as an automated process (eg. a cron job), hence keeping the 3D BAG in line with the BAG updates. The project started as `batch3dfier <https://github.com/balazsdukai/batch3dfier>`_ but it made sense to specialise it as more and more dataset specific features were needed.
 
-Completeness
-*************
+In short the ``bag3d`` application can:
 
-* Every BAG building footprint polygon should have a height assigned to it wherever AHN has data.
++ Download and restore a BAG PostgreSQL backup from `NLExtract <http://www.nlextract.nl/>`_.
++ Download all the available AHN3 files and the tile index. When new tiles are available, download only those that are not on the disk. Additionally, append the AHN file creation date to each tile in the index.
++ Import the tile indexes for BAG and AHN to a PostgreSQL database and partition the BAG building footprints.
++ Run several `3dfier <https://github.com/tudelft3d/3dfier>`_ jobs in parallel to process the given tiles. Currently the 3dfication output is attached to the 2D polygons as height attributes and the results are stored in the database.
++ Export into CSV, GeoPackage or PostgreSQL backup.
 
-* The date of AHN (height information) is assigned to every footprint. This includes the AHN version.
+Read more about the 3D BAG dataset as well as ``bag3d`` in the *documentation (LINK)*
 
-* The binary attribute `flat_roof` is assigned to every footprint with height information.
 
-Correctness
-***********
-
-* Which part of the roof does `roof-0.00`, `roof-0.50` and `roof-0.99` relate to in the real building?
-
-* The newest avialable AHN is used for every footprint.
-
-Consistency
-************
-
-Coherence
-*********
-
-Accountability
-***************
-
-* The source of BAG and AHN is clearly stated.
-
-* Logging into the `bagactueel.bag3d_log` table.
-
-* Data quality testing summary into the `bagactueel.bag3d_info` table.
-
-3D BAG quality testing
-######################
-
-+ randomly sample 1-5% of buildings, take the AHN raster, compute the height 
-percentiles and compare those to the 3D BAG
-
-Because I will remove the tile-tile intersection so that when complete tiles
-are provided as input extent, the 9 neighbouring tiles won't get dragged in 
-the computation:
-
-+ randomly sample 1-5% buildings that intersect the borders of the tile polygons
-and perform the same percentile comparison as above
-
+.. |Licence| image:: https://img.shields.io/badge/licence-GPL--3-blue.svg
+   :target: http://www.gnu.org/licenses/gpl-3.0.html
+.. |Python 3.6| image:: https://img.shields.io/badge/python-3.6-blue.svg
+.. |PostgreSQL 10| image:: https://img.shields.io/badge/PostgreSQL-10-blue.svg

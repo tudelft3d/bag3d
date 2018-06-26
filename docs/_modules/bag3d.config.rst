@@ -12,6 +12,14 @@ bag3d.config.args module
     :undoc-members:
     :show-inheritance:
 
+bag3d.config.batch3dfier module
+-------------------------------
+
+.. automodule:: bag3d.config.batch3dfier
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 bag3d.config.border module
 --------------------------
 

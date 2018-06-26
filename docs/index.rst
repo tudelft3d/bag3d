@@ -3,13 +3,19 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to bag3d's documentation!
-=================================
+3D BAG
+======
+
+This is the documentation of the 3D BAG dataset, as well as the ``bag3d`` application that is used for generating the data.
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+   
+   quality
 
+
+.. include:: _modules/modules.rst
 
 
 Indices and tables
