@@ -538,6 +538,7 @@ def get_2Dtile_views(db, schema_tiles, tiles):
                         WHERE table_schema = {}
                         AND table_name LIKE any({});
                         """).format(schema_tiles, t)
+    logger.debug(db.print_query(query))
     resultset = db.getQuery(query)
     tile_views = [tile[0] for tile in resultset]
     if tile_views:
@@ -801,8 +802,11 @@ def configure_tiles(conn, config, clip_prefix):
     config["clip_prefix"] = clip_prefix
     config["tile_out"] = None
     config["extent_ewkb"] = None
+    logger.debug("tile_list: %s", config["input_polygons"]["tile_list"])
     # TODO: assert that CREATE/DROP allowed on TILE_SCHEMA and/or USER_SCHEMA
     if config["input_polygons"]["extent"]:
+        # TODO: it should also return tile IDs without the tile prefix, and not
+        # the tile view names. Thus remove get_2D_tile_views()
         poly, ewkb = extent_to_ewkb(conn, config['tile_index']['polygons'], 
                                     config["input_polygons"]["extent"])
         config["extent_ewkb"] = ewkb
@@ -820,7 +824,6 @@ def configure_tiles(conn, config, clip_prefix):
                                      config["input_polygons"]['user_schema'], 
                                      config["input_polygons"]['tile_schema'], 
                                      tile_views, poly, clip_prefix, view_fields)
-
         # if the area of the extent is less than that of a tile, union the tiles is the
         # extent spans over many
         tile_area = get_2Dtile_area(conn, config['tile_index']['polygons'])
@@ -832,7 +835,6 @@ def configure_tiles(conn, config, clip_prefix):
             config["input_polygons"]["tile_list"] = [union_view]
         else:
             config["input_polygons"]["tile_list"] = tiles_clipped
-
     elif config["input_polygons"]["tile_list"]:
         if 'all' in config["input_polygons"]["tile_list"]:
             poly = config['tile_index']['polygons']
@@ -842,19 +844,25 @@ def configure_tiles(conn, config, clip_prefix):
             
             query = sql.SQL("SELECT {unit} FROM {schema}.{table};").format(
                 schema=schema_q, table=table_q, unit=unit_q)
+            logger.debug(conn.print_query(query))
             tiles = [tile[0] for tile in conn.getQuery(query)]
-            tile_views = get_2Dtile_views(conn, 
-                                          config["input_polygons"]['tile_schema'],
-                                          tiles)
+#             tile_views = get_2Dtile_views(conn, 
+#                                           config["input_polygons"]['tile_schema'],
+#                                           tiles)
         else:
-            tile_views = get_2Dtile_views(conn, 
-                                          config["input_polygons"]['tile_schema'],
-                                          config["input_polygons"]["tile_list"])
-        if not tile_views or len(tile_views) == 0:
-            logger.error("tile_views is None or len(tile_views) == 0")
-        else:
-            config["input_polygons"]["tile_list"] = tile_views
-
+#             tile_views = get_2Dtile_views(conn, 
+#                                           config["input_polygons"]['tile_schema'],
+#                                           config["input_polygons"]["tile_list"])
+            # TODO: --V
+            # now let's just assume that in config["input_polygons"]["tile_list"]
+            # the tile IDs are provided and not the tile view names
+            pass
+#         if not tile_views or len(tile_views) == 0:
+#             logger.error("tile_views is None or len(tile_views) == 0")
+#         else:
+#             config["input_polygons"]["tile_list"] = tile_views
+        config["input_polygons"]["tile_list"] = tiles
     else:
         raise TypeError("Please provide either 'extent' or 'tile_list' in config.")
+    logger.debug(config)
     return config

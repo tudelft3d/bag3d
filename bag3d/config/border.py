@@ -8,12 +8,14 @@ import warnings
 import copy
 import re
 import logging
+from pprint import pformat
 
 import yaml
 import psycopg2
 from psycopg2 import sql
 
 from bag3d.update import ahn
+from bag3d.config import batch3dfier
 
 logger = logging.getLogger("config.border")
 
@@ -233,7 +235,7 @@ def update_output(cfg, ahn_version, ahn_dir, border_table):
     return cfg
 
 
-def update_tile_list(config, tile_list, ahn_version=None, 
+def update_tile_list(conn, config, tile_list, ahn_version=None, 
                      ahn_dir=None, border_table=None):
     """Update the tile_list in the config
     
@@ -256,8 +258,11 @@ def update_tile_list(config, tile_list, ahn_version=None,
         The updated configuration
     """
     c = copy.deepcopy(config)
+    logger.debug(config["input_polygons"]["tile_list"])
     tl = list(set(tile_list).intersection(set(config["input_polygons"]["tile_list"])))
-    c["input_polygons"]["tile_list"] = tl
+    tile_views = batch3dfier.get_2Dtile_views(conn, config["input_polygons"]["tile_schema"], 
+                                 tl)
+    c["input_polygons"]["tile_list"] = tile_views
     
     if ahn_version:
         c = update_output(c, ahn_version, ahn_dir, border_table)
@@ -409,24 +414,24 @@ def process(conn, config, ahn3_dir, ahn2_dir, export=False):
     t_border = get_border_tiles(conn, tbl_schema, border_table, tbl_tile)
     t_rest = get_non_border_tiles(conn, tbl_schema, tbl_name, border_table,
                                  tbl_tile)
-    bt = set(config['tiles']).intersection(set(t_border))
+    bt = set(config["input_polygons"]["tile_list"]).intersection(set(t_border))
     if len(bt) > 0:
         w = "Tiles %s are on the border of AHN3 and they might be missing points" % bt
         warnings.warn(w, UserWarning)
         t_border = copy.deepcopy(list(bt))
-        rt = list(set(config['tiles']).intersection(set(t_rest)))
+        rt = list(set(config["input_polygons"]["tile_list"]).intersection(set(t_rest)))
         t_rest = copy.deepcopy(rt)
         del rt, bt
 
-    yml_rest = update_tile_list(config, t_rest)
+    yml_rest = update_tile_list(conn, config, t_rest)
     yml_rest["config"]["in"] = conf_rest
     # re-configure the border tiles with AHN2 only
-    yml_border_ahn2 = update_tile_list(config, t_border, ahn_version=2, 
+    yml_border_ahn2 = update_tile_list(conn, config, t_border, ahn_version=2, 
                                        ahn_dir=a2_dir,
                                        border_table=border_table)
     yml_border_ahn2["config"]["in"] = conf_border_ahn2
     # and with AHN3 only
-    yml_border_ahn3 = update_tile_list(config, t_border, ahn_version=3, 
+    yml_border_ahn3 = update_tile_list(conn, config, t_border, ahn_version=3, 
                                        ahn_dir=a3_dir,
                                        border_table=border_table)
     yml_border_ahn3["config"]["in"] = conf_border_ahn3
@@ -435,4 +440,7 @@ def process(conn, config, ahn3_dir, ahn2_dir, export=False):
         write_yml(yml_rest, conf_rest)
         write_yml(yml_border_ahn2, conf_border_ahn2)
         write_yml(yml_border_ahn3, conf_border_ahn3)
+    logger.debug(pformat(yml_rest))
+    logger.debug(pformat(yml_border_ahn2))
+    logger.debug(pformat(yml_border_ahn3))
     return [yml_rest, yml_border_ahn2, yml_border_ahn3]

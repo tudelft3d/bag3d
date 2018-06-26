@@ -127,26 +127,26 @@ def app(cli_args, here):
     
         if args_in['run_3dfier']:
             logger.info("Configuring batch3dfier")
-            cfg_rest, cfg_ahn2, cfg_ahn3 = border.process(conn, cfg, ahn3_dir, 
-                                                          ahn2_dir, 
-                                                          export=False)
             clip_prefix = "_clip3dfy_"
             logger.debug("clip_prefix is %s", clip_prefix)
-            
+            cfg_out = batch3dfier.configure_tiles(conn, cfg, clip_prefix)
+            cfg_rest, cfg_ahn2, cfg_ahn3 = border.process(conn, cfg_out, ahn3_dir, 
+                                                          ahn2_dir, 
+                                                          export=False)
             for c in [cfg_rest, cfg_ahn2, cfg_ahn3]:
-                cfg_out = batch3dfier.configure_tiles(conn, c, clip_prefix)
-                logger.debug("%s, %s", c, pformat(cfg_out))
+#                 cfg_out = batch3dfier.configure_tiles(conn, c, clip_prefix)
+#                 logger.debug("%s, %s", c, pformat(cfg_out))
                 #logger.debug("%s, %s", (c, pformat(cfg_out)))
-                if not os.path.exists(cfg_out["output"]["dir"]):
-                    os.makedirs(cfg_out["output"]["dir"], exist_ok=True)
-                logger.debug("Created %s", cfg_out["output"]["dir"])
+                if not os.path.exists(c["output"]["dir"]):
+                    os.makedirs(c["output"]["dir"], exist_ok=True)
+                logger.debug("Created %s", c["output"]["dir"])
                 
                 logger.info("Running batch3dfier")
-                process.run(conn, cfg_out, doexec=args_in['no_exec'])
+                process.run(conn, c, doexec=args_in['no_exec'])
 #                 process.run(conn, cfg_out, doexec=False)
             
                 logger.info("Importing batch3dfier output into database")
-                importer.import_csv(conn, cfg_out)
+                importer.import_csv(conn, c)
             
             logger.info("Joining 3D tables")
             importer.unite_border_tiles(conn, cfg["output"]["schema"], 
