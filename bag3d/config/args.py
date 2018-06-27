@@ -70,6 +70,11 @@ def parse_console_args(args):
         action="store_true",
         help="Export the 3D BAG into files")
     parser.add_argument(
+        "--check-quality",
+        action="store_true",
+        dest='quality',
+        help="Run various quality tests on the 3D BAG")
+    parser.add_argument(
         "--no-exec",
         dest="no_exec",
         action="store_false",
@@ -81,6 +86,7 @@ def parse_console_args(args):
     parser.set_defaults(add_borders=False)
     parser.set_defaults(run_3dfier=False)
     parser.set_defaults(export=False)
+    parser.set_defaults(quality=False)
     parser.set_defaults(no_exec=True)
 
     args = parser.parse_args(args)
@@ -98,6 +104,7 @@ def parse_console_args(args):
     args_in['add_borders'] = args.add_borders
     args_in['run_3dfier'] = args.run_3dfier
     args_in['export'] = args.export
+    args_in['quality'] = args.quality
     args_in['grant_access'] = args.grant_access
     args_in['no_exec'] = args.no_exec
     

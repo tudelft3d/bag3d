@@ -19,6 +19,7 @@ from bag3d.update import ahn
 from bag3d.batch3dfier import process
 from bag3d import importer
 from bag3d import exporter
+from bag3d import quality
 
 from pprint import pformat
 
@@ -165,6 +166,10 @@ def app(cli_args, here):
             exporter.csv(conn, cfg, cfg["output"]["dir"])
             exporter.gpkg(conn, cfg, cfg["output"]["dir"], args_in['no_exec'])
             exporter.postgis(conn, cfg, cfg["output"]["dir"], args_in['no_exec'])
+        
+        if args_in["quality"]:
+            logger.info("Checking 3D BAG quality")
+            quality.create_quality_views(conn, cfg)
             
     except Exception as e:
         logger.exception(e)
