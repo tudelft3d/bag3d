@@ -339,10 +339,13 @@ def find_pc_tiles(conn, table_index_pc, fields_index_pc, idx_identical,
         tiles = {}
         for tile in resultset:
             tile_id = tile[0].lower()
-            if id not in tiles:
-                tiles[tile_id] = int(tile[1])
+            if tile[1]:
+                if id not in tiles:
+                    tiles[tile_id] = int(tile[1])
+                else:
+                    logger.error("tile ID %s is duplicate", tile_id)
             else:
-                logger.error("tile ID %s is duplicate", tile_id)
+                logger.warning("Tile %s ahn_version is NULL", tile_id)
     else:
         schema_pc_q = sql.Identifier(table_index_pc['schema'])
         table_pc_q = sql.Identifier(table_index_pc['table'])
@@ -386,10 +389,13 @@ def find_pc_tiles(conn, table_index_pc, fields_index_pc, idx_identical,
         tiles = {}
         for tile in resultset:
             tile_id = tile[0].lower()
-            if id not in tiles:
-                tiles[tile_id] = int(tile[1])
+            if tile[1]:
+                if id not in tiles:
+                    tiles[tile_id] = int(tile[1])
+                else:
+                    logger.error("tile ID %s is duplicate", tile_id)
             else:
-                logger.error("tile ID %s is duplicate", tile_id)
+                logger.warning("Tile %s ahn_version is NULL", tile_id)
     logger.debug(tiles)
     return tiles
 
