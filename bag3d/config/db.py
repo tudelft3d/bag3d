@@ -8,6 +8,7 @@ import re
 
 import psycopg2
 from psycopg2 import sql
+from psycopg2 import extras
 
 logger = logging.getLogger('config.db')
 
@@ -63,6 +64,23 @@ class db(object):
         """
         with self.conn:
             with self.conn.cursor() as cur:
+                cur.execute(query)
+                return cur.fetchall()
+
+    def get_dict(self, query):
+        """DB query where the results need to return as a dictionary
+
+        Parameters
+        ----------
+        query : str
+            SQL query
+
+        Returns
+        -------
+        psycopg2 resultset
+        """
+        with self.conn:
+            with self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
                 cur.execute(query)
                 return cur.fetchall()
     
