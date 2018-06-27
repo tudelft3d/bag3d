@@ -413,6 +413,8 @@ def create_bag3d_table(conn, schema, name):
     ------
     BaseException
         If cannot create the table
+    psycopg2.IntegrityError
+        If the 'gid' field cannot be made PRIMARY KEY due to duplicate records
     
     Returns
     -------
@@ -449,21 +451,6 @@ def create_bag3d_table(conn, schema, name):
     DROP VIEW {schema}.bag3d_border_union;
     """).format(schema=sql.Identifier(schema))
     
-    viewname = sql.Identifier(name + "_valid_height")
-    query_v = sql.SQL("""
-    CREATE OR REPLACE VIEW bagactueel.{viewname} AS
-    SELECT *
-    FROM bagactueel.{bag3d}
-    WHERE bouwjaar <= date_part('YEAR', ahn_file_date);
-    """).format(bag3d=sql.Identifier(name), 
-                viewname=viewname)
-    
-    query_vc = sql.SQL("""
-    COMMENT ON VIEW bagactueel.{viewname} IS \
-    'The BAG footprints where the building was built before the AHN3 was created';
-    """).format(viewname=viewname)
-
-    
     # TODO: drop *border* tables
     try:
         logger.debug(conn.print_query(drop_q))
@@ -474,10 +461,6 @@ def create_bag3d_table(conn, schema, name):
         conn.sendQuery(query_i)
         logger.debug(conn.print_query(query_d))
         conn.sendQuery(query_d)
-        logger.debug(conn.print_query(query_v))
-        conn.sendQuery(query_v)
-        logger.debug(conn.print_query(query_vc))
-        conn.sendQuery(query_vc)
     except psycopg2.IntegrityError as e:
         logger.exception("There are overlapping footprints in the border and non-border tiles, possibly because some tiles were processed in a batch where they do not belong.")
         logger.exception(e)
