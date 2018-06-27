@@ -245,43 +245,6 @@ def import_csv(conn, cfg):
     create_bag3d_relations(conn, cfg)
 
 
-# --------------------- Unite tiles
-
-
-
-
-# config = {
-#     'db': {
-#         'dbname': "bag_test",
-#         'host': "localhost",
-#         'port': "55555",
-#         'user': "bag_admin"
-#         },
-#     'tile_index': {
-#         'schema': "tile_index",
-#         'table': {
-#             'name': "ahn_index",
-#             'version': "ahn_version",
-#             'geom': "geom",
-#             'tile': "bladnr"
-#             },
-#         'border_table': 'border_tiles'
-#         },
-#     'ahn2': {
-#         'dir': "/data/pointcloud/AHN2/merged"
-#         },
-#     'ahn3': {
-#         'dir': "/data/pointcloud/AHN3/as_downloaded"
-#         },
-#     'config': {
-#         'in': "/home/bdukai/Data/3DBAG/batch3dfy_bag_test_area.yml",
-#         'out_rest': "/home/bdukai/Data/3DBAG/conf_test_rest.yml",
-#         'out_border_ahn2': "/home/bdukai/Data/3DBAG/conf_test_border_ahn2.yml",
-#         'out_border_ahn3': "/home/bdukai/Data/3DBAG/conf_test_border_ahn3.yml"
-#         }
-#     }
-
-
 def unite_border_tiles(conn, schema, border_ahn2, border_ahn3):
     """Unite the border tiles on the AHN2 and AHN3 border
     

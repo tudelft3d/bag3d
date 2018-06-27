@@ -52,13 +52,34 @@ COMMENT ON VIEW bagactueel.missing_roof IS 'Buildings where any of the roof heig
 
 /* Evaluation */
 WITH total AS (
-SELECT count(gid) total_cnt FROM bagactueel.bag3d
-), ground AS (
-SELECT count(gid) ground_missing_cnt FROM bagactueel.missing_ground
-), roof AS (
-SELECT count(gid) roof_missing_cnt FROM bagactueel.missing_height
-)
-SELECT g.ground_missing_cnt, r.roof_missing_cnt, t.total_cnt, (g.ground_missing_cnt::float4 / t.total_cnt::float4)*100 AS ground_missing_pct,
-(r.roof_missing_cnt::float4 / t.total_cnt::float4)*100 AS roof_missing_pct
-FROM total t, ground g, roof r;
+    SELECT
+        COUNT( gid ) total_cnt
+    FROM
+        bagactueel.bag3d
+),
+ground AS (
+    SELECT
+        COUNT( gid ) ground_missing_cnt
+    FROM
+        bagactueel.missing_ground
+),
+roof AS (
+    SELECT
+        COUNT( gid ) roof_missing_cnt
+    FROM
+        bagactueel.missing_height
+) SELECT
+    g.ground_missing_cnt,
+    r.roof_missing_cnt,
+    t.total_cnt,
+    (
+        g.ground_missing_cnt::FLOAT4 / t.total_cnt::FLOAT4
+    )* 100 AS ground_missing_pct,
+    (
+        r.roof_missing_cnt::FLOAT4 / t.total_cnt::FLOAT4
+    )* 100 AS roof_missing_pct
+FROM
+    total t,
+    ground g,
+    roof r;
 

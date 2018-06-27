@@ -24,6 +24,7 @@ from bag3d import quality
 from pprint import pformat
 
 logger = logging.getLogger('app')
+logger_quality = logging.getLogger('quality')
 
 def app(cli_args, here):
     schema = os.path.join(here, 'bag3d_cfg_schema.yml')
@@ -168,8 +169,10 @@ def app(cli_args, here):
             exporter.postgis(conn, cfg, cfg["output"]["dir"], args_in['no_exec'])
         
         if args_in["quality"]:
-            logger.info("Checking 3D BAG quality")
+            logger_quality.info("Checking 3D BAG quality")
             quality.create_quality_views(conn, cfg)
+            cnts = quality.get_counts(conn, cfg["output"]["bag3d_table"])
+            logger_quality.info(pformat(cnts))
             
     except Exception as e:
         logger.exception(e)

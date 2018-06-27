@@ -71,3 +71,59 @@ def create_quality_views(conn, config):
     except BaseException as e:
         logger.exception(e)
         raise
+
+
+def get_counts(conn, name):
+    """Various counts on the 3D BAG
+    
+    * Total number of buildings, 
+    * Nr. of buildings with missing ground height,
+    * Nr. of buildings with missing roof height,
+    * The previous two as percent
+    
+    Returns
+    -------
+    dict
+        With the field names as keys
+    """
+    
+    query = sql.SQL("""
+    WITH total AS (
+    SELECT
+        COUNT( gid ) total_cnt
+    FROM
+        bagactueel.{bag3d}
+    ),
+    ground AS (
+        SELECT
+            COUNT( gid ) ground_missing_cnt
+        FROM
+            bagactueel.missing_ground
+    ),
+    roof AS (
+        SELECT
+            COUNT( gid ) roof_missing_cnt
+        FROM
+            bagactueel.missing_height
+    ) SELECT
+        g.ground_missing_cnt,
+        r.roof_missing_cnt,
+        t.total_cnt,
+        (
+            g.ground_missing_cnt::FLOAT4 / t.total_cnt::FLOAT4
+        )* 100 AS ground_missing_pct,
+        (
+            r.roof_missing_cnt::FLOAT4 / t.total_cnt::FLOAT4
+        )* 100 AS roof_missing_pct
+    FROM
+        total t,
+        ground g,
+        roof r;
+    """).format(bag3d=sql.Identifier(name))
+    try:
+        logger.debug(conn.print_query(query))
+        res = conn.get_dict(query)
+        return res[0]
+    except BaseException as e:
+        logger.exception(e)
+        raise
