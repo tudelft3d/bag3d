@@ -21,6 +21,12 @@ WHERE
 );
 COMMENT ON VIEW bagactueel.missing_height IS 'Buildings where any of the ground or roof heights is missing';
 
+CREATE OR REPLACE VIEW bagactueel.bag3d_invalid_height AS
+SELECT *
+FROM bagactueel.bag3d
+WHERE bouwjaar > date_part('YEAR', ahn_file_date);
+COMMENT ON VIEW bagactueel.bag3d_invalid_height IS 'The BAG footprints where the building was built after the AHN3 was created';
+
 
 CREATE OR REPLACE VIEW bagactueel.missing_ground AS
 SELECT *
@@ -53,33 +59,44 @@ COMMENT ON VIEW bagactueel.missing_roof IS 'Buildings where any of the roof heig
 /* Evaluation */
 WITH total AS (
     SELECT
-        COUNT( gid ) total_cnt
+        COUNT(gid) total_cnt
     FROM
         bagactueel.bag3d
 ),
 ground AS (
     SELECT
-        COUNT( gid ) ground_missing_cnt
+        COUNT(gid) ground_missing_cnt
     FROM
         bagactueel.missing_ground
 ),
 roof AS (
     SELECT
-        COUNT( gid ) roof_missing_cnt
+        COUNT(gid) roof_missing_cnt
     FROM
-        bagactueel.missing_height
+        bagactueel.missing_roof
+),
+invalid AS (
+    SELECT
+        COUNT (gid) invalid_height_cnt
+    FROM
+        bagactueel.bag3d_invalid_height
 ) SELECT
     g.ground_missing_cnt,
     r.roof_missing_cnt,
+    i.invalid_height_cnt,
     t.total_cnt,
     (
         g.ground_missing_cnt::FLOAT4 / t.total_cnt::FLOAT4
     )* 100 AS ground_missing_pct,
     (
         r.roof_missing_cnt::FLOAT4 / t.total_cnt::FLOAT4
-    )* 100 AS roof_missing_pct
+    )* 100 AS roof_missing_pct,
+    (
+        i.invalid_height_cnt::FLOAT4 / t.total_cnt::FLOAT4
+    )* 100 AS invalid_height_pct
 FROM
     total t,
     ground g,
-    roof r;
+    roof r,
+    invalid i;
 

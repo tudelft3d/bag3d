@@ -15,22 +15,22 @@ def create_quality_views(conn, config):
     name = config["output"]["bag3d_table"]
     name_q = sql.Identifier(name)
     
-    viewname = sql.Identifier(name + "_valid_height")
+    viewname = sql.Identifier(name + "_invalid_height")
     query_v = sql.SQL("""
     CREATE OR REPLACE VIEW bagactueel.{viewname} AS
     SELECT *
     FROM bagactueel.{bag3d}
-    WHERE bouwjaar <= date_part('YEAR', ahn_file_date);
+    WHERE bouwjaar > date_part('YEAR', ahn_file_date);
     """).format(bag3d=name_q, 
                 viewname=viewname)
-    
     query_vc = sql.SQL("""
     COMMENT ON VIEW bagactueel.{viewname} IS \
     'The BAG footprints where the building was built before the AHN3 was created';
     """).format(viewname=viewname)
 
+    viewname = sql.Identifier(name + "_missing_ground")
     query_g = sql.SQL("""
-    CREATE OR REPLACE VIEW bagactueel.missing_ground AS
+    CREATE OR REPLACE VIEW bagactueel.{viewname} AS
     SELECT *
     FROM bagactueel.{bag3d}
     WHERE
@@ -40,11 +40,12 @@ def create_quality_views(conn, config):
     "ground-0.30" IS NULL OR 
     "ground-0.40" IS NULL OR 
     "ground-0.50" IS NULL;
-    COMMENT ON VIEW bagactueel.missing_ground IS 'Buildings where any of the ground-heights is missing';
-    """).format(bag3d=name_q)
+    COMMENT ON VIEW bagactueel.{viewname} IS 'Buildings where any of the ground-heights is missing';
+    """).format(bag3d=name_q, viewname=viewname)
 
+    viewname = sql.Identifier(name + "_missing_roof")
     query_r = sql.SQL("""
-    CREATE OR REPLACE VIEW bagactueel.missing_roof AS
+    CREATE OR REPLACE VIEW bagactueel.{viewname} AS
     SELECT *
     FROM bagactueel.bag3d
     WHERE
@@ -56,8 +57,8 @@ def create_quality_views(conn, config):
     "roof-0.90" IS NULL OR
     "roof-0.95" IS NULL OR
     "roof-0.99" IS NULL;
-    COMMENT ON VIEW bagactueel.missing_roof IS 'Buildings where any of the roof heights is missing';
-    """).format(bag3d=name_q)
+    COMMENT ON VIEW bagactueel.{viewname} IS 'Buildings where any of the roof heights is missing';
+    """).format(bag3d=name_q, viewname=viewname)
     
     try:
         logger.debug(conn.print_query(query_v))
@@ -86,40 +87,54 @@ def get_counts(conn, name):
     dict
         With the field names as keys
     """
-    
+    view_h = sql.Identifier(name + "_invalid_height")
+    view_g = sql.Identifier(name + "_missing_ground")
+    view_r = sql.Identifier(name + "_missing_roof")
     query = sql.SQL("""
     WITH total AS (
-    SELECT
-        COUNT( gid ) total_cnt
-    FROM
-        bagactueel.{bag3d}
+        SELECT
+            COUNT(gid) total_cnt
+        FROM
+            bagactueel.bag3d
     ),
     ground AS (
         SELECT
-            COUNT( gid ) ground_missing_cnt
+            COUNT(gid) ground_missing_cnt
         FROM
-            bagactueel.missing_ground
+            bagactueel.{view_g}
     ),
     roof AS (
         SELECT
-            COUNT( gid ) roof_missing_cnt
+            COUNT(gid) roof_missing_cnt
         FROM
-            bagactueel.missing_height
+            bagactueel.{view_r}
+    ),
+    invalid AS (
+        SELECT
+            COUNT (gid) invalid_height_cnt
+        FROM
+            bagactueel.{view_h}
     ) SELECT
         g.ground_missing_cnt,
         r.roof_missing_cnt,
+        i.invalid_height_cnt,
         t.total_cnt,
         (
             g.ground_missing_cnt::FLOAT4 / t.total_cnt::FLOAT4
         )* 100 AS ground_missing_pct,
         (
             r.roof_missing_cnt::FLOAT4 / t.total_cnt::FLOAT4
-        )* 100 AS roof_missing_pct
+        )* 100 AS roof_missing_pct,
+        (
+            i.invalid_height_cnt::FLOAT4 / t.total_cnt::FLOAT4
+        )* 100 AS invalid_height_pct
     FROM
         total t,
         ground g,
-        roof r;
-    """).format(bag3d=sql.Identifier(name))
+        roof r,
+        invalid i;
+    """).format(bag3d=sql.Identifier(name),
+                view_g=view_g, view_r=view_r, view_h=view_h)
     try:
         logger.debug(conn.print_query(query))
         res = conn.get_dict(query)
