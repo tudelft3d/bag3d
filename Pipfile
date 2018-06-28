@@ -13,6 +13,8 @@ Sphinx = "*"
 lxml = "*"
 "bs4" = "*"
 pykwalify = "*"
+numpy = "*"
+rasterstats = "*"
 
 [requires]
 python_version = "3.6"

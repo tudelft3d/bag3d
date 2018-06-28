@@ -44,3 +44,22 @@ are provided as input extent, the 9 neighbouring tiles won't get dragged in
 the computation:
 
 + randomly sample 1-5% buildings that intersect the borders of the tile polygons and perform the same percentile comparison as above
+
+
+Comparison with the AHN 0.5m raster
+***********************************
+So, use rasterstats library to compute zonal statistics from the AHN raster. In this case a zone is a single building footprint and the statistics are all the roof-height percentiles.
+
+0. Download the AHN3 0.5m raster and the AHN2 0.5m raster (only for those tiles where AHN3 is not available)
+
+wget -nc https://geodata.nationaalgeoregister.nl/ahn3/extract/ahn3_05m_dsm/R_37FZ1.ZIP -O tile && unzip -o tile && rm tile
+wget -nc http://geodata.nationaalgeoregister.nl/ahn2/extract/ahn2_05m_ruw/r37hz1.tif.zip -O tile && unzip -o tile && rm tile
+
+1. Randomly sample 1% of the 3D BAG
+2. Get the geometry from postgres into python as WKB (or WKT?)
+3. Also get the tile ID for each geometry
+4. Create an index of tile IDs and raster files
+
+src = [wkb1, wkb2, wkb3, ...]
+zs = zonal_stats(src, 'tests/data/slope.tif')
+

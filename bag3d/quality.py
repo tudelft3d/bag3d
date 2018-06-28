@@ -47,7 +47,7 @@ def create_quality_views(conn, config):
     query_r = sql.SQL("""
     CREATE OR REPLACE VIEW bagactueel.{viewname} AS
     SELECT *
-    FROM bagactueel.bag3d
+    FROM bagactueel.{bag3d}
     WHERE
     "roof-0.00" IS NULL OR
     "roof-0.10" IS NULL OR
@@ -60,6 +60,15 @@ def create_quality_views(conn, config):
     COMMENT ON VIEW bagactueel.{viewname} IS 'Buildings where any of the roof heights is missing';
     """).format(bag3d=name_q, viewname=viewname)
     
+    viewname = sql.Identifier(name + "_sample")
+    query_s = sql.SQL("""
+    CREATE OR REPLACE VIEW bagactueel.{viewname} AS
+    SELECT *
+    FROM bagactueel.{bag3d}
+    TABLESAMPLE BERNOULLI (1);
+    COMMENT ON VIEW bagactueel.{viewname} IS 'Random sample (1%) of the 3D BAG, using Bernoulli sampling method';
+    """).format(bag3d=name_q, viewname=viewname)
+    
     try:
         logger.debug(conn.print_query(query_v))
         conn.sendQuery(query_v)
@@ -69,6 +78,8 @@ def create_quality_views(conn, config):
         conn.sendQuery(query_g)
         logger.debug(conn.print_query(query_r))
         conn.sendQuery(query_r)
+        logger.debug(conn.print_query(query_s))
+        conn.sendQuery(query_s)
     except BaseException as e:
         logger.exception(e)
         raise
@@ -142,3 +153,9 @@ def get_counts(conn, name):
     except BaseException as e:
         logger.exception(e)
         raise
+
+
+def compare_heights():
+    """
+    """
+    pass

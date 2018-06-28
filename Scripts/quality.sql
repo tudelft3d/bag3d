@@ -56,6 +56,19 @@ WHERE
 COMMENT ON VIEW bagactueel.missing_roof IS 'Buildings where any of the roof heights is missing';
 
 
+CREATE OR REPLACE VIEW bagactueel.bag3d_sample AS
+WITH sample AS (
+    SELECT *
+    FROM bagactueel.bag3d
+    TABLESAMPLE BERNOULLI (1)
+)
+SELECT
+FROM sample s,
+;
+
+COMMENT ON VIEW bagactueel.bag3d_sample IS 'Random sample (1%) of the 3D BAG, using Bernoulli sampling method';
+
+
 /* Evaluation */
 WITH total AS (
     SELECT
