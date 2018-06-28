@@ -41,44 +41,44 @@ def update_tile_index(db, table_index, fields_index):
     id_col_q = sql.Identifier(id_col)
     
     query = sql.SQL("""
-ALTER TABLE {}.{}
-ADD COLUMN IF NOT EXISTS geom_border geometry;
-""").format(schema_q, table_q)
+    ALTER TABLE {}.{}
+    ADD COLUMN IF NOT EXISTS geom_border geometry;
+    """).format(schema_q, table_q)
     db.sendQuery(query)
     logger.debug(db.print_query(query))
 
     query = sql.SQL("""
-UPDATE
-    {schema}.{table}
-SET
-    geom_border = b.geom::geometry(linestring,28992)
-FROM
-    (
-        SELECT
-            {id_col},
-            st_setSRID(
-                st_makeline(
-                    ARRAY[st_makepoint(
-                        st_xmax({geom_col}),
-                        st_ymin({geom_col})
+    UPDATE
+        {schema}.{table}
+    SET
+        geom_border = b.geom::geometry(linestring,28992)
+    FROM
+        (
+            SELECT
+                {id_col},
+                st_setSRID(
+                    st_makeline(
+                        ARRAY[st_makepoint(
+                            st_xmax({geom_col}),
+                            st_ymin({geom_col})
+                        ),
+                        st_makepoint(
+                            st_xmin({geom_col}),
+                            st_ymin({geom_col})
+                        ),
+                        st_makepoint(
+                            st_xmin({geom_col}),
+                            st_ymax({geom_col})
+                        ) ]
                     ),
-                    st_makepoint(
-                        st_xmin({geom_col}),
-                        st_ymin({geom_col})
-                    ),
-                    st_makepoint(
-                        st_xmin({geom_col}),
-                        st_ymax({geom_col})
-                    ) ]
-                ),
-                28992
-            ) AS geom
-        FROM
-            {schema}.{table}
-    ) b
-WHERE
-    {schema}.{table}.{id_col} = b.{id_col};
-""").format(schema=schema_q,
+                    28992
+                ) AS geom
+            FROM
+                {schema}.{table}
+        ) b
+    WHERE
+        {schema}.{table}.{id_col} = b.{id_col};
+    """).format(schema=schema_q,
             table=table_q,
             geom_col=geom_col_q,
             id_col=id_col_q)
@@ -86,9 +86,9 @@ WHERE
     db.sendQuery(query)
 
     sql_query = sql.SQL("""
-CREATE INDEX IF NOT EXISTS {idx_name} ON {schema}.{table} USING gist (geom_border);
-SELECT populate_geometry_columns({name}::regclass);
-""").format(idx_name=sql.Identifier(table + "_" + geom_col + "_border_idx"),
+    CREATE INDEX IF NOT EXISTS {idx_name} ON {schema}.{table} USING gist (geom_border);
+    SELECT populate_geometry_columns({name}::regclass);
+    """).format(idx_name=sql.Identifier(table + "_" + geom_col + "_border_idx"),
             schema=schema_q,
             table=table_q,
             name=sql.Literal(schema + '.' + table))
@@ -133,17 +133,17 @@ def create_centroids(db, table_centroid, table_footprint, fields_footprint):
     id_col_q = sql.Identifier(id_col)
 
     sql_query = sql.SQL("""
-CREATE TABLE IF NOT EXISTS {schema_ctr}.{table_ctr} AS
-    SELECT {id_col}, st_centroid({geom_col})::geometry(point, 28992) AS geom
-    FROM {schema_poly}.{table_poly};
-
-SELECT populate_geometry_columns({sch_tbl}::regclass);
-
-CREATE
-    INDEX IF NOT EXISTS {tbl_idx} ON
-    {schema_ctr}.{table_ctr}
-        USING gist(geom);
-""").format(schema_ctr=schema_ctr_q,
+    CREATE TABLE IF NOT EXISTS {schema_ctr}.{table_ctr} AS
+        SELECT {id_col}, st_centroid({geom_col})::geometry(point, 28992) AS geom
+        FROM {schema_poly}.{table_poly};
+    
+    SELECT populate_geometry_columns({sch_tbl}::regclass);
+    
+    CREATE
+        INDEX IF NOT EXISTS {tbl_idx} ON
+        {schema_ctr}.{table_ctr}
+            USING gist(geom);
+    """).format(schema_ctr=schema_ctr_q,
             table_ctr=table_ctr_q,
             id_col=id_col_q,
             geom_col=geom_col_q,
@@ -237,10 +237,8 @@ def create_views(db, schema_tiles, table_index, fields_index, table_centroid,
     db.sendQuery(query)
 
     # Get footprint index unit names
-    tiles = db.getQuery(
-        sql.SQL("SELECT {} FROM {}.{};").format(field_idx_unit_q, schema_idx_q,
-                                                table_idx_q)
-    )
+    tiles = db.getQuery(sql.SQL("SELECT {} FROM {}.{};").format(
+        field_idx_unit_q,schema_idx_q,table_idx_q))
     tiles = [str(i[0]) for i in tiles]
 
     if not prefix_tiles:
@@ -255,26 +253,27 @@ def create_views(db, schema_tiles, table_index, fields_index, table_centroid,
 
         tile = sql.Literal(tile)
         query = sql.SQL("""
-CREATE OR REPLACE VIEW {schema_tiles}.{view} AS
-SELECT
-    {fields_poly}
-FROM
-    {schema_poly}.{table_poly}
-INNER JOIN {schema_ctr}.{table_ctr} ON
-    {table_poly}.{field_poly_id} = {table_ctr}.{field_ctr_id},
-    {schema_idx}.{table_idx}
-WHERE
-    {table_idx}.{field_idx} = {tile}
-    AND(
-        st_containsproperly(
-            {table_idx}.{field_idx_geom},
-            {table_ctr}.{field_ctr_geom}
-        )
-        OR st_contains(
-            {table_idx}.geom_border,
-            {table_ctr}.{field_ctr_geom}
-        )
-);""").format(schema_tiles=schema_tiles_q,
+    CREATE OR REPLACE VIEW {schema_tiles}.{view} AS
+    SELECT
+        {fields_poly},
+        {table_idx}.{field_idx}
+    FROM
+        {schema_poly}.{table_poly}
+    INNER JOIN {schema_ctr}.{table_ctr} ON
+        {table_poly}.{field_poly_id} = {table_ctr}.{field_ctr_id},
+        {schema_idx}.{table_idx}
+    WHERE
+        {table_idx}.{field_idx} = {tile}
+        AND(
+            st_containsproperly(
+                {table_idx}.{field_idx_geom},
+                {table_ctr}.{field_ctr_geom}
+            )
+            OR st_contains(
+                {table_idx}.geom_border,
+                {table_ctr}.{field_ctr_geom}
+            )
+    );""").format(schema_tiles=schema_tiles_q,
               view=view,
               fields_poly=sql_fields_footprint,
               schema_poly=schema_poly_q,

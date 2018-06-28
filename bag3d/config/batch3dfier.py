@@ -862,6 +862,7 @@ def configure_tiles(conn, config, clip_prefix):
             # TODO: --V
             # now let's just assume that in config["input_polygons"]["tile_list"]
             # the tile IDs are provided and not the tile view names
+            tiles = config["input_polygons"]["tile_list"]
             pass
 #         if not tile_views or len(tile_views) == 0:
 #             logger.error("tile_views is None or len(tile_views) == 0")

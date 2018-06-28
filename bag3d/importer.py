@@ -43,7 +43,8 @@ def create_heights_table(conn, schema, table):
         "roof-0.95" real,
         "roof-0.99" real,
         ahn_file_date timestamptz,
-        ahn_version smallint
+        ahn_version smallint,
+        tile_id text
         );
     """).format(schema=schema_q, table=table_q)
     logger.debug(conn.print_query(query))
@@ -117,15 +118,16 @@ def csv2db(conn, cfg, out_paths):
                 # be imported with COPY instead of row-wise edit and import
                 # in python (suuuper slow)
                 # Watch out for trailing commas from the CSV (until #58 is fixed in 3dfier)
-                cmd_add_ahn = "gawk -i inplace -F',' 'BEGIN { OFS = \",\" } {$16=\"%s,%s\"; print}' %s" % (
+                cmd_add_ahn = "gawk -i inplace -F',' 'BEGIN { OFS = \",\" } {$16=\"%s,%s,%s\"; print}' %s" % (
                     ahn_file_date, 
                     ahn_version,
+                    tile,
                     path)
                 run(cmd_add_ahn, shell=True)
                 cmd_header = "sed -i '1s/.*/id,ground-0.00,ground-0.10,ground-0.20,\
 ground-0.30,ground-0.40,ground-0.50,roof-0.00,roof-0.10,\
 roof-0.25,roof-0.50,roof-0.75,roof-0.90,roof-0.95,roof-0.99,\
-ahn_file_date,ahn_version/' %s" % path
+ahn_file_date,ahn_version,tile_id/' %s" % path
                 run(cmd_header, shell=True)
                 
                 with open(path, "r") as f_in:
@@ -191,7 +193,8 @@ def create_bag3d_relations(conn, cfg):
         h."roof-0.95",
         h."roof-0.99",
         h.ahn_file_date,
-        h.ahn_version
+        h.ahn_version,
+        h.tile_id
     FROM bagactueel.pandactueelbestaand p
     INNER JOIN bagactueel.{heights} h ON p.identificatie::numeric = h.id;
     """).format(bag3d=bag3d_table_q, heights=heights_table_q)
@@ -202,6 +205,12 @@ def create_bag3d_relations(conn, cfg):
     idx = sql.Identifier(cfg['output']['bag3d_table'] + "_identificatie_idx")
     query = sql.SQL("""
     CREATE INDEX {idx} ON bagactueel.{bag3d} (identificatie);
+    """).format(idx=idx, bag3d=bag3d_table_q)
+    conn.sendQuery(query)
+    
+    idx = sql.Identifier(cfg['output']['bag3d_table'] + "_tile_id_idx")
+    query = sql.SQL("""
+    CREATE INDEX {idx} ON bagactueel.{bag3d} (tile_id);
     """).format(idx=idx, bag3d=bag3d_table_q)
     conn.sendQuery(query)
     
