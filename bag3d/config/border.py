@@ -327,7 +327,7 @@ def get_border_tiles(conn, tbl_schema, border_table, tbl_tile):
 
 
 def get_non_border_tiles(conn, tbl_schema, tbl_name, border_table, tbl_tile):
-    """Get the non-border tile names as a list
+    """Get the non-border tile names and ahn_version
     
     Parameters
     ----------
@@ -345,16 +345,18 @@ def get_non_border_tiles(conn, tbl_schema, tbl_name, border_table, tbl_tile):
     Returns
     -------
     list
-        List of tile names that are not on the border of AHN3 and AHN2 coverage
+        List of tuples of (tile ID, ahn_version) that are not on the border of AHN3 and AHN2 coverage
     """
     query = sql.SQL("""
     SELECT 
-        sub.a_bladnr
+        sub.a_bladnr,
+        sub.ahn_version
     FROM
         (
             SELECT
                 a.{tile} a_bladnr,
-                b.{tile} b_bladnr
+                b.{tile} b_bladnr,
+                a.ahn_version
             FROM
                 {schema}.{table} a
             LEFT JOIN {schema}.{border_table} b ON
@@ -369,8 +371,9 @@ def get_non_border_tiles(conn, tbl_schema, tbl_name, border_table, tbl_tile):
         border_table=sql.Identifier(border_table)
         )
     logger.debug(conn.print_query(query))
-    r = [row[0] for row in conn.getQuery(query)]
-    logger.debug("%s", r)
+    r = conn.getQuery(query)
+#     r = [row[0] for row in conn.getQuery(query)]
+#     logger.debug("%s", r)
     return r
 
 
@@ -412,8 +415,9 @@ def process(conn, config, ahn3_dir, ahn2_dir, export=False):
     border_table = config["tile_index"]['elevation']['border_table']
 
     t_border = get_border_tiles(conn, tbl_schema, border_table, tbl_tile)
-    t_rest = get_non_border_tiles(conn, tbl_schema, tbl_name, border_table,
+    tr = get_non_border_tiles(conn, tbl_schema, tbl_name, border_table,
                                  tbl_tile)
+    t_rest = [t[0] for t in tr]
     bt = set(config["input_polygons"]["tile_list"]).intersection(set(t_border))
     if len(bt) > 0:
         w = "Tiles %s are on the border of AHN3 and they might be missing points" % bt

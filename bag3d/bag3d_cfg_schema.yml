@@ -167,3 +167,12 @@ mapping:
         type: str
         required: True
         desc: Location of the 3dfier executable
+    quality:
+        type: map
+        mapping:
+            ahn2_rast_dir:
+                type: str
+                desc: Path to AHN2 raster directory
+            ahn3_rast_dir:
+                type: str
+                desc: Path to AHN3 raster directory

@@ -71,6 +71,13 @@ def app(cli_args, here):
                          tile_index_file=cfg["elevation"]["file"],
                          ahn3_file_pat=ahn3_fp,
                          ahn2_file_pat=ahn2_fp)
+        
+        if args_in['update_ahn_raster']:
+            logger.info("Updating AHN 0.5m raster files")
+            ahn.download_raster(conn, cfg, 
+                                cfg["quality"]["ahn2_rast_dir"], 
+                                cfg["quality"]["ahn3_rast_dir"], 
+                                doexec=args_in['no_exec'])
     
         if args_in['import_tile_idx']:
             logger.info("Importing BAG tile index")

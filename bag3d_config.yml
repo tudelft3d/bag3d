@@ -27,6 +27,10 @@ input_elevation:
         - "C_{tile}.LAZ"
         - "{tile}.laz"
 
+quality:
+    ahn2_rast_dir: /data/raster/AHN2
+    ahn3_rast_dir: /data/raster/AHN3
+
 tile_index:
     polygons:
         schema: tile_index

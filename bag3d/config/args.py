@@ -46,6 +46,11 @@ def parse_console_args(args):
         action="store_true",
         help="Download/update the AHN files")
     parser.add_argument(
+        "--update-ahn-raster",
+        dest='update_ahn_raster',
+        action="store_true",
+        help="Download/update the AHN 0.5m raster files. All AHN3, and AHN2 where AHN3 is not available.")
+    parser.add_argument(
         "--import-tile-idx",
         dest='import_tile_idx',
         action="store_true",
@@ -82,6 +87,7 @@ def parse_console_args(args):
     parser.set_defaults(get_bag=False)
     parser.set_defaults(update_bag=False)
     parser.set_defaults(update_ahn=False)
+    parser.set_defaults(update_ahn_raster=False)
     parser.set_defaults(import_tile_idx=False)
     parser.set_defaults(add_borders=False)
     parser.set_defaults(run_3dfier=False)
@@ -100,6 +106,7 @@ def parse_console_args(args):
     args_in['get_bag'] = args.get_bag
     args_in['update_bag'] = args.update_bag
     args_in['update_ahn'] = args.update_ahn
+    args_in['update_ahn_raster'] = args.update_ahn_raster
     args_in['import_tile_idx'] = args.import_tile_idx
     args_in['add_borders'] = args.add_borders
     args_in['run_3dfier'] = args.run_3dfier
@@ -271,5 +278,10 @@ def parse_config(args_in, schema):
                                                     "bag3d_cfg_border_ahn2.yml")
     cfg["config"]["out_border_ahn3"] = os.path.join(ahn3_dir, 
                                                     "bag3d_cfg_border_ahn3.yml")
+    if cfg_stream["quality"]["ahn2_rast_dir"]:
+        os.makedirs(cfg_stream["quality"]["ahn2_rast_dir"], exist_ok=True)
+    if cfg_stream["quality"]["ahn3_rast_dir"]:
+        os.makedirs(cfg_stream["quality"]["ahn3_rast_dir"], exist_ok=True)
+    cfg["quality"] = cfg_stream["quality"]
 
     return cfg

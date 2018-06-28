@@ -11,6 +11,9 @@ import re
 import urllib.request, json
 import logging
 
+from bag3d.config import border
+from bag3d.update import bag
+
 logger = logging.getLogger('update.ahn')
 
 def update_json_id(json):
@@ -169,3 +172,44 @@ def download(ahn3_dir, ahn2_dir, tile_index_file, ahn3_file_pat, ahn2_file_pat):
     logger.info("Corrupted files: %s", corruptedfiles)
     logger.info("Nr. AHN3 files in dir: %s; Nr. AHN3 tiles available: %s", file_count, has_data_cnt)
     logger.info("Nr. AHN2 files required: %s", ahn2_files)
+
+
+def downloader(tile_list, url, dir_out, doexec=True):
+    try:
+        fout = os.path.join(dir_out, 'tile')
+        for tile in tile_list:
+            command = ['wget', '-nc', '-P', dir_out, url.format(tile), '-O', fout]
+            bag.run_subprocess(command, shell=False, doexec=doexec)
+            command = ['unzip', '-o', fout, '-d', dir_out]
+            bag.run_subprocess(command, shell=False, doexec=doexec)
+            command = ['rm', fout]
+            bag.run_subprocess(command, shell=False, doexec=doexec)
+        logger.info("Downloaded %s tiles", len(tile_list))
+    except Exception as e:
+        logger.exception(e)
+
+
+def download_raster(conn, config, ahn2_rast_dir, ahn3_rast_dir, doexec=True):
+    "wget https://geodata.nationaalgeoregister.nl/ahn3/extract/ahn3_05m_dsm/R_37HN1.ZIP -O tile && unzip -o tile && rm tile"
+    
+    tbl_schema = config["tile_index"]['elevation']['schema']
+    tbl_name = config["tile_index"]['elevation']['table']
+    tbl_tile = config["tile_index"]['elevation']['fields']['unit_name']
+    border_table = config["tile_index"]['elevation']['border_table']
+    
+    ahn2_url = "http://geodata.nationaalgeoregister.nl/ahn2/extract/ahn2_05m_ruw/r{}.tif.zip"
+    ahn3_url = "https://geodata.nationaalgeoregister.nl/ahn3/extract/ahn3_05m_dsm/R_{}.ZIP"
+    
+    assert os.path.isdir(ahn2_rast_dir)
+    assert os.path.isdir(ahn3_rast_dir)
+    
+    bt = border.get_non_border_tiles(conn, tbl_schema, tbl_name, 
+                                     border_table, tbl_tile)
+    ahn2_tiles = [t[0].lower() for t in bt if t[1] is not None and t[1]==2]
+    ahn3_tiles = [t[0].upper() for t in bt if t[1] is not None and t[1]==3]
+    
+    downloader(ahn2_tiles, ahn2_url, ahn2_rast_dir, doexec)
+    downloader(ahn3_tiles, ahn3_url, ahn3_rast_dir, doexec)
+        
+
+
