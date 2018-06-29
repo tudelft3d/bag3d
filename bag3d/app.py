@@ -180,6 +180,9 @@ def app(cli_args, here):
             quality.create_quality_views(conn, cfg)
             cnts = quality.get_counts(conn, cfg["output"]["bag3d_table"])
             logger_quality.info(pformat(cnts))
+            rast_idx = ahn.rast_file_idx(conn, cfg, 
+                                         cfg["quality"]["ahn2_rast_dir"], 
+                                         cfg["quality"]["ahn3_rast_dir"])
             
     except Exception as e:
         logger.exception(e)

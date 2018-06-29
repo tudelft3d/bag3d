@@ -2,6 +2,7 @@
 
 """Update the AHN files and tile index"""
 
+import os
 import os.path
 import subprocess
 import locale
@@ -210,6 +211,49 @@ def download_raster(conn, config, ahn2_rast_dir, ahn3_rast_dir, doexec=True):
     
     downloader(ahn2_tiles, ahn2_url, ahn2_rast_dir, doexec)
     downloader(ahn3_tiles, ahn3_url, ahn3_rast_dir, doexec)
-        
 
 
+def rast_file_idx(conn, config, ahn2_rast_dir, ahn3_rast_dir):
+    """Create an index of tiles and AHN raster files
+    
+    Parameters
+    ----------
+    ahn2_rast_dir : str
+        Path to the directory of the AHN2 raster files
+    ahn3_rast_dir : str
+        Path to the directory of the AHN3 raster files
+    
+    Returns
+    -------
+    dict
+        {tile ID : path to raster file}
+    """
+    assert os.path.isdir(ahn2_rast_dir)
+    assert os.path.isdir(ahn3_rast_dir)
+    ahn2_files = os.listdir(ahn2_rast_dir)
+    ahn3_files = os.listdir(ahn3_rast_dir)
+    
+    tbl_schema = config["tile_index"]['elevation']['schema']
+    tbl_name = config["tile_index"]['elevation']['table']
+    tbl_tile = config["tile_index"]['elevation']['fields']['unit_name']
+    border_table = config["tile_index"]['elevation']['border_table']
+    bt = border.get_non_border_tiles(conn, tbl_schema, tbl_name, 
+                                     border_table, tbl_tile)
+    ahn2_tiles = [t[0].lower() for t in bt if t[1] is not None and t[1]==2]
+    ahn3_tiles = [t[0].upper() for t in bt if t[1] is not None and t[1]==3]
+    
+    file_idx = {}
+    for tile in ahn2_tiles:
+        f = "r{}.tif".format(tile.lower())
+        if f in ahn2_files:
+            file_idx[tile] = os.path.join(ahn2_rast_dir,f)
+        else:
+            pass
+    for tile in ahn3_tiles:
+        f = "r_{}.tif".format(tile.lower())
+        if f in ahn3_files:
+            file_idx[tile] = os.path.join(ahn3_rast_dir,f)
+        else:
+            pass
+    logger.debug(file_idx)
+    return file_idx
