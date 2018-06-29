@@ -168,7 +168,7 @@ def get_sample(conn, config):
     geom = sql.Identifier(config["input_polygons"]["footprints"]["fields"]["geometry"])
     query = sql.SQL("""
     SELECT 
-    identificatie,
+    gid,
     ST_AsEWKB({geom}) geom,
     "roof-0.00" "percentile_0.00",
     "roof-0.10" "percentile_0.10",
@@ -188,13 +188,10 @@ def get_sample(conn, config):
     return conn.get_dict(query)
 
 
-def compute_stats(sample, file_idx):
+def compute_stats(sample, file_idx, stats):
     """Compute statistics from a reference data set for comparison with 
     3dfier's output
     """
-    stats=['percentile_0.00', 'percentile_0.10', 'percentile_0.25',
-           'percentile_0.50', 'percentile_0.75', 'percentile_0.90',
-           'percentile_0.95', 'percentile_0.99']
     logger.info("Computing %s from reference data", stats)
     tiles = set([fp["tile_id"] for fp in sample])
     out = []
@@ -222,48 +219,40 @@ def compute_stats(sample, file_idx):
 
 
 def export_stats(sample, fout):
-    stats = {fp['identificatie']:fp for fp in sample}
+    stats = {fp['gid']:fp for fp in sample}
     with open(fout, 'w') as f:
         json.dump(stats, f)
 
-# 
-# def compute_diffs(sample):
-#     """
-#      
-#     Parameters
-#     ----------
-#     sample : list of dict
-#         Sample with reference heights
-#      
-#     Returns
-#     -------
-#     dict
-#         {percentile : Numpy Array of 'reference-height - computed-height' differences}
-#     """
-#     diffs = []
-#     for fp in sample:
-#         d = {
-#             'identificatie': fp["identificatie"],
-#             'ahn_version': fp["ahn_version"],
-#             'tile_id': fp["tile_id"],
-#             "percentile_0.00": fp["percentile_0.00"] - fp["reference"]["percentile_0.00"],
-#             "percentile_0.10": fp["percentile_0.10"] - fp["reference"]["percentile_0.10"],
-#             "percentile_0.25": fp["percentile_0.25"] - fp["reference"]["percentile_0.25"],
-#             "percentile_0.50": fp["percentile_0.50"] - fp["reference"]["percentile_0.50"],
-#             "percentile_0.75": fp["percentile_0.75"] - fp["reference"]["percentile_0.75"],
-#             "percentile_0.90": fp["percentile_0.90"] - fp["reference"]["percentile_0.90"],
-#             "percentile_0.95": fp["percentile_0.95"] - fp["reference"]["percentile_0.95"],
-#             "percentile_0.99": fp["percentile_0.99"] - fp["reference"]["percentile_0.99"]
-#              }
-#         for i, row in enumerate(heights):
-#             if ref_heights[i][k]:
-#                 diffs[k].append(row[k]- ref_heights[i][k])
-#             else:
-#                 diffs[k].append(None)
-#         diffs[k] = np.array(diffs[k], dtype='float32')
-#     return diffs
-#  
-# diffs = compute_diffs(stats, heights=res, ref_heights=ref_heights)
+
+def compute_diffs(sample, stats):
+    """
+      
+    Parameters
+    ----------
+    sample : list of dict
+        Sample with reference heights
+      
+    Returns
+    -------
+    dict
+        {percentile : Numpy Array of 'reference-height - computed-height' differences}
+    """
+    diffs = []
+    fields = ['gid','ahn_version','tile_id'] + stats
+    logger.debug(fields)
+    for fp in sample:
+        d = {}
+        for col in fields:
+            if 'percentile' in col:
+                if fp[col] and fp["reference"][col]:
+                    d[col] = fp[col] - fp["reference"][col]
+                else:
+                    d[col] = None
+            else:
+                d[col] = fp[col]
+        diffs.append(d)
+    return (diffs,fields)
+
 
 def rmse(a):
     """Compute Root Mean Square Error from a Numpy Array of height - reference 
@@ -271,8 +260,15 @@ def rmse(a):
     """
     return sqrt(sum([d**2 for d in a]) / len(a))
 
-def compute_rmse(diffs):
+def compute_rmse(diffs, stats):
+    """Compute the RMSE across the whole sample"""
     res = {}
-    for k in diffs:
-        res[k] = rmse(diffs[k])
+    for pctile in stats:
+        logger.debug("Computing %s", pctile)
+        r = []
+        for fp in diffs:
+            r.append(fp[pctile])
+        a = np.array(r, dtype='float32')
+        logger.debug(a)
+        res[pctile] = rmse(a[~np.isnan(a)])
     return res

@@ -5,6 +5,7 @@
 
 import os
 import sys
+from csv import DictWriter
 
 import yaml
 import logging, logging.config
@@ -184,9 +185,27 @@ def app(cli_args, here):
                                          cfg["quality"]["ahn2_rast_dir"], 
                                          cfg["quality"]["ahn3_rast_dir"])
             sample = quality.get_sample(conn, cfg)
-            logger.debug(sample[0])
-            stats = quality.compute_stats(sample, rast_idx)
+            logger_quality.info("Sample size %s", len(sample))
+            logger_quality.debug(sample[0])
+            stats=['percentile_0.00', 'percentile_0.10', 'percentile_0.25',
+           'percentile_0.50', 'percentile_0.75', 'percentile_0.90',
+           'percentile_0.95', 'percentile_0.99']
+            reference = quality.compute_stats(sample, rast_idx, stats)
+            diffs,fields = quality.compute_diffs(reference, stats)
             
+            out_dir = os.path.dirname(cfg["quality"]["results"])
+            os.makedirs(out_dir, exist_ok=True)
+            logger_quality.info("Writing height comparison to %s",
+                                cfg["quality"]["results"])
+            with open(cfg["quality"]["results"], 'w') as csvfile:
+                writer = DictWriter(csvfile, fieldnames=fields)
+                writer.writeheader()
+                for row in diffs:
+                    writer.writerow(row)
+            
+            r = quality.compute_rmse(diffs, stats)
+            logger_quality.info("RMSE across the whole sample %s",
+                                pformat(r))
     except Exception as e:
         logger.exception(e)
     finally:

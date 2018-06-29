@@ -176,3 +176,6 @@ mapping:
             ahn3_rast_dir:
                 type: str
                 desc: Path to AHN3 raster directory
+            results:
+                type: str
+                desc: Path to the CSV file where the quality test results will be saved
