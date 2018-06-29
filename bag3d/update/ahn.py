@@ -244,15 +244,17 @@ def rast_file_idx(conn, config, ahn2_rast_dir, ahn3_rast_dir):
     
     file_idx = {}
     for tile in ahn2_tiles:
-        f = "r{}.tif".format(tile.lower())
+        t = tile.lower()
+        f = "r{}.tif".format(t)
         if f in ahn2_files:
-            file_idx[tile] = os.path.join(ahn2_rast_dir,f)
+            file_idx[t] = os.path.join(ahn2_rast_dir,f)
         else:
             pass
     for tile in ahn3_tiles:
-        f = "r_{}.tif".format(tile.lower())
+        t = tile.lower()
+        f = "r_{}.tif".format(t)
         if f in ahn3_files:
-            file_idx[tile] = os.path.join(ahn3_rast_dir,f)
+            file_idx[t] = os.path.join(ahn3_rast_dir,f)
         else:
             pass
     logger.debug(file_idx)

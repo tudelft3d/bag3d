@@ -69,7 +69,7 @@ def create_quality_views(conn, config):
     CREATE OR REPLACE VIEW bagactueel.{viewname} AS
     SELECT *
     FROM bagactueel.{bag3d}
-    TABLESAMPLE BERNOULLI (1);
+    TABLESAMPLE BERNOULLI (2);
     COMMENT ON VIEW bagactueel.{viewname} IS 'Random sample (1%) of the 3D BAG, using Bernoulli sampling method';
     """).format(bag3d=name_q, viewname=viewname)
     
@@ -214,6 +214,7 @@ def compute_stats(sample, file_idx, stats):
                 fp['reference'] = ref_heights[i]
                 out.append(fp)
         else:
+            logger.debug("%s not in raster index", tile)
             pass
     return out
 
@@ -270,5 +271,5 @@ def compute_rmse(diffs, stats):
             r.append(fp[pctile])
         a = np.array(r, dtype='float32')
         logger.debug(a)
-        res[pctile] = rmse(a[~np.isnan(a)])
+        res[pctile] = round(rmse(a[~np.isnan(a)]),2)
     return res

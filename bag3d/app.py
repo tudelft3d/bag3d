@@ -192,6 +192,7 @@ def app(cli_args, here):
            'percentile_0.95', 'percentile_0.99']
             reference = quality.compute_stats(sample, rast_idx, stats)
             diffs,fields = quality.compute_diffs(reference, stats)
+            logger_quality.info("Computed differences on %s buildings", len(diffs))
             
             out_dir = os.path.dirname(cfg["quality"]["results"])
             os.makedirs(out_dir, exist_ok=True)
