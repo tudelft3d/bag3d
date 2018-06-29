@@ -183,6 +183,7 @@ def app(cli_args, here):
             rast_idx = ahn.rast_file_idx(conn, cfg, 
                                          cfg["quality"]["ahn2_rast_dir"], 
                                          cfg["quality"]["ahn3_rast_dir"])
+            sample = quality.get_sample(conn, cfg["output"]["bag3d_table"])
             
     except Exception as e:
         logger.exception(e)

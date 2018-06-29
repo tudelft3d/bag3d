@@ -106,7 +106,7 @@ def get_counts(conn, name):
         SELECT
             COUNT(gid) total_cnt
         FROM
-            bagactueel.bag3d
+            bagactueel.{bag3d}
     ),
     ground AS (
         SELECT
@@ -154,6 +154,28 @@ def get_counts(conn, name):
         logger.exception(e)
         raise
 
+
+def get_sample(conn, name):
+    """Get a random sample of buildings from the 3D BAG
+    
+    Sample size is defined in create_quality_views()
+    """
+    viewname = sql.Identifier(name + "_sample")
+    query = sql.SQL("""
+    SELECT 
+    ST_AsEWKB({geom}) geom,
+    "roof-0.00" "percentile_0.00",
+    "roof-0.10" "percentile_0.10",
+    "roof-0.25" "percentile_0.25",
+    "roof-0.50" "percentile_0.50",
+    "roof-0.75" "percentile_0.75",
+    "roof-0.90" "percentile_0.90",
+    "roof-0.95" "percentile_0.95",
+    "roof-0.99" "percentile_0.99"
+    FROM bagactueel.{viewname};
+    """).format(viewname=viewname)
+    logger.debug(conn.print_query(query))
+    return conn.get_dict(query)
 
 def compare_heights():
     """
