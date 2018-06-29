@@ -113,3 +113,7 @@ FROM
     roof r,
     invalid i;
 
+   
+SELECT geovlak, identificatie, tile_id, ahn_version
+FROM bagactueel.pand3d_sample
+ORDER BY tile_id;

@@ -178,12 +178,14 @@ def app(cli_args, here):
         if args_in["quality"]:
             logger_quality.info("Checking 3D BAG quality")
             quality.create_quality_views(conn, cfg)
-            cnts = quality.get_counts(conn, cfg["output"]["bag3d_table"])
-            logger_quality.info(pformat(cnts))
+            #cnts = quality.get_counts(conn, cfg["output"]["bag3d_table"])
+            #logger_quality.info(pformat(cnts))
             rast_idx = ahn.rast_file_idx(conn, cfg, 
                                          cfg["quality"]["ahn2_rast_dir"], 
                                          cfg["quality"]["ahn3_rast_dir"])
-            sample = quality.get_sample(conn, cfg["output"]["bag3d_table"])
+            sample = quality.get_sample(conn, cfg)
+            logger.debug(sample[0])
+            stats = quality.compute_stats(sample, rast_idx)
             
     except Exception as e:
         logger.exception(e)

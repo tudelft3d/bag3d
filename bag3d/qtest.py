@@ -7,6 +7,7 @@ from math import sqrt
 from psycopg2 import sql
 from psycopg2 import extras
 import numpy as np
+import fiona
 
 from bag3d.config import db
 from rasterstats import zonal_stats
@@ -36,12 +37,13 @@ WHERE {tile_id} = {tile};
 
 print(conn.print_query(query))
 res = conn.get_dict(query)
+
 polys = [bytes(row['geom']) for row in res]
 
 stats=['percentile_0.00', 'percentile_0.10', 'percentile_0.25',
        'percentile_0.50', 'percentile_0.75', 'percentile_0.90',
        'percentile_0.95', 'percentile_0.99']
-ref_heights = zonal_stats(polys, '/home/balazs/Data/bag3d_test/raster/r37hz1.tif',
+ref_heights = zonal_stats(polys, '/home/balazs/Data/bag3d_test/raster/r37hn1.tif',
                  stats=stats)
 
 def compute_diffs(stats, heights, ref_heights):
@@ -87,3 +89,11 @@ def compute_rmse(diffs):
 errs = compute_rmse(diffs)
 
 
+# test is zonal_stats returns the results in the same order as the input
+ids = []
+with fiona.open('/home/balazs/Data/bag3d_test/t_37hn1_3d.geojson') as src:
+    ids = [f['id'] for f in src]
+    zs = zonal_stats(src, '/home/balazs/Data/bag3d_test/raster/r_37hn1.tif',
+                      geojson_out=True)
+
+compids = [f['id'] for f in zs]
