@@ -13,13 +13,25 @@ from rasterstats import zonal_stats
 logger = logging.getLogger("quality")
 
 
-def create_quality_views(conn, config):
-    """Create the views that are used for quality control"""
+def create_quality_views(conn, cfg):
+    """Create the views that are used for quality control
+    
+    Retruns
+    -------
+    dict
+        The configuration with the names of the created views (in quality:views)
+    """
+    config = cfg
     
     name = config["output"]["bag3d_table"]
     name_q = sql.Identifier(name)
+    config["quality"]["views"] = {}
+    config["quality"]["views"]["invalid_height"] = name + "_invalid_height"
+    config["quality"]["views"]["missing_ground"] = name + "_missing_ground"
+    config["quality"]["views"]["missing_roof"] = name + "_missing_roof"
+    config["quality"]["views"]["sample"] = name + "_sample"
     
-    viewname = sql.Identifier(name + "_invalid_height")
+    viewname = sql.Identifier(config["quality"]["views"]["invalid_height"])
     query_v = sql.SQL("""
     CREATE OR REPLACE VIEW bagactueel.{viewname} AS
     SELECT *
@@ -32,7 +44,7 @@ def create_quality_views(conn, config):
     'The BAG footprints where the building was built before the AHN3 was created';
     """).format(viewname=viewname)
 
-    viewname = sql.Identifier(name + "_missing_ground")
+    viewname = sql.Identifier(config["quality"]["views"]["missing_ground"])
     query_g = sql.SQL("""
     CREATE OR REPLACE VIEW bagactueel.{viewname} AS
     SELECT *
@@ -47,7 +59,7 @@ def create_quality_views(conn, config):
     COMMENT ON VIEW bagactueel.{viewname} IS 'Buildings where any of the ground-heights is missing';
     """).format(bag3d=name_q, viewname=viewname)
 
-    viewname = sql.Identifier(name + "_missing_roof")
+    viewname = sql.Identifier(config["quality"]["views"]["missing_roof"])
     query_r = sql.SQL("""
     CREATE OR REPLACE VIEW bagactueel.{viewname} AS
     SELECT *
@@ -64,14 +76,16 @@ def create_quality_views(conn, config):
     COMMENT ON VIEW bagactueel.{viewname} IS 'Buildings where any of the roof heights is missing';
     """).format(bag3d=name_q, viewname=viewname)
     
-    viewname = sql.Identifier(name + "_sample")
+    viewname = sql.Identifier(config["quality"]["views"]["sample"])
+    size = sql.Literal(float(config["quality"]["sample_size"]))
     query_s = sql.SQL("""
     CREATE OR REPLACE VIEW bagactueel.{viewname} AS
     SELECT *
     FROM bagactueel.{bag3d}
-    TABLESAMPLE BERNOULLI (2);
+    TABLESAMPLE BERNOULLI ({size});
     COMMENT ON VIEW bagactueel.{viewname} IS 'Random sample (1%) of the 3D BAG, using Bernoulli sampling method';
-    """).format(bag3d=name_q, viewname=viewname)
+    """).format(bag3d=name_q, viewname=viewname,
+                size=size)
     
     try:
         logger.debug(conn.print_query(query_v))
@@ -87,9 +101,11 @@ def create_quality_views(conn, config):
     except BaseException as e:
         logger.exception(e)
         raise
+    
+    return config
 
 
-def get_counts(conn, name):
+def get_counts(conn, config):
     """Various counts on the 3D BAG
     
     * Total number of buildings, 
@@ -102,9 +118,9 @@ def get_counts(conn, name):
     dict
         With the field names as keys
     """
-    view_h = sql.Identifier(name + "_invalid_height")
-    view_g = sql.Identifier(name + "_missing_ground")
-    view_r = sql.Identifier(name + "_missing_roof")
+    view_h = sql.Identifier(config["quality"]["views"]["invalid_height"])
+    view_g = sql.Identifier(config["quality"]["views"]["missing_ground"])
+    view_r = sql.Identifier(config["quality"]["views"]["missing_roof"])
     query = sql.SQL("""
     WITH total AS (
         SELECT
@@ -148,7 +164,7 @@ def get_counts(conn, name):
         ground g,
         roof r,
         invalid i;
-    """).format(bag3d=sql.Identifier(name),
+    """).format(bag3d=sql.Identifier(config["output"]["bag3d_table"]),
                 view_g=view_g, view_r=view_r, view_h=view_h)
     try:
         logger.debug(conn.print_query(query))
@@ -164,7 +180,7 @@ def get_sample(conn, config):
     
     Sample size is defined in create_quality_views()
     """
-    viewname = sql.Identifier(config["output"]["bag3d_table"] + "_sample")
+    viewname = sql.Identifier(config["quality"]["views"]["sample"])
     geom = sql.Identifier(config["input_polygons"]["footprints"]["fields"]["geometry"])
     query = sql.SQL("""
     SELECT 

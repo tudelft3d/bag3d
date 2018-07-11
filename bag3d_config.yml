@@ -31,6 +31,7 @@ quality:
     ahn2_rast_dir: /data/raster/AHN2
     ahn3_rast_dir: /data/raster/AHN3
     results: /data/3DBAG/quality/ahn_rast.csv
+    sample_size: 10.0
 
 tile_index:
     polygons:
