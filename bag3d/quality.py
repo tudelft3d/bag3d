@@ -10,6 +10,8 @@ from psycopg2 import sql
 import numpy as np
 from rasterstats import zonal_stats
 
+from bag3d.config import border
+
 logger = logging.getLogger("quality")
 
 
@@ -26,10 +28,23 @@ def create_quality_views(conn, cfg):
     name = config["output"]["bag3d_table"]
     name_q = sql.Identifier(name)
     config["quality"]["views"] = {}
+    config["quality"]["views"]["valid"] = name + "_valid"
     config["quality"]["views"]["invalid_height"] = name + "_invalid_height"
     config["quality"]["views"]["missing_ground"] = name + "_missing_ground"
     config["quality"]["views"]["missing_roof"] = name + "_missing_roof"
     config["quality"]["views"]["sample"] = name + "_sample"
+    
+    viewname = sql.Identifier(config["quality"]["views"]["valid"])
+    query_valid = sql.SQL("""
+    CREATE TABLE IF NOT EXISTS bagactueel.{viewname} AS
+    SELECT *
+    FROM bagactueel.{bag3d}
+    WHERE bouwjaar <= date_part('YEAR', ahn_file_date)
+    AND pandstatus <> 'Bouwvergunning verleend'::bagactueel.pandstatus
+    AND pandstatus <> 'Bouw gestart'::bagactueel.pandstatus
+    AND pandstatus <> 'Niet gerealiseerd pand'::bagactueel.pandstatus
+    AND pandstatus <> 'Pand gesloopt'::bagactueel.pandstatus;
+    """).format(bag3d=name_q, viewname=viewname)
     
     viewname = sql.Identifier(config["quality"]["views"]["invalid_height"])
     query_v = sql.SQL("""
@@ -57,7 +72,8 @@ def create_quality_views(conn, cfg):
     "ground-0.40" IS NULL OR 
     "ground-0.50" IS NULL;
     COMMENT ON VIEW bagactueel.{viewname} IS 'Buildings where any of the ground-heights is missing';
-    """).format(bag3d=name_q, viewname=viewname)
+    """).format(bag3d=sql.Identifier(config["quality"]["views"]["valid"]), 
+                viewname=viewname)
 
     viewname = sql.Identifier(config["quality"]["views"]["missing_roof"])
     query_r = sql.SQL("""
@@ -74,19 +90,36 @@ def create_quality_views(conn, cfg):
     "roof-0.95" IS NULL OR
     "roof-0.99" IS NULL;
     COMMENT ON VIEW bagactueel.{viewname} IS 'Buildings where any of the roof heights is missing';
-    """).format(bag3d=name_q, viewname=viewname)
+    """).format(bag3d=sql.Identifier(config["quality"]["views"]["valid"]), 
+                viewname=viewname)
     
+    tbl_schema = config["tile_index"]['elevation']['schema']
+    tbl_name = config["tile_index"]['elevation']['table']
+    tbl_tile = config["tile_index"]['elevation']['fields']['unit_name']
+    border_table = config["tile_index"]['elevation']['border_table']
+    tr = border.get_non_border_tiles(conn, tbl_schema, tbl_name, border_table,
+                                     tbl_tile)
+    t_rest = [t[0] for t in tr]
     viewname = sql.Identifier(config["quality"]["views"]["sample"])
     size = sql.Literal(float(config["quality"]["sample_size"]))
     query_s = sql.SQL("""
     CREATE OR REPLACE VIEW bagactueel.{viewname} AS
     SELECT *
     FROM bagactueel.{bag3d}
-    TABLESAMPLE BERNOULLI ({size});
-    COMMENT ON VIEW bagactueel.{viewname} IS 'Random sample (1%) of the 3D BAG, using Bernoulli sampling method';
-    """).format(bag3d=name_q, viewname=viewname,
-                size=size)
+    TABLESAMPLE BERNOULLI ({size})
+    WHERE tile_id = ANY({non_border_tiles});
+    COMMENT ON VIEW bagactueel.{viewname} IS 'Random sample of the 3D BAG, using Bernoulli sampling method. Border tiles are excluded.';
+    """).format(bag3d=sql.Identifier(config["quality"]["views"]["valid"]), 
+                viewname=viewname,
+                size=size,
+                non_border_tiles=sql.Literal(t_rest))
     
+    try:
+        logger.debug(conn.print_query(query_valid))
+        conn.sendQuery(query_valid)
+    except BaseException as e:
+        logger.exception(e)
+        raise
     try:
         logger.debug(conn.print_query(query_v))
         conn.sendQuery(query_v)
@@ -118,6 +151,7 @@ def get_counts(conn, config):
     dict
         With the field names as keys
     """
+    view_valid = sql.Identifier(config["quality"]["views"]["valid"])
     view_h = sql.Identifier(config["quality"]["views"]["invalid_height"])
     view_g = sql.Identifier(config["quality"]["views"]["missing_ground"])
     view_r = sql.Identifier(config["quality"]["views"]["missing_roof"])
@@ -145,27 +179,39 @@ def get_counts(conn, config):
             COUNT (gid) invalid_height_cnt
         FROM
             bagactueel.{view_h}
+    ),
+    valid AS (
+        SELECT
+            COUNT (gid) valid_cnt
+        FROM
+            bagactueel.{view_valid}
     ) SELECT
         g.ground_missing_cnt,
         r.roof_missing_cnt,
         i.invalid_height_cnt,
+        v.valid_cnt,
         t.total_cnt,
         (
-            g.ground_missing_cnt::FLOAT4 / t.total_cnt::FLOAT4
+            g.ground_missing_cnt::FLOAT4 / v.valid_cnt::FLOAT4
         )* 100 AS ground_missing_pct,
         (
-            r.roof_missing_cnt::FLOAT4 / t.total_cnt::FLOAT4
+            r.roof_missing_cnt::FLOAT4 / v.valid_cnt::FLOAT4
         )* 100 AS roof_missing_pct,
         (
-            i.invalid_height_cnt::FLOAT4 / t.total_cnt::FLOAT4
-        )* 100 AS invalid_height_pct
+            i.invalid_height_cnt::FLOAT4 / v.valid_cnt::FLOAT4
+        )* 100 AS invalid_height_pct,
+        (
+            v.valid_cnt::FLOAT4 / t.total_cnt::FLOAT4
+        )* 100 AS valid_pct
     FROM
         total t,
         ground g,
         roof r,
-        invalid i;
+        invalid i,
+        valid v;
     """).format(bag3d=sql.Identifier(config["output"]["bag3d_table"]),
-                view_g=view_g, view_r=view_r, view_h=view_h)
+                view_g=view_g, view_r=view_r, view_h=view_h,
+                view_valid=view_valid)
     try:
         logger.debug(conn.print_query(query))
         res = conn.get_dict(query)
