@@ -28,6 +28,15 @@ logger = logging.getLogger('app')
 logger_quality = logging.getLogger('quality')
 
 def app(cli_args, here):
+    """The command line application
+    
+    Parameters
+    ----------
+    cli_args : list of strings
+        Command line arguments
+    here : string
+        Path to the source code directory
+    """
     schema = os.path.join(here, 'bag3d_cfg_schema.yml')
     args_in = args.parse_console_args(cli_args[1:])
     

@@ -18,10 +18,22 @@ logger = logging.getLogger("quality")
 def create_quality_views(conn, cfg):
     """Create the views that are used for quality control
     
+    Parameters
+    ----------
+    conn : :py:class:`bag3d.config.db.db`
+        Open connection
+    cfg: dict
+        batch3dfier YAML config as returned by :meth:`bag3d.config.args.parse_config`
+    
     Retruns
     -------
     dict
         The configuration with the names of the created views (in quality:views)
+    
+    Raises
+    ------
+    BaseException
+        If cannot create the table
     """
     config = cfg
     
@@ -146,6 +158,13 @@ def get_counts(conn, config):
     * Nr. of buildings with missing roof height,
     * The previous two as percent
     
+    Parameters
+    ----------
+    conn : :py:class:`bag3d.config.db.db`
+        Open connection
+    config: dict
+        batch3dfier YAML config as returned by :meth:`bag3d.config.args.parse_config`
+    
     Returns
     -------
     dict
@@ -225,6 +244,17 @@ def get_sample(conn, config):
     """Get a random sample of buildings from the 3D BAG
     
     Sample size is defined in create_quality_views()
+    
+    Parameters
+    ----------
+    conn : :py:class:`bag3d.config.db.db`
+        Open connection
+    cfg: dict
+        batch3dfier YAML config as returned by :meth:`bag3d.config.args.parse_config`
+    
+    Returns
+    -------
+    dict
     """
     viewname = sql.Identifier(config["quality"]["views"]["sample"])
     geom = sql.Identifier(config["input_polygons"]["footprints"]["fields"]["geometry"])
@@ -298,7 +328,7 @@ def compute_diffs(sample, stats):
     Returns
     -------
     dict
-        {percentile : Numpy Array of 'reference-height - computed-height' differences}
+        {percentile : Numpy Array of 'computed-height - reference-height' differences}
     """
     diffs = []
     fields = ['gid','ahn_version','tile_id'] + stats

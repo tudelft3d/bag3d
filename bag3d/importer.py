@@ -16,11 +16,31 @@ logger = logging.getLogger('import')
 
 
 def create_heights_table(conn, schema, table):
-    """Create a postgres table that can store the content of 3dfier CSV-BUILDINGS-MULTIPLE
+    """Create a postgres table that can store the content of 3dfier's CSV-BUILDINGS-MULTIPLE output
     
     Note
     ----
-    The 'id' field is set to numeric because of the BAG 'identificatie' field.
+    The 'id' field is set to numeric because the data type of the 
+    BAG 'identificatie' field in the NLExtract changes between extracts.
+    
+    Parameters
+    ----------
+    conn : :py:class:`bag3d.config.db.db`
+        Open connection
+    schema : string
+        Name of the schema where to create the table
+    table : string
+        Name of the new table
+    
+    Raises
+    ------
+    Exception
+        Raises every exception
+    
+    Returns
+    -------
+    boolean
+        True on success
     """
 
     schema_q = sql.Identifier(schema)
@@ -63,17 +83,15 @@ def csv2db(conn, cfg, out_paths):
     Note
     ----
     Only for 3dfier's CSV-BUILDINGS-MULTIPLE output. 
-    Only works when the AHN3 and BAG tiles are the same (same size and identifier). 
     Only Linux.
     Alter the CSV files by adding the ahn_file_date, ahn_version fields and values.
     
     Parameters
     ----------
-    db : db Class instance
+    conn : :py:class:`bag3d.config.db.db`
+        Open connection
     cfg: dict
-        batch3dfier YAML config (output by parse_config() )
-    args_in: dict
-        batch3dfier command line arguments
+        batch3dfier YAML config as returned by :meth:`bag3d.config.args.parse_config`
     out_paths: list of strings
         Paths of the CSV files
     """
@@ -153,7 +171,15 @@ ahn_file_date,ahn_version,tile_id/' %s" % path
 
 
 def create_bag3d_relations(conn, cfg):
-    """Creates the necessary postgres tables and views for the 3D BAG"""
+    """Creates the necessary postgres tables and views for the 3D BAG
+    
+    Parameters
+    ----------
+    conn : :py:class:`bag3d.config.db.db`
+        Open connection
+    cfg: dict
+        batch3dfier YAML config as returned by :meth:`bag3d.config.args.parse_config`
+    """
     
     bag3d_table_q = sql.Identifier(cfg['output']['bag3d_table'])
     heights_table_q = sql.Identifier(cfg['output']['table'])
@@ -237,7 +263,15 @@ def create_bag3d_relations(conn, cfg):
 
 
 def import_csv(conn, cfg):
-    """Import the batch3dfier CSV output into the BAG database"""
+    """Import the batch3dfier CSV output into the BAG database
+    
+    Parameters
+    ----------
+    conn : :py:class:`bag3d.config.db.db`
+        Open connection
+    cfg: dict
+        batch3dfier YAML config as returned by :meth:`bag3d.config.args.parse_config`
+    """
     
     # Get CSV files in dir
     for root, dir, filenames in os.walk(cfg['output']['dir'], topdown=True):
@@ -259,6 +293,8 @@ def unite_border_tiles(conn, schema, border_ahn2, border_ahn3):
     
     Creates a view 'bag3d_border_union' in schema. The view has the following
     condition on the imported CSV files:
+    
+    .. code-block:: sql
     
         WHERE
         a."ground-0.00" IS NOT NULL
@@ -367,6 +403,8 @@ def unite_border_tiles(conn, schema, border_ahn2, border_ahn3):
 def create_bag3d_table(conn, schema, name):
     """Unite the border tiles with the rest
     
+    Note
+    -----
     Persists and indexes the table 'bag3d' by uniting the border tiles with the 
     rest. 
     Drops the table 'bag3d' if exists before the operation.

@@ -112,30 +112,14 @@ def gpkg(conn, config, out_dir, doexec=True):
 def postgis(conn, config, out_dir, doexec=True):
     """Export as PostgreSQL backup file
     
-    Note
-    ----
-    The backup is restored as:
+    For example the backup can be restored as:
     
-    createdb <db>
-    psql -d <db> -c 'create extension postgis;'
+    .. code-block:: sh
     
-    pg_restore \
-    --no-owner \
-    --no-privileges \
-    -h <host> \
-    -U <user> \
-    -d <db> \
-    -w bagactueel_schema.backup
-    
-    pg_restore \
-    --no-owner \
-    --no-privileges \
-    -j 2 \
-    --clean \
-    -h <host> \
-    -U <user> \
-    -d <db> \
-    -w <bag3d backup>.backup
+        createdb <db>
+        psql -d <db> -c 'create extension postgis;'
+        pg_restore --no-owner --no-privileges -h <host> -U <user> -d <db> -w bagactueel_schema.backup
+        pg_restore --no-owner --no-privileges -j 2 --clean -h <host> -U <user> -d <db> -w <bag3d backup>.backup
 
     Parameters
     ----------

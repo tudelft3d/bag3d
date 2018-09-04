@@ -85,11 +85,10 @@ def download(ahn3_dir, ahn2_dir, tile_index_file, ahn3_file_pat, ahn2_file_pat):
     """Update the AHN3 files in the provided folder
 
     1. Downloads the latest AHN3 index (bladindex) to the local file system
-    2. Downloads all AHN3 tiles that are not in the provided directory and checks 
-    them for error with lasinfo (without parsing the points).
+    2. Downloads all AHN3 tiles that are not in the provided directory and checks them for error with lasinfo (without parsing the points).
     3. Appends the 'file creation date' attribute of the LAZ file to the AHN index.
-    4. If an AHN3 file is not available, marks the tile as AHN2 and add the date of the AHN2 file
-    
+    4. If an AHN3 file is not available, marks the tile as AHN2 and add the date of the AHN2 file.
+
     Parameters
     ----------
     ahn3_dir: path to the directory for the AHN3 files
