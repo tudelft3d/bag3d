@@ -1,5 +1,8 @@
-3D BAG quality expectations
-###########################
+Quality of the 3D BAG
+######################
+
+Quality expectations
+============================
 
 These quality expectations describe the 3D-part of the 3D BAG. The quality of the BAG itself is not discussed here.
 
@@ -34,8 +37,8 @@ Accountability
 
 * Data quality testing summary into the `bagactueel.bag3d_info` table.
 
-3D BAG quality testing
-######################
+Quality testing
+=======================
 
 + randomly sample 1-5% of buildings, take the AHN raster, compute the height percentiles and compare those to the 3D BAG
 

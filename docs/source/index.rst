@@ -11,8 +11,8 @@
    quality
    software
 
-3D BAG
-======
+Introduction
+###############
 
 .. warning:: This documentation is still under construction!
 
