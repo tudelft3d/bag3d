@@ -7,6 +7,7 @@
    :maxdepth: 2
    :caption: Contents:
    
+   download
    quality
    software
 
@@ -14,17 +15,6 @@
 ======
 
 .. warning:: This documentation is still under construction!
-
-Access the data
----------------
-
-**WFS:** LINK
-
-**CSV:** `<http://godzilla.bk.tudelft.nl/data/3dbag/csv/>`_
-
-**GPKG:** `<http://godzilla.bk.tudelft.nl/data/3dbag/gpkg/>`_
-
-**PostgreSQL backup:** `<http://godzilla.bk.tudelft.nl/data/3dbag/postgis/>`_
 
 This is the documentation of the **3D BAG** data set, as well as the ``bag3d`` software that is used for generating the data. The 3D BAG is an enhanced version of the Dutch `Basisregistraties Adressen en Gebouwen (BAG) <https://www.kadaster.nl/wat-is-de-bag>`_ data set, with added height information. The 3D BAG lives in a PostgreSQL database and it follows the updates of the BAG.
 
