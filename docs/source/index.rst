@@ -15,6 +15,17 @@
 
 .. warning:: This documentation is still under construction!
 
+Access the data
+---------------
+
+**WFS:** LINK
+
+**CSV:** `<http://godzilla.bk.tudelft.nl/data/3dbag/csv/>`_
+
+**GPKG:** `<http://godzilla.bk.tudelft.nl/data/3dbag/gpkg/>`_
+
+**PostgreSQL backup:** `<http://godzilla.bk.tudelft.nl/data/3dbag/postgis/>`_
+
 This is the documentation of the **3D BAG** data set, as well as the ``bag3d`` software that is used for generating the data. The 3D BAG is an enhanced version of the Dutch `Basisregistraties Adressen en Gebouwen (BAG) <https://www.kadaster.nl/wat-is-de-bag>`_ data set, with added height information. The 3D BAG lives in a PostgreSQL database and it follows the updates of the BAG.
 
 The `Basisregistraties Adressen en Gebouwen (BAG) <https://www.kadaster.nl/wat-is-de-bag>`_ is the most detailed, openly available data set on buildings and addresses in the Netherlands. It contains information about each address in a building, such as its current use, construction date or registration status. The polygons in the BAG represent the footprint of the building as the projection of the roof's outline. The data set is regularly updated as new buildings are registered, built or demolished. The project `NLExtract <http://www.nlextract.nl/>`_ prepares a monthly PostgreSQL backup of the BAG, which is then used as basis for the 3D BAG.
@@ -42,7 +53,7 @@ The two AHN versions
 
 
 Attribute description
-----------------
+---------------------
 
 attributes from the BAG
 
