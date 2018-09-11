@@ -1,13 +1,15 @@
+.. _quality:
+
 Quality of the 3D BAG
 ######################
 
 Quality expectations
-============================
+**********************
 
 These quality expectations describe the 3D-part of the 3D BAG. The quality of the BAG itself is not discussed here.
 
 Completeness
-*************
+-------------
 
 * Every BAG building footprint polygon should have a height assigned to it wherever AHN has data.
 
@@ -16,20 +18,14 @@ Completeness
 * The binary attribute `flat_roof` is assigned to every footprint with height information.
 
 Correctness
-***********
+------------
 
 * Which part of the roof does `roof-0.00`, `roof-0.50` and `roof-0.99` relate to in the real building?
 
 * The newest avialable AHN is used for every footprint.
 
-Consistency
-************
-
-Coherence
-*********
-
 Accountability
-***************
+----------------
 
 * The source of BAG and AHN is clearly stated.
 
@@ -38,31 +34,35 @@ Accountability
 * Data quality testing summary into the `bagactueel.bag3d_info` table.
 
 Quality testing
-=======================
+*****************
 
-+ randomly sample 1-5% of buildings, take the AHN raster, compute the height percentiles and compare those to the 3D BAG
+The following quality metrics are computed with every update:
 
-Because I will remove the tile-tile intersection so that when complete tiles
-are provided as input extent, the 9 neighbouring tiles won't get dragged in 
-the computation:
++-----------------------------------------------------+---------+
+| Total nr. buildings                                 | 9989779 |
++-----------------------------------------------------+---------+
+| Buildings with valid height                         | 96.33%  |
++-----------------------------------------------------+---------+
+| Buildings missing height information for the roof   | 0.87%   |
++-----------------------------------------------------+---------+
+| Buildings missing height information for the ground | 0.87%   |
++-----------------------------------------------------+---------+
 
-+ randomly sample 1-5% buildings that intersect the borders of the tile polygons and perform the same percentile comparison as above
+Additional to the metrics above, it is good to have an estimate on how well does a building model approximate the geometry of its real-world counter part. Therefore we computed the root mean square error (RMSE) of the geometric difference between the point cloud and the 3D building model at each percentile for 470 buildings in two areas of Delft. The *geometric difference* is represented by the shortest absolute distances *from* all point in the point cloud *to* the building model. Only those points are used from the point cloud that contribute to the creation of the 3D model.
 
+The diagram of the RMSE of geometric difference, grouped by the type of the roof.
 
-Comparison with the AHN 0.5m raster
-***********************************
-So, use rasterstats library to compute zonal statistics from the AHN raster. In this case a zone is a single building footprint and the statistics are all the roof-height percentiles.
+.. image:: ../figures/rmse.png
+    :align: center
 
-0. Download the AHN3 0.5m raster and the AHN2 0.5m raster (only for those tiles where AHN3 is not available)
+3D gebouwhoogte NL
+-------------------
 
-wget -nc https://geodata.nationaalgeoregister.nl/ahn3/extract/ahn3_05m_dsm/R_37FZ1.ZIP -O tile && unzip -o tile && rm tile
-wget -nc http://geodata.nationaalgeoregister.nl/ahn2/extract/ahn2_05m_ruw/r37hz1.tif.zip -O tile && unzip -o tile && rm tile
+The `3D gebouwhoogte NL <https://www.kadaster.nl/-/3d-gebouwhoogte-nl>`_ data set is probably what is the closest to what the 3D BAG offers. There are two major differences however. First, the 3D BAG is continuously updated along with the BAG while the 3D geobouwhoogte was last updated in 2015 and the heights are based on the AHN2. Second, the 3D geobouwhoogte is generated from a map of 1:10000 scale, thus the geometry of the building footprints are considerably less detailed than those in the BAG.
 
-1. Randomly sample 1% of the 3D BAG
-2. Get the geometry from postgres into python as WKB (or WKT?)
-3. Also get the tile ID for each geometry
-4. Create an index of tile IDs and raster files
+Esri's 3D BAG
+--------------
 
-src = [wkb1, wkb2, wkb3, ...]
-zs = zonal_stats(src, 'tests/data/slope.tif')
+The GIS software company Esri offers open data set which is based on the BAG and AHN too (eg. `provinces <https://hub.arcgis.com/items/esrinl-content::bag-3-d-provincies-1>`_. However, it is not clear whether the height information is still relevant for each building, neither it is stated what the top surface in the model relates to in the real world.
 
+.. include:: ahn.rst

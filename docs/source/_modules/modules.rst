@@ -1,4 +1,6 @@
 The bag3d application
 #####################
 
-.. include:: _modules/modules.rst
+.. toctree::
+
+   bag3d

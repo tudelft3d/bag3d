@@ -15,6 +15,7 @@ lxml = "*"
 pykwalify = "*"
 numpy = "*"
 rasterstats = "*"
+sphinx-jsonschema = "*"
 
 [requires]
 python_version = "3.6"

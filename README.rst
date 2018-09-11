@@ -15,7 +15,7 @@ In short the ``bag3d`` application can:
 + Export into CSV, GeoPackage or PostgreSQL backup.
 + Report various quality metrics.
 
-Read more about the 3D BAG data set as well as ``bag3d`` in the *documentation (LINK)*
+Read more about the 3D BAG data set as well as ``bag3d`` in the **`documentation <https://tudelft3d.github.io/bag3d/>`_**
 
 
 .. |Licence| image:: https://img.shields.io/badge/licence-GPL--3-blue.svg

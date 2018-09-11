@@ -1,7 +1,7 @@
 Download the data
 ##################
 
-**WFS:** LINK
+**WFS:** ``http://godzilla.bk.tudelft.nl:8090/geoserver/BAG3D/wfs``
 
 **CSV:** `<http://godzilla.bk.tudelft.nl/data/3dbag/csv/>`_
 
@@ -13,4 +13,11 @@ The `GeoPackage <http://www.geopackage.org/>`_ is an export of the complete 3D B
 
 **PostgreSQL backup:** `<http://godzilla.bk.tudelft.nl/data/3dbag/postgis/>`_
 
-The PostgreSQL backup file is equivalent in content to the GPKG.
+The PostgreSQL backup file is equivalent in content to the GPKG. For example the backup can be restored as:
+
+.. code-block:: sh
+
+    createdb <db>
+    psql -d <db> -c 'create extension postgis;'
+    pg_restore --no-owner --no-privileges -h <host> -U <user> -d <db> -w bagactueel_schema.backup
+    pg_restore --no-owner --no-privileges -j 2 --clean -h <host> -U <user> -d <db> -w <bag3d backup>.backup
