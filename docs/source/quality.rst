@@ -63,6 +63,6 @@ The `3D gebouwhoogte NL <https://www.kadaster.nl/-/3d-gebouwhoogte-nl>`_ data se
 Esri's 3D BAG
 --------------
 
-The GIS software company Esri offers open data set which is based on the BAG and AHN too (eg. `provinces <https://hub.arcgis.com/items/esrinl-content::bag-3-d-provincies-1>`_. However, it is not clear whether the height information is still relevant for each building, neither it is stated what the top surface in the model relates to in the real world.
+The GIS software company Esri offers open data set which is based on the BAG and AHN too (eg. `provinces <https://hub.arcgis.com/items/esrinl-content::bag-3-d-provincies-1>`_. However, it is not clear whether the height information is still relevant for each building, neither it is stated what the top surface in the model relates to in the real world. These properties make the data set unsuitable for noise simulations for example.
 
 .. include:: ahn.rst
