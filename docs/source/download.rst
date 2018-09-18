@@ -1,17 +1,17 @@
 Download the data
 ##################
 
-**WFS:** ``http://godzilla.bk.tudelft.nl/3dbag/data/wfs``
+**WFS:** ``http://3dbag.bk.tudelft.nl/data/wfs``
 
-**CSV:** `<http://godzilla.bk.tudelft.nl/3dbag/data/csv/>`_
+**CSV:** `<http://3dbag.bk.tudelft.nl/data/csv/>`_
 
 The Comma Separated Value file is an export of the 3D BAG attributes only, thus does not contain the geometry of the building footprints.
 
-**GPKG:** `<http://godzilla.bk.tudelft.nl/3dbag/data/gpkg/>`_
+**GPKG:** `<http://3dbag.bk.tudelft.nl/data/gpkg/>`_
 
 The `GeoPackage <http://www.geopackage.org/>`_ is an export of the complete 3D BAG (incl. geometry).
 
-**PostgreSQL backup:** `<http://godzilla.bk.tudelft.nl/3dbag/data/postgis/>`_
+**PostgreSQL backup:** `<http://3dbag.bk.tudelft.nl/data/postgis/>`_
 
 The PostgreSQL backup file is equivalent in content to the GPKG. For example the backup can be restored as:
 
