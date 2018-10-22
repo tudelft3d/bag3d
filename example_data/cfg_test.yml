@@ -1,0 +1,32 @@
+input_polygons:
+  - datasets: 
+      - PG:dbname=bag3d_db port=5432 host=3dbag_postgis user=bag3d_tester password=bag3d_test schemas=bagactueel tables=pand
+    uniqueid: gid
+    lifting: Building
+
+lifting_options: 
+  Building:
+    lod: 1
+    floor: true
+    inner_walls: false
+    triangulate: true
+    ground:
+      height: percentile-10
+      use_LAS_classes:
+        - 2
+    roof:
+      height: percentile-90
+      use_LAS_classes:
+        - 0
+        - 1
+        - 6
+
+input_elevation:
+  - datasets:
+      - ahn2/unit_25gn1_1.laz
+    thinning: 0
+
+options:
+  building_radius_vertex_elevation: 0.5
+  radius_vertex_elevation: 0.5
+  threshold_jump_edges: 0.5
