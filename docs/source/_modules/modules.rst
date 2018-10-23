@@ -1,5 +1,6 @@
-The bag3d application
-#####################
+*********************
+Module documentation
+*********************
 
 .. toctree::
 

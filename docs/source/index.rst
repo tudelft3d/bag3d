@@ -3,14 +3,23 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+##############################
+3D BAG data set and software
+##############################
+
+.. image:: ../figures/bag3d.jpg
+    :align: center
+
+This is the documentation of the 3D BAG data set created by the `3D Geoinformation research group <https://3d.bk.tudelft.nl/>`_ at the Delft University of Technology. This is also the documentation of the **bag3d** software which is used for generating the 3D BAG.
+
+
+
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
    
-   intro
-   download
-   quality
-   _modules/modules
+   data
+   software
    contact
 
 Indices and tables

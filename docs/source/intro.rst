@@ -1,5 +1,6 @@
+**************
 Introduction
-###############
+**************
 
 .. warning:: This documentation is still under construction!
 
@@ -14,7 +15,7 @@ The engine behind ``bag3d`` is `3dfier <https://github.com/tudelft3d/3dfier>`_ w
 The last piece is `PostgreSQL <https://www.postgresql.org/>`_ which is used for storing the BAG, the *tile indices* and finally storing and serving the 3D BAG. The AHN files are stored in the local file system.
 
 The tiling process
-*******************
+====================
 
 In order to be able to 3dfy any size of data set, the input is processed parallel, tile by tile. Therefore the bottleneck becomes the size of a single tile. Both footprint and point cloud tiles need to be *small* enough, so that ``3dfier`` can process them on your machine. Therefore a central element for ``bag3d`` is the **tile index**.
 
@@ -25,12 +26,12 @@ A *tile index* is a polygonal tesselation of the BAG or the AHN. A *tile index u
 In the 3D BAG, the AHN tile index is used for partitioning the BAG thus the AHN and BAG tiles are equivalent, both in geometry and ID. But matching footprint and point cloud tiles is not a requirement as for each footprint tile the intersecting point cloud tiles are selected. And in case you are wondering how to generate a tile index, the *Create grid* Processing algorithm in QGIS might be a good starting point.
 
 The two AHN versions
-*********************
+=====================
 
 The missions for acquiring the AHN2 and AHN3 lasted 2007–2012 and 2014–2019 respectively. Thus AHN3 does not cover the whole Netherlands yet and it is expected to be complete by the end of 2019. Until then, parts of the previous version (AHN2) need to be used for achieving a complete coverage of heights. One of the main arguments against the AHN in general that is deemed to be out dated by design, due to long mission times for acquiring the scans. However, the building stock changes in a relatively slow pace, this pace being faster in metropolitan regions and even slower in remote areas of the country. In fact, our analysis shows that 96.33% of the measured building heights are still valid. This means that the respective point cloud and the age of the building are related.
 
 LoD1 building models with different heights
-********************************************
+=============================================
 
 TODO
 
@@ -39,7 +40,7 @@ TODO
 
 
 3D BAG Attribute description
-******************************
+=================================
 
 ``gid``: geometry ID, used internally
 
@@ -58,6 +59,6 @@ from ``roof-00`` to ``roof-99``: the height of the roof surface of the building 
 ``tile_id``: the ID of the tile where the building belongs to
 
 The 3D BAG compared to similar data sets
-*****************************************
+==========================================
 
 For details on the quality of the 3D BAG, also in comparison with similar data sets, see :ref:`quality`.

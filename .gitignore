@@ -6,11 +6,20 @@ deploy.sh
 .settings
 .project
 .pydevproject
+.dbeaver-data-sources.xml
+
+# SQL
+Script*
 
 # Testing and coverage
 .pytest_cache
 bag3d.egg-info
 .coverage
+*html
+*.Rproj
+*.RData
+*.Rhistory
+*.Rmd
 
 # Sphinx
 docs/_build
@@ -19,5 +28,9 @@ docs/_build
 *.log
 
 # Docker
-docker
 .Rproj.user
+
+# Data
+example_data/polys
+*.qgz
+*.qgs*

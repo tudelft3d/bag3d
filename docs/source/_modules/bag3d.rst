@@ -1,8 +1,9 @@
+***************
 bag3d package
-=============
+***************
 
 Subpackages
------------
+============
 
 .. toctree::
 
@@ -12,7 +13,7 @@ Subpackages
     bag3d.update
 
 Submodules
-----------
+===========
 
 bag3d.app module
 ----------------
