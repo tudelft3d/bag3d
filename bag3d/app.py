@@ -94,6 +94,7 @@ def app(cli_args, here):
             bag.import_index(cfg['polygons']["file"], cfg["database"]["dbname"], 
                              cfg['polygons']["schema"], str(cfg["database"]["host"]), 
                              str(cfg["database"]["port"]), cfg["database"]["user"], 
+                             cfg["database"]["pw"],
                              doexec=args_in['no_exec'])
             # Update BAG tiles to include the lower/left boundary
             footprints.update_tile_index(conn,
@@ -135,6 +136,7 @@ def app(cli_args, here):
             bag.import_index(cfg['elevation']["file"], cfg["database"]["dbname"], 
                              cfg['elevation']["schema"], str(cfg["database"]["host"]), 
                              str(cfg["database"]["port"]), cfg["database"]["user"], 
+                             cfg["database"]["pw"],
                              doexec=args_in['no_exec'])
             
         if args_in['add_borders']:

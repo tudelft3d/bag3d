@@ -248,14 +248,19 @@ VALUES ({}, 'auto-update by overwriting the bagactueel schema');
         return False
 
 
-def import_index(idx, dbname, tile_schema, host, port, user, doexec=True):
+def import_index(idx, dbname, tile_schema, host, port, user,
+                 pw=None, doexec=True):
     """Import the tile index into the database
     
     Calls ogr2ogr to import a tile index with EPSG:28992 into the tile_index
     schema.
     """
-    pg_conn = 'PG:"dbname={d} host={h} port={p} user={u}"'.format(
-        d=dbname, h=host, p=port, u=user)
+    if pw:
+        pg_conn = 'PG:"dbname={d} host={h} port={p} user={u} password={pw}"'.format(
+        d=dbname, h=host, p=port, u=user, pw=pw)
+    else:
+        pg_conn = 'PG:"dbname={d} host={h} port={p} user={u}"'.format(
+            d=dbname, h=host, p=port, u=user)
     schema = 'SCHEMA=%s' % tile_schema
     i = os.path.abspath(idx)
     command = ['ogr2ogr', '-f', 'PostgreSQL', pg_conn, i, 

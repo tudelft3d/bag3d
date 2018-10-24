@@ -1,0 +1,65 @@
+database:
+    dbname: bag3d_db
+    host: localhost
+    port: 5590
+    user: bag3d_tester
+    pw: bag3d_test
+
+input_polygons:
+    footprints:
+        schema: bagactueel
+        table: pand
+        fields:
+            primary_key: gid
+            geometry: geom
+            uniqueid: identification
+    tile_schema: bag_tiles
+    user_schema: 
+    tile_prefix: t_ 
+    extent:
+    tile_list: [all]
+
+input_elevation:
+    dataset_dir:
+        - example_data/ahn2
+        - example_data/ahn3
+    dataset_name: 
+        - "unit_{tile}.laz"
+        - "unit_{tile}.laz"
+
+quality:
+    ahn2_rast_dir:
+    ahn3_rast_dir:
+    results:
+    sample_size: 10.0
+
+tile_index:
+    polygons:
+        schema: tile_index
+        table: bag_index
+        fields:
+            primary_key: id
+            geometry: geom
+            unit_name: unit
+        file: example_data/bag_index.geojson
+    elevation: 
+        schema: tile_index
+        table: ahn_index
+        border_table: border_tiles
+        fields:
+            primary_key: id
+            geometry: geom
+            unit_name: unit
+            version: ahn_version
+        file: example_data/ahn_index.geojson
+    identical: True
+
+output:
+    dir: /tmp/3DBAG
+    schema: bagactueel
+    table: heights
+    bag3d_table: pand3d
+
+path_3dfier: docker run --rm --link 3dbag_postgis -v $(pwd):/home/3dfier 3dbag:3dfier 3dfier
+
+

@@ -1,6 +1,6 @@
 input_polygons:
   - datasets: 
-      - PG:dbname=bag3d_db port=5432 host=3dbag_postgis user=bag3d_tester password=bag3d_test schemas=bagactueel tables=pand
+      - PG:dbname=bag3d_db port=5590 host=localhost user=bag3d_tester password=bag3d_test schemas=bagactueel tables=pand
     uniqueid: gid
     lifting: Building
 
