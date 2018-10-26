@@ -149,6 +149,25 @@ def create_quality_views(conn, cfg):
     
     return config
 
+def create_quality_table(conn):
+    """Create a table to store the quality statistics"""
+    query = sql.SQL("""
+        CREATE TABLE IF NOT EXISTS public.bag3d_quality (
+        date date, 
+        total_cnt int,
+        ground_missing_cnt int,
+        roof_missing_cnt int,
+        invalid_height_cnt int,
+        ground_missing_pct float4,
+        roof_missing_pct float4,
+        invalid_height_pct float4);
+    """)
+    try:
+        logger.debug(conn.print_query(query))
+        conn.sendQuery(query)
+    except BaseException as e:
+        logger.exception(e)
+        raise
 
 def get_counts(conn, config):
     """Various counts on the 3D BAG
@@ -170,71 +189,61 @@ def get_counts(conn, config):
     dict
         With the field names as keys
     """
-    view_valid = sql.Identifier(config["quality"]["views"]["valid"])
-    view_h = sql.Identifier(config["quality"]["views"]["invalid_height"])
-    view_g = sql.Identifier(config["quality"]["views"]["missing_ground"])
-    view_r = sql.Identifier(config["quality"]["views"]["missing_roof"])
+    schema = sql.Identifier(config['input_polygons']['footprints']['schema'])
     query = sql.SQL("""
     WITH total AS (
         SELECT
             COUNT(gid) total_cnt
         FROM
-            bagactueel.{bag3d}
+            {schema}.{bag3d}
     ),
     ground AS (
         SELECT
             COUNT(gid) ground_missing_cnt
         FROM
-            bagactueel.{view_g}
+            {schema}.{bag3d}
+        WHERE nr_ground_pts = 0
     ),
     roof AS (
         SELECT
             COUNT(gid) roof_missing_cnt
         FROM
-            bagactueel.{view_r}
+            {schema}.{bag3d}
+        WHERE nr_roof_pts = 0
     ),
     invalid AS (
         SELECT
             COUNT (gid) invalid_height_cnt
         FROM
-            bagactueel.{view_h}
-    ),
-    valid AS (
-        SELECT
-            COUNT (gid) valid_cnt
-        FROM
-            bagactueel.{view_valid}
-    ) SELECT
+            {schema}.{bag3d}
+        WHERE bouwjaar > ahn_file_date
+    )
+    INSERT INTO public.bag3d_quality
+    SELECT
+        current_date AS date,
+        t.total_cnt,
         g.ground_missing_cnt,
         r.roof_missing_cnt,
         i.invalid_height_cnt,
-        v.valid_cnt,
-        t.total_cnt,
         (
-            g.ground_missing_cnt::FLOAT4 / v.valid_cnt::FLOAT4
+            g.ground_missing_cnt::FLOAT4 / t.total_cnt::FLOAT4
         )* 100 AS ground_missing_pct,
         (
-            r.roof_missing_cnt::FLOAT4 / v.valid_cnt::FLOAT4
+            r.roof_missing_cnt::FLOAT4 / t.total_cnt::FLOAT4
         )* 100 AS roof_missing_pct,
         (
-            i.invalid_height_cnt::FLOAT4 / v.valid_cnt::FLOAT4
-        )* 100 AS invalid_height_pct,
-        (
-            v.valid_cnt::FLOAT4 / t.total_cnt::FLOAT4
-        )* 100 AS valid_pct
+            i.invalid_height_cnt::FLOAT4 / t.total_cnt::FLOAT4
+        )* 100 AS invalid_height_pct
     FROM
         total t,
         ground g,
         roof r,
-        invalid i,
-        valid v;
+        invalid i;
     """).format(bag3d=sql.Identifier(config["output"]["bag3d_table"]),
-                view_g=view_g, view_r=view_r, view_h=view_h,
-                view_valid=view_valid)
+                schema=schema)
     try:
         logger.debug(conn.print_query(query))
-        res = conn.get_dict(query)
-        return res[0]
+        conn.sendQuery(query)
     except BaseException as e:
         logger.exception(e)
         raise

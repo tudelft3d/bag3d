@@ -70,34 +70,41 @@ COMMENT ON VIEW bagactueel.bag3d_sample IS 'Random sample (1%) of the 3D BAG, us
 
 
 /* Evaluation */
+
 WITH total AS (
     SELECT
         COUNT(gid) total_cnt
     FROM
-        bagactueel.bag3d
+        bagactueel.pand3d
 ),
 ground AS (
     SELECT
         COUNT(gid) ground_missing_cnt
     FROM
-        bagactueel.missing_ground
+        bagactueel.pand3d
+    WHERE nr_ground_pts = 0
 ),
 roof AS (
     SELECT
         COUNT(gid) roof_missing_cnt
     FROM
-        bagactueel.missing_roof
+        bagactueel.pand3d
+    WHERE nr_roof_pts = 0
 ),
 invalid AS (
     SELECT
         COUNT (gid) invalid_height_cnt
     FROM
-        bagactueel.bag3d_invalid_height
-) SELECT
+        bagactueel.pand3d
+    WHERE bouwjaar > ahn_file_date
+)
+INSERT INTO public.bag3d_quality
+SELECT
+    current_date AS date,
+    t.total_cnt,
     g.ground_missing_cnt,
     r.roof_missing_cnt,
     i.invalid_height_cnt,
-    t.total_cnt,
     (
         g.ground_missing_cnt::FLOAT4 / t.total_cnt::FLOAT4
     )* 100 AS ground_missing_pct,
@@ -114,6 +121,14 @@ FROM
     invalid i;
 
    
-SELECT geovlak, identificatie, tile_id, ahn_version
-FROM bagactueel.pand3d_sample
-ORDER BY tile_id;
+CREATE TABLE public.bag3d_quality (
+date date, 
+total_cnt int,
+ground_missing_cnt int,
+roof_missing_cnt int,
+invalid_height_cnt int,
+ground_missing_pct float4,
+roof_missing_pct float4,
+invalid_height_pct float4);
+
+
