@@ -217,7 +217,7 @@ def create_bag3d_relations(conn, cfg):
         p.documentnummer,
         p.documentdatum,
         p.pandstatus,
-        p.bouwjaar,
+        make_date(p.bouwjaar::int, 1, 1) bouwjaar,
         p.begindatumtijdvakgeldigheid,
         p.einddatumtijdvakgeldigheid,
         p.geovlak,
