@@ -12,6 +12,8 @@ from psycopg2 import sql
 import datetime
 import logging
 
+from bag3d.update import bag
+
 logger = logging.getLogger('import')
 
 
@@ -70,6 +72,9 @@ def create_heights_table(conn, schema, table):
         "rmse-0.95" real,
         "roof-0.99" real,
         "rmse-0.99" real,
+        roof_flat bool,
+        nr_ground_pts int,
+        nr_roof_pts int,
         ahn_file_date timestamptz,
         ahn_version smallint,
         tile_id text
@@ -144,21 +149,21 @@ def csv2db(conn, cfg, out_paths):
                 # be imported with COPY instead of row-wise edit and import
                 # in python (suuuper slow)
                 # Watch out for trailing commas from the CSV (until #58 is fixed in 3dfier)
-                cmd_add_ahn = "gawk -i inplace -F',' 'BEGIN { OFS = \",\" } {$24=\"%s,%s,%s\"; print}' %s" % (
+                cmd_add_ahn = "gawk -i inplace -F',' 'BEGIN { OFS = \",\" } {$27=\"%s,%s,%s\"; print}' %s" % (
                     ahn_file_date, 
                     ahn_version,
                     tile,
                     path)
                 run(cmd_add_ahn, shell=True)
-                cmd_header = "sed -i '1s/.*/id,ground-0.00,ground-0.10,\
-ground-0.20,ground-0.30,ground-0.40,ground-0.50,roof-0.00,rmse-0.00,roof-0.10,\
-rmse-0.10,roof-0.25,rmse-0.25,roof-0.50,rmse-0.50,roof-0.75,rmse-0.75,roof-0.90,\
-rmse-0.90,roof-0.95,rmse-0.95,roof-0.99,rmse-0.99,\
+                cmd_header = "sed -i '1s/.*/id,ground-0.00,ground-0.10,ground-0.20,\
+ground-0.30,ground-0.40,ground-0.50,roof-0.00,roof-0.10,roof-0.25,roof-0.50,\
+roof-0.75,roof-0.90,roof-0.95,roof-0.99,roof_flat,nr_ground_pts,nr_roof_pts,\
 ahn_file_date,ahn_version,tile_id/' %s" % path
                 run(cmd_header, shell=True)
                 
                 with open(path, "r") as f_in:
                     next(f_in) # skip header
+                    logger.debug(f_in)
                     cur.copy_from(f_in, tbl, sep=',', null='-99.99')
                         
         conn.sendQuery(
@@ -238,6 +243,9 @@ def create_bag3d_relations(conn, cfg):
         h."rmse-0.95",
         h."roof-0.99",
         h."rmse-0.99",
+        h.roof_flat,
+        h.nr_ground_pts,
+        h.nr_roof_pts,
         h.ahn_file_date,
         h.ahn_version,
         h.tile_id

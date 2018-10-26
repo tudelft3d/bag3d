@@ -92,7 +92,7 @@ def call_3dfier(db, tile, schema_tiles,
         else:
             output_path = os.path.join(output_dir, tile_out)
         # Run 3dfier
-        command = [path_3dfier, yml_path, "--CSV-BUILDINGS-MULTIPLE", 
+        command = [path_3dfier, yml_path, "--stat_RMSE", "--CSV-BUILDINGS-MULTIPLE", 
                    output_path]
         try:
             logger.debug(" ".join(command))
@@ -181,8 +181,8 @@ input_elevation:
     thinning: 0
 
 options:
-  building_radius_vertex_elevation: 3.0
-  radius_vertex_elevation: 1.0
+  building_radius_vertex_elevation: 0.5
+  radius_vertex_elevation: 0.5
   threshold_jump_edges: 0.5
         """.format(dns=dns,
                    uniqueid=uniqueid,
