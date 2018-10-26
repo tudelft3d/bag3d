@@ -67,18 +67,24 @@ def get_file_date(ahn_dir, ahn_pat, t, f_date_pat, corruptedfiles):
         d = None
     else:
         # append file creation date to AHN index
-        f_date = f_date_pat.search(err).group().strip()
-        day_len = f_date.find("/")
-        if day_len == 1:
-            date = "00" + f_date
-        elif day_len == 2:
-            date = "0" + f_date
+        sres = f_date_pat.search(err)
+        logger.debug(sres)
+        if sres:
+            f_date = f_date_pat.search(err).group().strip()
+            day_len = f_date.find("/")
+            if day_len == 1:
+                date = "00" + f_date
+            elif day_len == 2:
+                date = "0" + f_date
+            else:
+                date = f_date
+            # strftime needs zero-padding for day-of-the-year
+            d = datetime.strptime(date + '/CET', '%j/%Y/%Z')
+            return d
         else:
-            date = f_date
-        # strftime needs zero-padding for day-of-the-year
-        d = datetime.strptime(date + '/CET', '%j/%Y/%Z')
-        
-    return d
+            
+            logger.error("Could not find the file date in LAS header:\n %s", err)
+            return None
 
 
 def download(ahn3_dir, ahn2_dir, tile_index_file, ahn3_file_pat, ahn2_file_pat):
