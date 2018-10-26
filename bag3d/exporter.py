@@ -13,6 +13,12 @@ from bag3d.update import bag
 
 logger = logging.getLogger("export")
 
+def compute_md5(file, d):
+    """Compute the md5sum of a file"""
+    filename = os.path.splitext(os.path.basename(file))
+    md5_file = filename[0] + ".md5"
+    cmd = ["md5sum", "--tag", file, ">", os.path.join(d, md5_file)]
+    bag.run_subprocess(cmd, shell=True  )
 
 def csv(conn, config, out_dir):
     """Export the 3DBAG table into a CSV file
@@ -76,6 +82,7 @@ def csv(conn, config, out_dir):
     with open(csv_out, "w") as c_out:
         with conn.conn.cursor() as cur:
             cur.copy_expert(query, c_out)
+    compute_md5(csv_out, d)
 
 
 def gpkg(conn, config, out_dir, doexec=True):
@@ -111,6 +118,7 @@ def gpkg(conn, config, out_dir, doexec=True):
     command = ["ogr2ogr", "-f", "GPKG", f, dns]
     logger.info("Exporting GPKG")
     bag.run_subprocess(command, shell=True, doexec=doexec)
+    compute_md5(f, d)
     
 def postgis(conn, config, out_dir, doexec=True):
     """Export as PostgreSQL backup file
@@ -148,6 +156,7 @@ def postgis(conn, config, out_dir, doexec=True):
                "UTF8", "--verbose", "--schema-only", "--schema", "bagactueel",
                 "--file", f, conn.dbname]
     bag.run_subprocess(command, shell=True, doexec=doexec)
+    compute_md5(f, postgis_dir)
     
     # The 3D BAG (building heights + footprint geom)s
     f = os.path.join(postgis_dir, "bag3d_{d}.backup".format(d=date))
@@ -158,4 +167,5 @@ def postgis(conn, config, out_dir, doexec=True):
                "UTF8", "--verbose", "--file", f, "--table", tbl, conn.dbname]
     logger.info("Exporting PostGIS backup")
     bag.run_subprocess(command, shell=True, doexec=doexec)
+    compute_md5(f, postgis_dir)
 
