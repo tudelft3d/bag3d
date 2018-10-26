@@ -55,13 +55,21 @@ def create_heights_table(conn, schema, table):
         "ground-0.40" real,
         "ground-0.50" real,
         "roof-0.00" real,
+        "rmse-0.00" real,
         "roof-0.10" real,
+        "rmse-0.10" real,
         "roof-0.25" real,
+        "rmse-0.25" real,
         "roof-0.50" real,
+        "rmse-0.50" real,
         "roof-0.75" real,
+        "rmse-0.75" real,
         "roof-0.90" real,
+        "rmse-0.90" real,
         "roof-0.95" real,
+        "rmse-0.95" real,
         "roof-0.99" real,
+        "rmse-0.99" real,
         ahn_file_date timestamptz,
         ahn_version smallint,
         tile_id text
@@ -136,15 +144,16 @@ def csv2db(conn, cfg, out_paths):
                 # be imported with COPY instead of row-wise edit and import
                 # in python (suuuper slow)
                 # Watch out for trailing commas from the CSV (until #58 is fixed in 3dfier)
-                cmd_add_ahn = "gawk -i inplace -F',' 'BEGIN { OFS = \",\" } {$16=\"%s,%s,%s\"; print}' %s" % (
+                cmd_add_ahn = "gawk -i inplace -F',' 'BEGIN { OFS = \",\" } {$24=\"%s,%s,%s\"; print}' %s" % (
                     ahn_file_date, 
                     ahn_version,
                     tile,
                     path)
                 run(cmd_add_ahn, shell=True)
-                cmd_header = "sed -i '1s/.*/id,ground-0.00,ground-0.10,ground-0.20,\
-ground-0.30,ground-0.40,ground-0.50,roof-0.00,roof-0.10,\
-roof-0.25,roof-0.50,roof-0.75,roof-0.90,roof-0.95,roof-0.99,\
+                cmd_header = "sed -i '1s/.*/id,ground-0.00,ground-0.10,\
+ground-0.20,ground-0.30,ground-0.40,ground-0.50,roof-0.00,rmse-0.00,roof-0.10,\
+rmse-0.10,roof-0.25,rmse-0.25,roof-0.50,rmse-0.50,roof-0.75,rmse-0.75,roof-0.90,\
+rmse-0.90,roof-0.95,rmse-0.95,roof-0.99,rmse-0.99,\
 ahn_file_date,ahn_version,tile_id/' %s" % path
                 run(cmd_header, shell=True)
                 
@@ -214,13 +223,21 @@ def create_bag3d_relations(conn, cfg):
         h."ground-0.40",
         h."ground-0.50",
         h."roof-0.00",
+        h."rmse-0.00",
         h."roof-0.10",
+        h."rmse-0.10",
         h."roof-0.25",
+        h."rmse-0.25",
         h."roof-0.50",
+        h."rmse-0.50",
         h."roof-0.75",
+        h."rmse-0.75",
         h."roof-0.90",
+        h."rmse-0.90",
         h."roof-0.95",
+        h."rmse-0.95",
         h."roof-0.99",
+        h."rmse-0.99",
         h.ahn_file_date,
         h.ahn_version,
         h.tile_id
