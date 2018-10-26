@@ -8,11 +8,11 @@ database:
 input_polygons:
     footprints:
         schema: bagactueel
-        table: pand
+        table: pandactueelbestaand
         fields:
             primary_key: gid
-            geometry: geom
-            uniqueid: identification
+            geometry: geovlak
+            uniqueid: identificatie
     tile_schema: bag_tiles
     user_schema: 
     tile_prefix: t_ 
@@ -21,8 +21,8 @@ input_polygons:
 
 input_elevation:
     dataset_dir:
-        - example_data/ahn2
         - example_data/ahn3
+        - example_data/ahn2
     dataset_name: 
         - "unit_{tile}.laz"
         - "unit_{tile}.laz"
@@ -55,11 +55,11 @@ tile_index:
     identical: True
 
 output:
-    dir: /tmp/3DBAG
+    dir: temp
     schema: bagactueel
     table: heights
     bag3d_table: pand3d
 
-path_3dfier: docker run --rm --link 3dbag_postgis -v $(pwd):/home/3dfier 3dbag:3dfier 3dfier
+path_3dfier: /home/balazs/Development/3dfier_src/3dfier/build/3dfier
 
 

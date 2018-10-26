@@ -180,16 +180,19 @@ def create_bag3d_relations(conn, cfg):
     cfg: dict
         batch3dfier YAML config as returned by :meth:`bag3d.config.args.parse_config`
     """
-    
+    schema_q = sql.Identifier(cfg['input_polygons']['footprints']['schema'])
+    bag_table_q = sql.Identifier(cfg['input_polygons']['footprints']['table'])
+    uniqueid_q = sql.Identifier(cfg['input_polygons']['footprints']['fields']['uniqueid'])
     bag3d_table_q = sql.Identifier(cfg['output']['bag3d_table'])
     heights_table_q = sql.Identifier(cfg['output']['table'])
     
-    drop_q = sql.SQL("DROP TABLE IF EXISTS bagactueel.{bag3d} CASCADE;").format(
-        bag3d=bag3d_table_q)
+    drop_q = sql.SQL("DROP TABLE IF EXISTS {schema}.{bag3d} CASCADE;").format(
+        bag3d=bag3d_table_q,
+        schema=schema_q)
     conn.sendQuery(drop_q)
     
     query = sql.SQL("""
-    CREATE TABLE bagactueel.{bag3d} AS
+    CREATE TABLE {schema}.{bag3d} AS
     SELECT
         p.gid,
         p.identificatie::bigint,
@@ -221,44 +224,45 @@ def create_bag3d_relations(conn, cfg):
         h.ahn_file_date,
         h.ahn_version,
         h.tile_id
-    FROM bagactueel.pandactueelbestaand p
-    INNER JOIN bagactueel.{heights} h ON p.identificatie::numeric = h.id;
-    """).format(bag3d=bag3d_table_q, heights=heights_table_q)
+    FROM {schema}.{bag} p
+    INNER JOIN {schema}.{heights} h ON p.{uniqueid}::numeric = h.id;
+    """).format(bag=bag_table_q, uniqueid=uniqueid_q,schema=schema_q,
+                bag3d=bag3d_table_q, heights=heights_table_q)
     # the type of bagactueel.pand.identificatie can change between different 
     # BAG extracts (numeric or varchar)
     conn.sendQuery(query)
     
     idx = sql.Identifier(cfg['output']['bag3d_table'] + "_identificatie_idx")
     query = sql.SQL("""
-    CREATE INDEX {idx} ON bagactueel.{bag3d} (identificatie);
-    """).format(idx=idx, bag3d=bag3d_table_q)
+    CREATE INDEX {idx} ON {schema}.{bag3d} ({uniqueid});
+    """).format(idx=idx, bag3d=bag3d_table_q,schema=schema_q,uniqueid=uniqueid_q)
     conn.sendQuery(query)
     
     idx = sql.Identifier(cfg['output']['bag3d_table'] + "_tile_id_idx")
     query = sql.SQL("""
-    CREATE INDEX {idx} ON bagactueel.{bag3d} (tile_id);
-    """).format(idx=idx, bag3d=bag3d_table_q)
+    CREATE INDEX {idx} ON {schema}.{bag3d} (tile_id);
+    """).format(idx=idx, bag3d=bag3d_table_q,schema=schema_q)
     conn.sendQuery(query)
     
     idx = sql.Identifier(cfg['output']['bag3d_table'] + "_geovlak_idx")
     query = sql.SQL("""
-    CREATE INDEX {idx} ON bagactueel.{bag3d} USING GIST (geovlak);
-    """).format(idx=idx, bag3d=bag3d_table_q)
+    CREATE INDEX {idx} ON {schema}.{bag3d} USING GIST (geovlak);
+    """).format(idx=idx, bag3d=bag3d_table_q,schema=schema_q)
     conn.sendQuery(query)
     
     query = sql.SQL("""
-    SELECT populate_geometry_columns('bagactueel.{bag3d}'::regclass);
-    """).format(bag3d=bag3d_table_q)
+    SELECT populate_geometry_columns('{schema}.{bag3d}'::regclass);
+    """).format(bag3d=bag3d_table_q,schema=schema_q)
     conn.sendQuery(query)
     
     query = sql.SQL("""
-    COMMENT ON TABLE bagactueel.{bag3d} IS 'The 3D BAG';
-    """).format(bag3d=bag3d_table_q)
+    COMMENT ON TABLE {schema}.{bag3d} IS 'The 3D BAG';
+    """).format(bag3d=bag3d_table_q,schema=schema_q)
     conn.sendQuery(query)
     
     query = sql.SQL("""
-    DROP TABLE bagactueel.{heights} CASCADE;
-    """).format(heights=heights_table_q)
+    DROP TABLE {schema}.{heights} CASCADE;
+    """).format(heights=heights_table_q,schema=schema_q)
     conn.sendQuery(query)
 
 

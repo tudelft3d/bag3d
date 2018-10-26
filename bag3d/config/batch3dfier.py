@@ -71,7 +71,7 @@ def call_3dfier(db, tile, schema_tiles,
         # uses it
         yml_name = thread + "_config.yml"
         yml_path = os.path.join(yml_dir, yml_name)
-        config = yamlr(dbname=db.dbname, host=db.host, user=db.user,
+        config = yamlr(dbname=db.dbname, host=db.host, port=db.port, user=db.user,
                        pw=db.password, schema_tiles=schema_tiles,
                        bag_tile=tile, pc_path=pc_path, uniqueid=uniqueid,
                        ahn_version=ahn_version)
@@ -109,7 +109,7 @@ def call_3dfier(db, tile, schema_tiles,
     return {'tile_skipped': None, 'out_path': output_path}
 
 
-def yamlr(dbname, host, user, pw, schema_tiles,
+def yamlr(dbname, host, port, user, pw, schema_tiles,
           bag_tile, pc_path, uniqueid, ahn_version):
     """Parse the YAML config file for 3dfier.
 
@@ -135,17 +135,19 @@ def yamlr(dbname, host, user, pw, schema_tiles,
     # results in 'YAML::TypedBadConversion<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >'
     # because every line is indented as here
     if pw:
-        d = 'PG:dbname={dbname} host={host} user={user} password={pw} schemas={schema_tiles} tables={bag_tile}'
+        d = 'PG:dbname={dbname} host={host} port={port} user={user} password={pw} schemas={schema_tiles} tables={bag_tile}'
         dns = d.format(dbname=dbname,
                host=host,
+               port=port,
                user=user,
                pw=pw,
                schema_tiles=schema_tiles,
                bag_tile=bag_tile)
     else:
-        d = 'PG:dbname={dbname} host={host} user={user} schemas={schema_tiles} tables={bag_tile}'
+        d = 'PG:dbname={dbname} host={host} port={port} user={user} schemas={schema_tiles} tables={bag_tile}'
         dns = d.format(dbname=dbname,
                host=host,
+               port=port,
                user=user,
                schema_tiles=schema_tiles,
                bag_tile=bag_tile)

@@ -14,5 +14,7 @@ RUN set -x; \
     && mv /opt/3dfier/build/3dfier /bin/; \
     rm -rf /var/cache/apt/* /tmp/*
 
-USER 3dfier
-WORKDIR /home/3dfier
+RUN useradd -ms /bin/bash balazs
+RUN mkdir -p /home/balazs/Development/3dbag
+USER balazs
+WORKDIR /home/balazs/Development/3dbag
