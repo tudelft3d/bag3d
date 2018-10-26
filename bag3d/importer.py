@@ -248,6 +248,11 @@ def create_bag3d_relations(conn, cfg):
         h.nr_roof_pts,
         h.ahn_file_date,
         h.ahn_version,
+        CASE
+            WHEN make_date(p.bouwjaar::int, 1, 1) > h.ahn_file_date THEN FALSE
+            WHEN h.nr_roof_pts = 0 THEN FALSE
+            ELSE TRUE
+        END AS height_valid,
         h.tile_id
     FROM {schema}.{bag} p
     INNER JOIN {schema}.{heights} h ON p.{uniqueid}::numeric = h.id;
@@ -266,6 +271,12 @@ def create_bag3d_relations(conn, cfg):
     idx = sql.Identifier(cfg['output']['bag3d_table'] + "_tile_id_idx")
     query = sql.SQL("""
     CREATE INDEX {idx} ON {schema}.{bag3d} (tile_id);
+    """).format(idx=idx, bag3d=bag3d_table_q,schema=schema_q)
+    conn.sendQuery(query)
+    
+    idx = sql.Identifier(cfg['output']['bag3d_table'] + "_valid_idx")
+    query = sql.SQL("""
+    CREATE INDEX {idx} ON {schema}.{bag3d} (height_valid);
     """).format(idx=idx, bag3d=bag3d_table_q,schema=schema_q)
     conn.sendQuery(query)
     
