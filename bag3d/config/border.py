@@ -373,7 +373,7 @@ def get_non_border_tiles(conn, tbl_schema, tbl_name, border_table, tbl_tile):
     logger.debug(conn.print_query(query))
     r = conn.getQuery(query)
 #     r = [row[0] for row in conn.getQuery(query)]
-#     logger.debug("%s", r)
+#    logger.debug("%s", r)
     return r
 
 

@@ -522,6 +522,10 @@ def get_2Dtile_area(db, table_index):
 def get_2Dtile_views(db, schema_tiles, tiles):
     """Get View names of the 2D tiles. It tries to find views in schema_tiles
     that contain the respective tile ID in their name.
+    
+    Note
+    ----
+    It uses wildcard search to subsitute prefixes.
 
     Parameters
     ----------
@@ -538,7 +542,7 @@ def get_2Dtile_views(db, schema_tiles, tiles):
         Name of the view that contain the tile ID as substring.
     """
     # Get View names for the tiles
-    tstr = ["%" + str(tile) + "%" for tile in tiles]
+    tstr = ["%" + str(tile) for tile in tiles]
     t = sql.Literal(tstr)
     schema_tiles = sql.Literal(schema_tiles)
     query = sql.SQL("""SELECT table_name

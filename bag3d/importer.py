@@ -156,8 +156,9 @@ def csv2db(conn, cfg, out_paths):
                     path)
                 run(cmd_add_ahn, shell=True)
                 cmd_header = "sed -i '1s/.*/id,ground-0.00,ground-0.10,ground-0.20,\
-ground-0.30,ground-0.40,ground-0.50,roof-0.00,roof-0.10,roof-0.25,roof-0.50,\
-roof-0.75,roof-0.90,roof-0.95,roof-0.99,roof_flat,nr_ground_pts,nr_roof_pts,\
+ground-0.30,ground-0.40,ground-0.50,roof-0.00,rmse-0.00,roof-0.10,rmse-0.10,\
+roof-0.25,rmse-0.25,roof-0.50,rmse-0.50,roof-0.75,rmse-0.75,roof-0.90,rmse-0.90,\
+roof-0.95,rmse-0.95,roof-0.99,rmse-0.99,roof_flat,nr_ground_pts,nr_roof_pts,\
 ahn_file_date,ahn_version,tile_id/' %s" % path
                 run(cmd_header, shell=True)
                 
@@ -216,7 +217,6 @@ def create_bag3d_relations(conn, cfg):
         p.inonderzoek,
         p.documentnummer,
         p.documentdatum,
-        p.pandstatus,
         make_date(p.bouwjaar::int, 1, 1) bouwjaar,
         p.begindatumtijdvakgeldigheid,
         p.einddatumtijdvakgeldigheid,
