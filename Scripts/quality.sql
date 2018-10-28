@@ -102,18 +102,14 @@ INSERT INTO public.bag3d_quality
 SELECT
     current_date AS date,
     t.total_cnt,
-    g.ground_missing_cnt,
-    r.roof_missing_cnt,
-    i.invalid_height_cnt,
+    (t.total_cnt::float4 - i.invalid_height_cnt::float4) / t.total_cnt::float4 * 100 AS valid_height_pct,
+    i.invalid_height_cnt::float4 / t.total_cnt::float4 * 100 AS invalid_height_pct,
     (
         g.ground_missing_cnt::FLOAT4 / t.total_cnt::FLOAT4
     )* 100 AS ground_missing_pct,
     (
         r.roof_missing_cnt::FLOAT4 / t.total_cnt::FLOAT4
-    )* 100 AS roof_missing_pct,
-    (
-        i.invalid_height_cnt::FLOAT4 / t.total_cnt::FLOAT4
-    )* 100 AS invalid_height_pct
+    )* 100 AS roof_missing_pct
 FROM
     total t,
     ground g,
@@ -122,13 +118,12 @@ FROM
 
    
 CREATE TABLE public.bag3d_quality (
-date date, 
+date date PRIMARY KEY, 
 total_cnt int,
-ground_missing_cnt int,
-roof_missing_cnt int,
-invalid_height_cnt int,
+valid_height_pct float4,
+invalid_height_pct float4,
 ground_missing_pct float4,
-roof_missing_pct float4,
-invalid_height_pct float4);
+roof_missing_pct float4
+);
 
 
