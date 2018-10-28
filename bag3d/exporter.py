@@ -105,15 +105,16 @@ def gpkg(conn, config, out_dir, doexec=True):
     os.makedirs(d, exist_ok=True)
     f = os.path.join(d, x)
     if conn.password:
-        dns = "PG:'dbname={db} host={h} user={u} password={pw} \
+        dns = "PG:'dbname={db} host={h} port={p} user={u} password={pw} \
         schemas=bagactueel tables={bag3d}'".format(db=conn.dbname,
                                                  h=conn.host,
+                                                 p=conn.port,
                                                  pw=conn.password,
                                                  u=conn.user,
                                                  bag3d=bag3d)
     else:
-        dns = "PG:'dbname={db} host={h} user={u} schemas=bagactueel \
-        tables={bag3d}'".format(db=conn.dbname, h=conn.host, 
+        dns = "PG:'dbname={db} host={h} port={p} user={u} schemas=bagactueel \
+        tables={bag3d}'".format(db=conn.dbname, h=conn.host, p=conn.port,
                                 pw=conn.password, u=conn.user, bag3d=bag3d)
     command = ["ogr2ogr", "-f", "GPKG", f, dns]
     logger.info("Exporting GPKG")
