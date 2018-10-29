@@ -24,7 +24,7 @@ copyright = '2018, Balázs Dukai'
 author = 'Balázs Dukai'
 
 # The short X.Y version
-version = '0.1.0'
+version = ''
 # The full version, including alpha/beta/rc tags
 release = ''
 

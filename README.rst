@@ -1,6 +1,6 @@
-******
-3D BAG
-******
+##########
+bag3d
+##########
 
 |Licence| |Python 3.6| |PostgreSQL 10|
 
@@ -15,7 +15,9 @@ In short the ``bag3d`` application can:
 + Export into CSV, GeoPackage or PostgreSQL backup.
 + Report various quality metrics.
 
-Read more about the 3D BAG data set as well as ``bag3d`` in the **`documentation <https://tudelft3d.github.io/bag3d/>`_**
+Read the complete ``bag3d`` `documentation <https://tudelft3d.github.io/bag3d/>`_
+
+Read the `3D BAG data set documentation <http://3dbag.bk.tudelft.nl>`_
 
 
 .. |Licence| image:: https://img.shields.io/badge/licence-GPL--3-blue.svg
