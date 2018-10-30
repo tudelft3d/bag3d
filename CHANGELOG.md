@@ -5,5 +5,5 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-+ Initial bag3d release
++ First feature complete release
 

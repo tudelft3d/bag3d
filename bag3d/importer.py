@@ -141,9 +141,10 @@ def csv2db(conn, cfg, out_paths):
                 try:
                     ahn_file_date = resultset[0][0].isoformat()
                     ahn_version = resultset[0][1]
-                except IndexError:
+                except (IndexError, AttributeError) as e:
                     ahn_file_date = -99.99
                     ahn_version = -99.99
+                    logger.error(e)
                 
                 # Need to do some linux text-fu so that the whole csv file can
                 # be imported with COPY instead of row-wise edit and import
@@ -217,7 +218,10 @@ def create_bag3d_relations(conn, cfg):
         p.inonderzoek,
         p.documentnummer,
         p.documentdatum,
-        make_date(p.bouwjaar::int, 1, 1) bouwjaar,
+        CASE
+            WHEN p.bouwjaar > 0 THEN make_date(p.bouwjaar::int, 1, 1)
+            ELSE NULL
+        END AS bouwjaar,
         p.begindatumtijdvakgeldigheid,
         p.einddatumtijdvakgeldigheid,
         p.geovlak,
@@ -249,6 +253,7 @@ def create_bag3d_relations(conn, cfg):
         h.ahn_file_date,
         h.ahn_version,
         CASE
+            WHEN p.bouwjaar = 0 THEN FALSE
             WHEN make_date(p.bouwjaar::int, 1, 1) > h.ahn_file_date THEN FALSE
             WHEN h.nr_roof_pts = 0 THEN FALSE
             ELSE TRUE
