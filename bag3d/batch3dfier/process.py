@@ -15,7 +15,11 @@ from bag3d.config import batch3dfier
 logger = logging.getLogger('batch3dfier.process')
 
 def run(conn, config, doexec=True):
-    tiles = config["input_polygons"]["tile_list"]
+    if config["input_polygons"]["tile_list"] is None:
+        logger.error("tile_list in %s is empty, exiting function", config["config"]["in"])
+        return
+    else:
+        tiles = config["input_polygons"]["tile_list"]
     cfg_dir = os.path.dirname(config["config"]["in"])
     pc_name_map = batch3dfier.pc_name_dict(config["input_elevation"]["dataset_dir"], 
                                            config["input_elevation"]["dataset_name"])
@@ -117,3 +121,5 @@ def run(conn, config, doexec=True):
     logger.info("Total number of tiles processed: %s",
                  str(len(tiles.difference(tiles_skipped))))
     logger.info("Tiles skipped: %s", tiles_skipped)
+    
+    return 0
