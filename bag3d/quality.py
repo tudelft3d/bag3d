@@ -152,7 +152,7 @@ def create_quality_views(conn, cfg):
 def create_quality_table(conn):
     """Create a table to store the quality statistics"""
     query = sql.SQL("""
-    CREATE TABLE public.bag3d_quality (
+    CREATE TABLE IF NOT EXISTS public.bag3d_quality (
     date date PRIMARY KEY, 
     total_cnt int,
     valid_height_pct float4,

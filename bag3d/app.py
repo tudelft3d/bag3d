@@ -165,11 +165,11 @@ def app(cli_args, here):
                 logger.info("Running batch3dfier")
                 res = process.run(conn, c, doexec=args_in['no_exec'])
 #                 process.run(conn, cfg_out, doexec=False)
-                if res:
+                if res is None:
+                    logger.warning("3dfier returned None, skipping import")
+                else:
                     logger.info("Importing batch3dfier output into database")
                     importer.import_csv(conn, c)
-                else:
-                    logger.info("3dfier returned None, skipping import")
             
             logger.info("Joining 3D tables")
             importer.unite_border_tiles(conn, cfg["output"]["schema"], 

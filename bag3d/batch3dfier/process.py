@@ -17,7 +17,7 @@ logger = logging.getLogger('batch3dfier.process')
 def run(conn, config, doexec=True):
     if config["input_polygons"]["tile_list"] is None:
         logger.error("tile_list in %s is empty, exiting function", config["config"]["in"])
-        return
+        return None
     else:
         tiles = config["input_polygons"]["tile_list"]
     cfg_dir = os.path.dirname(config["config"]["in"])
