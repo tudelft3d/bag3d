@@ -258,7 +258,7 @@ def update_tile_list(conn, config, tile_list, ahn_version=None,
         The updated configuration
     """
     c = copy.deepcopy(config)
-    logger.debug(config["input_polygons"]["tile_list"])
+#     logger.debug(config["input_polygons"]["tile_list"])
     tl = list(set(tile_list).intersection(set(config["input_polygons"]["tile_list"])))
     tile_views = batch3dfier.get_2Dtile_views(conn, config["input_polygons"]["tile_schema"], 
                                  tl)

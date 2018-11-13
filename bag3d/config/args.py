@@ -4,6 +4,7 @@
 
 from sys import exit
 import os.path
+from shutil import rmtree
 import argparse
 import logging
 
@@ -225,10 +226,6 @@ def parse_config(args_in, schema):
 #     cfg['out_schema'] = cfg_stream["output"]["schema"]
 #     cfg['out_table'] = cfg_stream["output"]["table"]
 #     cfg['bag3d_table'] = cfg_stream["output"]["bag3d_table"]
-    
-    cfg["output"] = cfg_stream["output"]
-    cfg["output"]["dir"] = os.path.abspath(cfg_stream["output"]["dir"])
-    os.makedirs(cfg["output"]["dir"], exist_ok=True)
 
     cfg['path_3dfier'] = cfg_stream["path_3dfier"]
 
@@ -264,20 +261,28 @@ def parse_config(args_in, schema):
 
     cfg['prefix_tile_footprint'] = cfg_stream["input_polygons"]["tile_prefix"]
     
+    cfg["output"] = cfg_stream["output"]
+    cfg["output"]["dir"] = os.path.abspath(cfg_stream["output"]["dir"])
+    os.makedirs(cfg["output"]["dir"], exist_ok=True)
+    
     cfg["config"] = {}
     cfg["config"]["in"] = args_in['cfg_file']
-    d = os.path.dirname(args_in['cfg_file'])
-    rest_dir = os.path.join(d, "cfg_rest")
-    ahn2_dir = os.path.join(d, "cfg_ahn2")
-    ahn3_dir = os.path.join(d, "cfg_ahn3")
+    rootdir = os.path.dirname(args_in['cfg_file'])
+    rest_dir = os.path.join(rootdir, "cfg_rest")
+    ahn2_dir = os.path.join(rootdir, "cfg_ahn2")
+    ahn3_dir = os.path.join(rootdir, "cfg_ahn3")
     for d in [rest_dir, ahn2_dir, ahn3_dir]:
-        os.makedirs(d, exist_ok=True)
-    cfg["config"]["out_rest"] = os.path.join(rest_dir, 
-                                             "bag3d_cfg_rest.yml")
-    cfg["config"]["out_border_ahn2"] = os.path.join(ahn2_dir, 
-                                                    "bag3d_cfg_border_ahn2.yml")
-    cfg["config"]["out_border_ahn3"] = os.path.join(ahn3_dir, 
-                                                    "bag3d_cfg_border_ahn3.yml")
+        if os.path.isdir(d):
+            rmtree(d, ignore_errors=True, onerror=None)
+        else:
+            try:
+                os.makedirs(d, exist_ok=False)
+            except Exception as e:
+                logger.error(e)
+    cfg["config"]["out_rest"] = os.path.join(rest_dir, "bag3d_cfg_rest.yml")
+    cfg["config"]["out_border_ahn2"] = os.path.join(ahn2_dir, "bag3d_cfg_border_ahn2.yml")
+    cfg["config"]["out_border_ahn3"] = os.path.join(ahn3_dir, "bag3d_cfg_border_ahn3.yml")
+    
     if cfg_stream["quality"]["ahn2_rast_dir"]:
         os.makedirs(cfg_stream["quality"]["ahn2_rast_dir"], exist_ok=True)
     if cfg_stream["quality"]["ahn3_rast_dir"]:

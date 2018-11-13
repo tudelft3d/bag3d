@@ -5,6 +5,8 @@
 
 import os
 import sys
+from shutil import rmtree
+
 from csv import DictWriter
 
 import yaml
@@ -158,9 +160,16 @@ def app(cli_args, here):
 #                 cfg_out = batch3dfier.configure_tiles(conn, c, clip_prefix)
 #                 logger.debug("%s, %s", c, pformat(cfg_out))
                 #logger.debug("%s, %s", (c, pformat(cfg_out)))
-                if not os.path.exists(c["output"]["dir"]):
-                    os.makedirs(c["output"]["dir"], exist_ok=True)
-                logger.debug("Created %s", c["output"]["dir"])
+                # clean up previous files
+                if os.path.isdir(c["output"]["dir"]):
+                    rmtree(c["output"]["dir"], ignore_errors=True, onerror=None)
+                else:
+                    try:
+                        os.makedirs(c["output"]["dir"], exist_ok=False)
+                        logger.debug("Created %s", c["output"]["dir"])
+                    except Exception as e:
+                        logger.error(e)
+                        sys.exit(1)
                 
                 logger.info("Running batch3dfier")
                 res = process.run(conn, c, doexec=args_in['no_exec'])
