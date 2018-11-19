@@ -9,6 +9,7 @@ import threading
 import time
 from shutil import rmtree
 import logging
+import re
 
 from bag3d.config import batch3dfier
 
@@ -30,6 +31,7 @@ def run(conn, config, doexec=True):
     pc_name_map = batch3dfier.pc_name_dict(config["input_elevation"]["dataset_dir"], 
                                            config["input_elevation"]["dataset_name"])
     pc_file_idx = batch3dfier.pc_file_index(pc_name_map)
+    tile_group = re.search(r"bag3d_cfg_(\w+).yml", config["config"]["in"]).group(1)
 
     exitFlag = 0
     tiles_skipped = []
@@ -52,7 +54,7 @@ def run(conn, config, doexec=True):
             if not workQueue.empty():
                 tile = q.get()
                 queueLock.release()
-                logger.debug("%s processing %s" % (threadName, tile))
+                logger.debug("Processing %s" % tile)
                 t = batch3dfier.call_3dfier(
                     db=conn,
                     tile=tile,
@@ -73,6 +75,7 @@ def run(conn, config, doexec=True):
                     path_3dfier=config['path_3dfier'],
                     thread=threadName,
                     pc_file_index=pc_file_idx,
+                    tile_group=tile_group,
                     doexec=doexec)
                 if t['tile_skipped'] is not None:
                     tiles_skipped.append(t['tile_skipped'])

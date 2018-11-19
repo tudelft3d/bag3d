@@ -7,6 +7,7 @@ from os import remove
 import re
 from itertools import chain
 from pprint import pformat
+import time
 
 from shapely.geometry import shape
 from shapely import geos
@@ -19,6 +20,7 @@ import random
 from bag3d.update import bag
 
 logger = logging.getLogger('config.batch3dfier')
+logger_perf = logging.getLogger('performance')
 
 
 def call_3dfier(db, tile, schema_tiles,
@@ -27,7 +29,7 @@ def call_3dfier(db, tile, schema_tiles,
                 extent_ewkb, clip_prefix, prefix_tile_footprint,
                 yml_dir, tile_out, output_format, output_dir,
                 path_3dfier, thread,
-                pc_file_index,
+                pc_file_index, tile_group,
                 doexec=True):
     """Call 3dfier with the YAML config created by yamlr().
 
@@ -75,7 +77,7 @@ def call_3dfier(db, tile, schema_tiles,
     if pc_path:
         # Needs a YAML per thread so one doesn't overwrite it while the other
         # uses it
-        yml_name = thread + "_config.yml"
+        yml_name = tile + ".yml"
         yml_path = os.path.join(yml_dir, yml_name)
         config = yamlr(dbname=db.dbname, host=db.host, port=db.port, user=db.user,
                        pw=db.password, schema_tiles=schema_tiles,
@@ -116,6 +118,8 @@ def call_3dfier(db, tile, schema_tiles,
         tile_skipped = tile
         return({'tile_skipped': tile_skipped,
                 'out_path': None})
+    proc_time = time.process_time() / 60 # convert to minutes
+    logger_perf.debug("%s - %s - process_time %s" % (tile_group, tile, proc_time))
     return {'tile_skipped': None, 
             'out_path': output_path}
 
