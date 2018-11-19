@@ -148,7 +148,7 @@ def app(cli_args, here):
                                        doexec=args_in['no_exec'])
             border.update_file_date(conn, cfg, ahn2_dir, ahn2_fp, 
                                     doexec=args_in['no_exec'])
-    
+
         if args_in['run_3dfier']:
             logger.info("Configuring batch3dfier")
             clip_prefix = "_clip3dfy_"
@@ -158,28 +158,41 @@ def app(cli_args, here):
                                                           ahn2_dir, 
                                                           export=False)
             for c in [cfg_rest, cfg_ahn2, cfg_ahn3]:
-#                 cfg_out = batch3dfier.configure_tiles(conn, c, clip_prefix)
-#                 logger.debug("%s, %s", c, pformat(cfg_out))
-                #logger.debug("%s, %s", (c, pformat(cfg_out)))
                 # clean up previous files
                 if os.path.isdir(c["output"]["dir"]):
                     rmtree(c["output"]["dir"], ignore_errors=True, onerror=None)
-                else:
-                    try:
-                        os.makedirs(c["output"]["dir"], exist_ok=False)
-                        logger.debug("Created %s", c["output"]["dir"])
-                    except Exception as e:
-                        logger.error(e)
-                        sys.exit(1)
+                    logger.debug("Deleted %s", c["output"]["dir"])
+                try:
+                    os.makedirs(c["output"]["dir"], exist_ok=False)
+                    logger.debug("Created %s", c["output"]["dir"])
+                except Exception as e:
+                    logger.error(e)
+                    sys.exit(1)
                 
                 logger.info("Running batch3dfier")
                 res = process.run(conn, c, doexec=args_in['no_exec'])
-#                 process.run(conn, cfg_out, doexec=False)
-                if res is None:
-                    logger.warning("3dfier returned None, skipping import")
+                
+                restart = 0
+                while restart < 3:
+                    if res is None:
+                        break
+                    elif len(res) == 0:
+                        break
+                    elif len(res) > 0:
+                        restart += 1
+                        logger.info("Restarting 3dfier with tiles %s", res)
+                        c["input_polygons"]["tile_list"] = res
+                        res = process.run(conn, c, doexec=args_in['no_exec'])
+                
+                if not os.listdir(c["output"]["dir"]):
+                    logger.warning("3dfier failed completely for %s, skipping import", 
+                                   c["config"]["in"])
                 else:
                     logger.info("Importing batch3dfier output into database")
                     importer.import_csv(conn, c)
+                # Clean up
+                rmtree(os.path.dirname(c["config"]["in"]), ignore_errors=True)
+#                 rmtree(c["output"]["dir"], ignore_errors=True)
             
             logger.info("Joining 3D tables")
             importer.unite_border_tiles(conn, cfg["output"]["schema"], 

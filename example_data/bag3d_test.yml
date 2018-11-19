@@ -21,8 +21,8 @@ input_polygons:
 
 input_elevation:
     dataset_dir:
-        - example_data/ahn3/laz
-        - example_data/ahn2/laz
+        - ahn3/laz
+        - ahn2/laz
     dataset_name: 
         - "unit_{tile}.laz"
         - "unit_{tile}.laz"
@@ -41,7 +41,7 @@ tile_index:
             primary_key: id
             geometry: geom
             unit_name: unit
-        file: example_data/bag_index.geojson
+        file: bag_index.geojson
     elevation: 
         schema: tile_index
         table: ahn_index
@@ -51,7 +51,7 @@ tile_index:
             geometry: geom
             unit_name: unit
             version: ahn_version
-        file: example_data/ahn_index.geojson
+        file: ahn_index.geojson
     identical: True
 
 output:

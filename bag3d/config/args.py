@@ -274,11 +274,11 @@ def parse_config(args_in, schema):
     for d in [rest_dir, ahn2_dir, ahn3_dir]:
         if os.path.isdir(d):
             rmtree(d, ignore_errors=True, onerror=None)
-        else:
-            try:
-                os.makedirs(d, exist_ok=False)
-            except Exception as e:
-                logger.error(e)
+        try:
+            os.makedirs(d, exist_ok=False)
+            logger.debug("Created %s", d)
+        except Exception as e:
+            logger.error(e)
     cfg["config"]["out_rest"] = os.path.join(rest_dir, "bag3d_cfg_rest.yml")
     cfg["config"]["out_border_ahn2"] = os.path.join(ahn2_dir, "bag3d_cfg_border_ahn2.yml")
     cfg["config"]["out_border_ahn3"] = os.path.join(ahn3_dir, "bag3d_cfg_border_ahn3.yml")
