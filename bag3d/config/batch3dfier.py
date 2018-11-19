@@ -3,6 +3,7 @@
 """Configure batch3dfier with the input data."""
 
 import os.path
+from os import remove
 import re
 from itertools import chain
 from pprint import pformat
@@ -12,6 +13,8 @@ from shapely import geos
 from psycopg2 import sql
 import fiona
 import logging
+
+import random
 
 from bag3d.update import bag
 
@@ -52,9 +55,12 @@ def call_3dfier(db, tile, schema_tiles,
 
     Returns
     -------
-    list
-        The tiles that are skipped because no corresponding pointcloud file
-        was found in 'dataset_dir' (YAML)
+    dict
+        tile_skipped : str
+            The tiles that are skipped because no corresponding pointcloud file
+            was found in 'dataset_dir' (YAML)
+        out_path : str
+            Output path of 3dfier
     """
     tiles = find_pc_tiles(db, table_index_pc, fields_index_pc, idx_identical,
                              table_index_footprint, fields_index_footprint,
@@ -97,6 +103,10 @@ def call_3dfier(db, tile, schema_tiles,
         try:
             logger.debug(" ".join(command))
             bag.run_subprocess(command, shell=True, doexec=doexec)
+            try:
+                remove(yml_path)
+            except Exception as e:
+                logger.error(e)
         except BaseException as e:
             logger.exception("Cannot run 3dfier on tile %s", tile)
             tile_skipped = tile
@@ -106,7 +116,8 @@ def call_3dfier(db, tile, schema_tiles,
         tile_skipped = tile
         return({'tile_skipped': tile_skipped,
                 'out_path': None})
-    return {'tile_skipped': None, 'out_path': output_path}
+    return {'tile_skipped': None, 
+            'out_path': output_path}
 
 
 def yamlr(dbname, host, port, user, pw, schema_tiles,

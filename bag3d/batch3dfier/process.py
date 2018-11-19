@@ -15,6 +15,12 @@ from bag3d.config import batch3dfier
 logger = logging.getLogger('batch3dfier.process')
 
 def run(conn, config, doexec=True):
+    """
+    Returns
+    -------
+    list of str
+        The tiles that failed
+    """
     if config["input_polygons"]["tile_list"] is None:
         logger.error("tile_list in %s is empty, exiting function", config["config"]["in"])
         return None
@@ -113,8 +119,6 @@ def run(conn, config, doexec=True):
                 views_to_drop=to_drop)
     except TypeError:
         logger.debug("No views to drop")
-    rmtree(cfg_dir, ignore_errors=True)
-    
     # Reporting
     tiles = set(tiles)
     tiles_skipped = set(tiles_skipped)
@@ -122,4 +126,4 @@ def run(conn, config, doexec=True):
                  str(len(tiles.difference(tiles_skipped))))
     logger.info("Tiles skipped: %s", tiles_skipped)
     
-    return 0
+    return tiles_skipped
