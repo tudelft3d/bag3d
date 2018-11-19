@@ -6,14 +6,15 @@
 import os
 import queue
 import threading
-import time
-from shutil import rmtree
 import logging
 import re
+
+import psutil
 
 from bag3d.config import batch3dfier
 
 logger = logging.getLogger('batch3dfier.process')
+
 
 def run(conn, config, doexec=True):
     """

@@ -8,20 +8,30 @@ import re
 from itertools import chain
 from pprint import pformat
 import time
+import logging
 
 from shapely.geometry import shape
 from shapely import geos
 from psycopg2 import sql
 import fiona
-import logging
-
-import random
+import psutil
 
 from bag3d.update import bag
 
 logger = logging.getLogger('config.batch3dfier')
 logger_perf = logging.getLogger('performance')
 
+
+def report_procs():
+    res = []
+    for p in psutil.process_iter(attrs=['name', 'status', "cmdline", 'memory_info']):
+        if '3dfier' in p.info['name']:
+            res.append((p.info['cmdline'], p.info['memory_info']))
+    if len(res) > 0:
+        res.extend(["loadavg %s" % str(os.getloadavg()), psutil.swap_memory()])
+        return res
+    else:
+        return None
 
 def call_3dfier(db, tile, schema_tiles,
                 table_index_pc, fields_index_pc, idx_identical,
@@ -64,6 +74,10 @@ def call_3dfier(db, tile, schema_tiles,
         out_path : str
             Output path of 3dfier
     """
+    perf = report_procs()
+    if perf:
+        logger_perf.debug("%s - %s - %s" % (tile_group, tile, perf))
+    start = time.process_time()
     tiles = find_pc_tiles(db, table_index_pc, fields_index_pc, idx_identical,
                              table_index_footprint, fields_index_footprint,
                              extent_ewkb, tile_footprint=tile,
@@ -118,8 +132,9 @@ def call_3dfier(db, tile, schema_tiles,
         tile_skipped = tile
         return({'tile_skipped': tile_skipped,
                 'out_path': None})
-    proc_time = time.process_time() / 60 # convert to minutes
-    logger_perf.debug("%s - %s - process_time %s" % (tile_group, tile, proc_time))
+    end = time.process_time()
+    proc_time = (end - start) / 60
+    logger_perf.debug("%s - %s - process_time: %s" % (tile_group, tile, proc_time))
     return {'tile_skipped': None, 
             'out_path': output_path}
 

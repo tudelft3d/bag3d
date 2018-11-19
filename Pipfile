@@ -16,6 +16,7 @@ pykwalify = "*"
 numpy = "*"
 rasterstats = "*"
 sphinx-jsonschema = "*"
+psutil = "*"
 
 [requires]
 python_version = "3.6"

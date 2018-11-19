@@ -100,7 +100,7 @@ def parse_console_args(args):
     args_in = {}
     args_in['cfg_file'] = os.path.abspath(args.path)
     if not os.path.exists(args_in['cfg_file']):
-        logger.exception('Configuration file %s not round', args_in['cfg_file'])
+        logger.exception('Configuration file %s not found', args_in['cfg_file'])
         exit(1)
     args_in['cfg_dir'] = os.path.dirname(args_in['cfg_file'])
     args_in['threads'] = args.threads
