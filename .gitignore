@@ -32,5 +32,7 @@ docs/_build
 
 # Data
 example_data/polys
+example_data/ahn2/las
+example_data/ahn3/las
 *.qgz
 *.qgs*
