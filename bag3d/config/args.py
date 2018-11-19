@@ -228,6 +228,7 @@ def parse_config(args_in, schema):
 #     cfg['bag3d_table'] = cfg_stream["output"]["bag3d_table"]
 
     cfg['path_3dfier'] = cfg_stream["path_3dfier"]
+    cfg['path_lasinfo'] = cfg_stream['path_lasinfo']
 
     cfg["input_polygons"] = cfg_stream["input_polygons"]
     #FIXME: sanitzie this below --v
@@ -253,7 +254,6 @@ def parse_config(args_in, schema):
     if (USER_SCHEMA is None) or (EXTENT_FILE is None):
         logger.debug("user_schema or extent is None")
         cfg["input_polygons"]['user_schema'] = cfg["input_polygons"]['tile_schema']
-
     
     cfg['database'] = cfg_stream['database']
 

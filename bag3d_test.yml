@@ -21,8 +21,8 @@ input_polygons:
 
 input_elevation:
     dataset_dir:
-        - example_data/ahn3
-        - example_data/ahn2
+        - example_data/ahn3/laz
+        - example_data/ahn2/laz
     dataset_name: 
         - "unit_{tile}.laz"
         - "unit_{tile}.laz"
@@ -61,5 +61,6 @@ output:
     bag3d_table: pand3d
 
 path_3dfier: /home/balazs/Development/3dfier_src/3dfier/build/3dfier
+path_lasinfo: /opt/LAStools/src/lasinfo
 
 

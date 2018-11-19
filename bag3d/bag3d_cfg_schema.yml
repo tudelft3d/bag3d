@@ -167,6 +167,10 @@ mapping:
         type: str
         required: True
         desc: Location of the 3dfier executable
+    path_lasinfo:
+        type: str
+        required: True
+        desc: Location of the lasinfo executable
     quality:
         type: map
         mapping:

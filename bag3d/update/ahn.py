@@ -44,7 +44,7 @@ def download_ahn_index():
         return data
 
 
-def get_file_date(ahn_dir, ahn_pat, t, f_date_pat, corruptedfiles):
+def get_file_date(path_lasinfo, ahn_dir, ahn_pat, t, f_date_pat, corruptedfiles):
     """Get the file creation date from a las file"""
     try:
         p = os.path.join(ahn_dir, ahn_pat.format(t))
@@ -55,7 +55,7 @@ def get_file_date(ahn_dir, ahn_pat, t, f_date_pat, corruptedfiles):
         logger.error(e)
         
     # lasinfo is not compiled with multi-core support on godzilla
-    check = subprocess.run(['lasinfo', p, '-nc'], 
+    check = subprocess.run([path_lasinfo, p, '-nc'], 
                            stdout=subprocess.PIPE, 
                            stderr=subprocess.PIPE)
     # by default LAStools outputs everything to stderr instead of stdout
@@ -87,7 +87,7 @@ def get_file_date(ahn_dir, ahn_pat, t, f_date_pat, corruptedfiles):
             return None
 
 
-def download(ahn3_dir, ahn2_dir, tile_index_file, ahn3_file_pat, ahn2_file_pat):
+def download(path_lasinfo, ahn3_dir, ahn2_dir, tile_index_file, ahn3_file_pat, ahn2_file_pat):
     """Update the AHN3 files in the provided folder
 
     1. Downloads the latest AHN3 index (bladindex) to the local file system
@@ -143,7 +143,7 @@ def download(ahn3_dir, ahn2_dir, tile_index_file, ahn3_file_pat, ahn2_file_pat):
             add_date = True
 
         if add_date:
-            d = get_file_date(ahn3_dir, ahn_pat, t, f_date_pat, corruptedfiles)
+            d = get_file_date(path_lasinfo, ahn3_dir, ahn_pat, t, f_date_pat, corruptedfiles)
             if d:
                 j_in['features'][i]['properties']['file_date'] = d.isoformat()
                 j_in['features'][i]['properties']['ahn_version'] = 3
@@ -157,7 +157,7 @@ def download(ahn3_dir, ahn2_dir, tile_index_file, ahn3_file_pat, ahn2_file_pat):
             logger.info("AHN2 tile: %s", t)
             ahn2_files += 1
             t = tile.lower()
-            d = get_file_date(ahn2_dir, ahn2_pat, t, f_date_pat, corruptedfiles)
+            d = get_file_date(path_lasinfo, ahn2_dir, ahn2_pat, t, f_date_pat, corruptedfiles)
             if d:
                 j_in['features'][i]['properties']['file_date'] = d.isoformat()
                 j_in['features'][i]['properties']['ahn_version'] = 2

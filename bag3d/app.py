@@ -78,7 +78,8 @@ def app(cli_args, here):
         if args_in['update_ahn']:
             logger.info("Updating AHN files")
 
-            ahn.download(ahn3_dir=ahn3_dir, 
+            ahn.download(path_lasinfo=cfg['path_lasinfo'],
+                         ahn3_dir=ahn3_dir, 
                          ahn2_dir=ahn2_dir, 
                          tile_index_file=cfg["elevation"]["file"],
                          ahn3_file_pat=ahn3_fp,

@@ -143,7 +143,8 @@ def update_file_date(conn, config, ahn2_dir, ahn2_fp, doexec=True):
     
     queries = sql.Composed('')
     for e, t in enumerate(tiles):
-        d = ahn.get_file_date(ahn2_dir, ahn2_fp, t, a_date_pat, corruptedfiles)
+        d = ahn.get_file_date(config['path_lasinfo'], ahn2_dir, ahn2_fp, t, a_date_pat, 
+                              corruptedfiles)
         if d:
             date = d.isoformat()
             query = sql.SQL("""
