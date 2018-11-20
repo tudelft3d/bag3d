@@ -49,7 +49,7 @@ def create_heights_table(conn, schema, table):
     table_q = sql.Identifier(table)
     query = sql.SQL("""
     CREATE TABLE IF NOT EXISTS {schema}.{table} (
-        id bigint,
+        id varchar(16),
         "ground-0.00" real,
         "ground-0.10" real,
         "ground-0.20" real,
@@ -211,7 +211,7 @@ def create_bag3d_relations(conn, cfg):
     CREATE TABLE {schema}.{bag3d} AS
     SELECT
         p.gid,
-        p.identificatie::bigint,
+        p.identificatie,
         p.aanduidingrecordinactief,
         p.aanduidingrecordcorrectie,
         p.officieel,
@@ -260,7 +260,7 @@ def create_bag3d_relations(conn, cfg):
         END AS height_valid,
         h.tile_id
     FROM {schema}.{bag} p
-    INNER JOIN {schema}.{heights} h ON p.{uniqueid}::numeric = h.id;
+    INNER JOIN {schema}.{heights} h ON p.{uniqueid} = h.id;
     """).format(bag=bag_table_q, uniqueid=uniqueid_q,schema=schema_q,
                 bag3d=bag3d_table_q, heights=heights_table_q)
     # the type of bagactueel.pand.identificatie can change between different 
