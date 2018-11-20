@@ -35,43 +35,45 @@ def csv(conn, config, out_dir):
     """
     bag3d_table_q = sql.Identifier(config["output"]['bag3d_table'])
     
-    query = sql.SQL("""COPY (
-    SELECT
-        gid,
-        identificatie,
-        gemeentecode,
-        "ground-0.00",
-        "ground-0.10",
-        "ground-0.20",
-        "ground-0.30",
-        "ground-0.40",
-        "ground-0.50",
-        "roof-0.00",
-        "rmse-0.00",
-        "roof-0.10",
-        "rmse-0.10",
-        "roof-0.25",
-        "rmse-0.25",
-        "roof-0.50",
-        "rmse-0.50",
-        "roof-0.75",
-        "rmse-0.75",
-        "roof-0.90",
-        "rmse-0.90",
-        "roof-0.95",
-        "rmse-0.95",
-        "roof-0.99",
-        "rmse-0.99",
-        roof_flat::int,
-        nr_ground_pts,
-        nr_roof_pts,
-        ahn_file_date::date,
-        ahn_version,
-        height_valid::int,
-        tile_id
-    FROM bagactueel.{bag3d})
+    query = sql.SQL("""
+    COPY (
+        SELECT
+            gid,
+            identificatie,
+            gemeentecode,
+            "ground-0.00",
+            "ground-0.10",
+            "ground-0.20",
+            "ground-0.30",
+            "ground-0.40",
+            "ground-0.50",
+            "roof-0.00",
+            "rmse-0.00",
+            "roof-0.10",
+            "rmse-0.10",
+            "roof-0.25",
+            "rmse-0.25",
+            "roof-0.50",
+            "rmse-0.50",
+            "roof-0.75",
+            "rmse-0.75",
+            "roof-0.90",
+            "rmse-0.90",
+            "roof-0.95",
+            "rmse-0.95",
+            "roof-0.99",
+            "rmse-0.99",
+            roof_flat::int,
+            nr_ground_pts,
+            nr_roof_pts,
+            ahn_file_date::date,
+            ahn_version,
+            height_valid::int,
+            tile_id
+        FROM bagactueel.{bag3d})
     TO STDOUT
-    WITH (FORMAT 'csv', HEADER TRUE, ENCODING 'utf-8')
+    WITH (FORMAT 'csv', HEADER TRUE, ENCODING 'utf-8', 
+          FORCE_QUOTE (identificatie,gemeentecode,ahn_file_date,tile_id) )
     """).format(bag3d=bag3d_table_q)
     logger.debug(conn.print_query(query))
     
@@ -82,6 +84,7 @@ def csv(conn, config, out_dir):
     csv_out = os.path.join(d, x)
     with open(csv_out, "w") as c_out:
         with conn.conn.cursor() as cur:
+            logger.info("Exporting CSV")
             cur.copy_expert(query, c_out)
     compute_md5(csv_out, d)
 
