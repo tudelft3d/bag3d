@@ -39,6 +39,7 @@ def csv(conn, config, out_dir):
     SELECT
         gid,
         identificatie,
+        gemeentecode,
         "ground-0.00",
         "ground-0.10",
         "ground-0.20",

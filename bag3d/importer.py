@@ -225,6 +225,7 @@ def create_bag3d_relations(conn, cfg):
         p.begindatumtijdvakgeldigheid,
         p.einddatumtijdvakgeldigheid,
         p.geovlak,
+        left(p.identificatie, 4)::varchar(4) AS gemeentecode,
         h."ground-0.00",
         h."ground-0.10",
         h."ground-0.20",
