@@ -3,13 +3,10 @@
 """Import batch3dfier output into the database"""
 
 import os
-import sys
 from subprocess import run
 
-import argparse
 import psycopg2
 from psycopg2 import sql
-import datetime
 import logging
 
 from bag3d.update import bag
@@ -502,12 +499,7 @@ def create_bag3d_table(conn, schema, name):
     """).format(schema=sql.Identifier(schema),
                 bag3d=sql.Identifier(name),
                 idx_name=sql.Identifier(idx_name))
-
-    query_d = sql.SQL("""
-    DROP VIEW {schema}.bag3d_border_union;
-    """).format(schema=sql.Identifier(schema))
     
-    # TODO: drop *border* tables
     try:
         logger.debug(conn.print_query(drop_q))
         conn.sendQuery(drop_q)
@@ -515,12 +507,34 @@ def create_bag3d_table(conn, schema, name):
         conn.sendQuery(query_t)
         logger.debug(conn.print_query(query_i))
         conn.sendQuery(query_i)
-        logger.debug(conn.print_query(query_d))
-        conn.sendQuery(query_d)
     except psycopg2.IntegrityError as e:
         logger.exception("There are overlapping footprints in the border and non-border tiles, possibly because some tiles were processed in a batch where they do not belong.")
         logger.exception(e)
         raise
+    except BaseException as e:
+        logger.exception(e)
+        raise
+
+
+def drop_border_view(conn, schema):
+    query_d = sql.SQL("""
+    DROP VIEW IF EXISTS {schema}.bag3d_border_union;
+    """).format(schema=sql.Identifier(schema))
+    try:
+        logger.debug(conn.print_query(query_d))
+        conn.sendQuery(query_d)
+    except BaseException as e:
+        logger.exception(e)
+        raise
+
+def drop_border_table(conn, cfg):
+    query_d = sql.SQL("""
+    DROP TABLE IF EXISTS {schema}.{table};
+    """).format(schema=sql.Identifier(cfg['input_polygons']['footprints']['schema']), 
+                table=sql.Identifier(cfg['output']['bag3d_table']))
+    try:
+        logger.debug(conn.print_query(query_d))
+        conn.sendQuery(query_d)
     except BaseException as e:
         logger.exception(e)
         raise

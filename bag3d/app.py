@@ -68,13 +68,15 @@ def app(cli_args, here):
         ahn2_fp = cfg["input_elevation"]["dataset_name"][1]
         ahn3_dir = cfg["input_elevation"]["dataset_dir"][0]
         ahn2_dir = cfg["input_elevation"]["dataset_dir"][1]
-        
+
+
         if args_in['update_bag']:
             logger.info("Updating BAG database")
             # At this point an empty database should exists, restore_BAG 
             # takes care of the rest
             bag.restore_BAG(cfg["database"], doexec=args_in['no_exec'])
-    
+
+
         if args_in['update_ahn']:
             logger.info("Updating AHN files")
 
@@ -84,7 +86,8 @@ def app(cli_args, here):
                          tile_index_file=cfg["elevation"]["file"],
                          ahn3_file_pat=ahn3_fp,
                          ahn2_file_pat=ahn2_fp)
-        
+
+
         if args_in['update_ahn_raster']:
             logger.info("Updating AHN 0.5m raster files")
             ahn.download_raster(conn, cfg, 
@@ -141,13 +144,15 @@ def app(cli_args, here):
                              str(cfg["database"]["port"]), cfg["database"]["user"], 
                              cfg["database"]["pw"],
                              doexec=args_in['no_exec'])
-            
+
+
         if args_in['add_borders']:
             logger.info("Configuring AHN2-3 border tiles")
             border.create_border_table(conn, cfg, 
                                        doexec=args_in['no_exec'])
             border.update_file_date(conn, cfg, ahn2_dir, ahn2_fp, 
                                     doexec=args_in['no_exec'])
+
 
         if args_in['run_3dfier']:
             logger.info("Configuring batch3dfier")
@@ -190,9 +195,6 @@ def app(cli_args, here):
                 else:
                     logger.info("Importing batch3dfier output into database")
                     importer.import_csv(conn, c)
-                # Clean up
-                rmtree(os.path.dirname(c["config"]["in"]), ignore_errors=True)
-#                 rmtree(c["output"]["dir"], ignore_errors=True)
             
             logger.info("Joining 3D tables")
             importer.unite_border_tiles(conn, cfg["output"]["schema"], 
@@ -200,23 +202,39 @@ def app(cli_args, here):
                                         cfg_ahn3["output"]["bag3d_table"])
             importer.create_bag3d_table(conn, cfg["output"]["schema"],
                                         cfg["output"]["bag3d_table"])
-        
+            
+            logger.info("Cleaning up")
+            importer.drop_border_view(conn, cfg["output"]["schema"])
+            for c in [cfg_rest, cfg_ahn2, cfg_ahn3]:
+                importer.drop_border_table(conn, c)
+
+
         if args_in["grant_access"]:
             bag.grant_access(conn, args_in["grant_access"], 
                              cfg['tile_schema'], 
                              cfg['polygons']["schema"])
-    
+
+
         if args_in['export']:
             logger.info("Exporting 3D BAG")
             exporter.csv(conn, cfg, cfg["output"]["dir"])
             exporter.gpkg(conn, cfg, cfg["output"]["dir"], args_in['no_exec'])
             exporter.postgis(conn, cfg, cfg["output"]["dir"], args_in['no_exec'])
-        
+
+
         if args_in["quality"]:
             logger_quality.info("Checking 3D BAG quality")
 #             cfg_quality = quality.create_quality_views(conn, cfg)
             quality.create_quality_table(conn)
             quality.get_counts(conn, cfg)
+
+
+        # Clean up
+        for c in [cfg['config']['out_border_ahn2'], 
+                  cfg['config']['out_border_ahn3'],
+                  cfg['config']['out_rest']]:
+            rmtree(os.path.dirname(c), ignore_errors=True)
+#           rmtree(c["output"]["dir"], ignore_errors=True)
 
 #             rast_idx = ahn.rast_file_idx(conn, cfg, 
 #                                          cfg["quality"]["ahn2_rast_dir"], 
