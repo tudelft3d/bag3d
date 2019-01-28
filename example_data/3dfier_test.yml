@@ -1,7 +1,7 @@
 input_polygons:
   - datasets: 
-      - PG:dbname=bag3d_db port=5590 host=localhost user=bag3d_tester password=bag3d_test schemas=bagactueel tables=pand
-    uniqueid: gid
+      - PG:dbname=bag3d_db port=5590 host=localhost user=bag3d_tester password=bag3d_test schemas=bagactueel tables=pandactueelbestaand
+    uniqueid: identificatie
     lifting: Building
 
 lifting_options: 
@@ -23,7 +23,7 @@ lifting_options:
 
 input_elevation:
   - datasets:
-      - ahn2/unit_25gn1_1.laz
+      - /home/3dfier/ahn2/laz/unit_25gn1_1.laz
     thinning: 0
 
 options:

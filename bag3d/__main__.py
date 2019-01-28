@@ -9,9 +9,8 @@ def main():
     here = os.path.abspath(os.path.dirname(__file__))
     with open(os.path.join(here, 'logging.cfg'), 'r') as f:
         log_conf = yaml.safe_load(f)
-    logging.config.dictConfig(log_conf)
     
-    app.app(sys.argv, here)
+    app.app(sys.argv, here, log_conf)
 
 if __name__ == '__main__':
     main()

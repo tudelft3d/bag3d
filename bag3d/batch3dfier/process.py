@@ -13,7 +13,7 @@ import psutil
 
 from bag3d.config import batch3dfier
 
-logger = logging.getLogger('batch3dfier.process')
+logger = logging.getLogger(__name__)
 
 
 def run(conn, config, doexec=True):

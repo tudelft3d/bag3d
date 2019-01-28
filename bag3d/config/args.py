@@ -12,16 +12,16 @@ import yaml
 import pykwalify.core
 import pykwalify.errors
 
-logger = logging.getLogger('config.args')
+logger = logging.getLogger(__name__)
 
 def parse_console_args(args):
     """Parse command line arguments
-    
+
     Parameters
     ----------
     args : list
         The list of command line arguments passed to bag3d.app.py
-    
+
     Returns
     -------
     dict
@@ -85,6 +85,11 @@ def parse_console_args(args):
         dest="no_exec",
         action="store_false",
         help="Control the execution of subprocesses. Used for debugging.")
+    parser.add_argument(
+        "--log",
+        dest="loglevel",
+        default="INFO",
+        help="Set logging level.")
     parser.set_defaults(get_bag=False)
     parser.set_defaults(update_bag=False)
     parser.set_defaults(update_ahn=False)
@@ -98,10 +103,13 @@ def parse_console_args(args):
 
     args = parser.parse_args(args)
     args_in = {}
+    numeric_level = getattr(logging, args.loglevel.upper(), None)
+    if not isinstance(numeric_level, int):
+        raise ValueError('Invalid log level: %s' % args.loglevel)
+    args_in['loglevel'] = args.loglevel.upper()
     args_in['cfg_file'] = os.path.abspath(args.path)
     if not os.path.exists(args_in['cfg_file']):
-        logger.exception('Configuration file %s not found', args_in['cfg_file'])
-        exit(1)
+        raise FileNotFoundError('Configuration file %s not found' % args_in['cfg_file'])
     args_in['cfg_dir'] = os.path.dirname(args_in['cfg_file'])
     args_in['threads'] = args.threads
     args_in['get_bag'] = args.get_bag
@@ -115,7 +123,7 @@ def parse_console_args(args):
     args_in['quality'] = args.quality
     args_in['grant_access'] = args.grant_access
     args_in['no_exec'] = args.no_exec
-    
+
     return args_in
 
 

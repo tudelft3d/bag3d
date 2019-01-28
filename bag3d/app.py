@@ -7,9 +7,6 @@ import os
 import sys
 from shutil import rmtree
 
-from csv import DictWriter
-
-import yaml
 import logging, logging.config
 
 from bag3d.config import args
@@ -26,10 +23,7 @@ from bag3d import quality
 
 from pprint import pformat
 
-logger = logging.getLogger('app')
-logger_quality = logging.getLogger('quality')
-
-def app(cli_args, here):
+def app(cli_args, here, log_conf):
     """The command line application
     
     Parameters
@@ -41,7 +35,11 @@ def app(cli_args, here):
     """
     schema = os.path.join(here, 'bag3d_cfg_schema.yml')
     args_in = args.parse_console_args(cli_args[1:])
-    
+
+    log_conf['handlers']['console']['level'] = args_in['loglevel']
+    logging.config.dictConfig(log_conf)
+    logger = logging.getLogger(__name__)
+
     try:
         cfg = args.parse_config(args_in, schema)
     except Exception as e:
@@ -223,7 +221,7 @@ def app(cli_args, here):
 
 
         if args_in["quality"]:
-            logger_quality.info("Checking 3D BAG quality")
+            logger.info("Checking 3D BAG quality")
 #             cfg_quality = quality.create_quality_views(conn, cfg)
             quality.create_quality_table(conn)
             quality.get_counts(conn, cfg)
@@ -240,18 +238,18 @@ def app(cli_args, here):
 #                                          cfg["quality"]["ahn2_rast_dir"], 
 #                                          cfg["quality"]["ahn3_rast_dir"])
 #             sample = quality.get_sample(conn, cfg_quality)
-#             logger_quality.info("Sample size %s", len(sample))
-#             logger_quality.debug(sample[0])
+#             logger.info("Sample size %s", len(sample))
+#             logger.debug(sample[0])
 #             stats=['percentile_0.00', 'percentile_0.10', 'percentile_0.25',
 #            'percentile_0.50', 'percentile_0.75', 'percentile_0.90',
 #            'percentile_0.95', 'percentile_0.99']
 #             reference = quality.compute_stats(sample, rast_idx, stats)
 #             diffs,fields = quality.compute_diffs(reference, stats)
-#             logger_quality.info("Computed differences on %s buildings", len(diffs))
+#             logger.info("Computed differences on %s buildings", len(diffs))
 #             
 #             out_dir = os.path.dirname(cfg["quality"]["results"])
 #             os.makedirs(out_dir, exist_ok=True)
-#             logger_quality.info("Writing height comparison to %s",
+#             logger.info("Writing height comparison to %s",
 #                                 cfg["quality"]["results"])
 #             with open(cfg["quality"]["results"], 'w') as csvfile:
 #                 writer = DictWriter(csvfile, fieldnames=fields)
@@ -260,9 +258,10 @@ def app(cli_args, here):
 #                     writer.writerow(row)
 #             
 #             r = quality.compute_rmse(diffs, stats)
-#             logger_quality.info("RMSE across the whole sample %s",
+#             logger.info("RMSE across the whole sample %s",
 #                                 pformat(r))
     except Exception as e:
         logger.exception(e)
     finally:
         conn.close()
+        logging.shutdown()

@@ -8,7 +8,7 @@ database. These tiles are then used by batch3dfier.
 import logging
 from psycopg2 import sql
 
-logger = logging.getLogger('config.footprints')
+logger = logging.getLogger(__name__)
 
 
 def update_tile_index(db, table_index, fields_index):

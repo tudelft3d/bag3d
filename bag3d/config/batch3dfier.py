@@ -18,7 +18,7 @@ import psutil
 
 from bag3d.update import bag
 
-logger = logging.getLogger('config.batch3dfier')
+logger = logging.getLogger(__name__)
 logger_perf = logging.getLogger('performance')
 
 

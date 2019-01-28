@@ -17,7 +17,7 @@ from psycopg2 import sql
 from bag3d.update import ahn
 from bag3d.config import batch3dfier
 
-logger = logging.getLogger("config.border")
+logger = logging.getLogger(__name__)
 
 
 def create_border_table(conn, config, doexec=True):

@@ -10,7 +10,7 @@ import psycopg2
 from psycopg2 import sql
 from psycopg2 import extras
 
-logger = logging.getLogger('config.db')
+logger = logging.getLogger(__name__)
 
 class db(object):
     """A database connection class """

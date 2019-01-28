@@ -15,7 +15,7 @@ import logging
 from bag3d.config import border
 from bag3d.update import bag
 
-logger = logging.getLogger('update.ahn')
+logger = logging.getLogger(__name__)
 
 def update_json_id(json):
     """Update a GeoJSON tile index's ID field

@@ -15,7 +15,7 @@ from psycopg2 import sql
 from bag3d.config import db
 
 
-logger = logging.getLogger('update.bag')
+logger = logging.getLogger(__name__)
 
 
 def run_subprocess(command, shell=False, doexec=True):
