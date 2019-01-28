@@ -17,7 +17,7 @@ In short the ``bag3d`` application can:
 
 Read the complete ``bag3d`` `documentation <https://tudelft3d.github.io/bag3d/>`_
 
-Read the `3D BAG data set documentation <http://3dbag.bk.tudelft.nl>`_
+The 3D BAG is a register of addresses and buildings of the Netherlands, including building height information and related quality metrics. The data set is updated every month, keeping it up-to-date with the latest building stock and elevation information. The 3D BAG is generated from two data sources, the Dutch national register of addresses and buildings (Basisregistraties Adressen en Gebouwen (BAG)) and the national elevation model (AHN). Read the `3D BAG data set documentation <http://3dbag.bk.tudelft.nl>`_
 
 
 .. |Licence| image:: https://img.shields.io/badge/licence-GPL--3-blue.svg

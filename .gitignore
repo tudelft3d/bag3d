@@ -20,6 +20,7 @@ bag3d.egg-info
 *.RData
 *.Rhistory
 *.Rmd
+tmp
 
 # Sphinx
 docs/_build
