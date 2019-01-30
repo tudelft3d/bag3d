@@ -153,7 +153,7 @@ def create_quality_table(conn):
     """Create a table to store the quality statistics"""
     query = sql.SQL("""
     CREATE TABLE IF NOT EXISTS public.bag3d_quality (
-    date date PRIMARY KEY, 
+    timestamp timestamptz PRIMARY KEY, 
     total_cnt int,
     valid_height_pct float4,
     invalid_height_pct float4,
@@ -219,7 +219,7 @@ def get_counts(conn, config):
     )
     INSERT INTO public.bag3d_quality
     SELECT
-        current_date AS date,
+        current_timestamp AS timestamp,
         t.total_cnt,
         (t.total_cnt::float4 - i.invalid_height_cnt::float4) / t.total_cnt::float4 * 100 AS valid_height_pct,
         i.invalid_height_cnt::float4 / t.total_cnt::float4 * 100 AS invalid_height_pct,
@@ -234,6 +234,45 @@ def get_counts(conn, config):
         ground g,
         roof r,
         invalid i;
+    """).format(bag3d=sql.Identifier(config["output"]["bag3d_table"]),
+                schema=schema)
+    try:
+        logger.debug(conn.print_query(query))
+        conn.sendQuery(query)
+    except BaseException as e:
+        logger.exception(e)
+        raise
+
+def count_buildings(conn, config):
+    """Count the number of buildings in the BAG and the 3D BAG per tile"""
+    schema = sql.Identifier(config['input_polygons']['footprints']['schema'])
+    query = sql.SQL("""
+    WITH bag_tiles AS (
+    SELECT
+        pandactueelbestaand.gid,
+        bag_index.bladnr
+    FROM
+        bagactueel.pandactueelbestaand
+    JOIN bagactueel.pand_centroid ON
+        pandactueelbestaand.gid = pand_centroid.gid,
+        tile_index.bag_index
+    WHERE
+        st_containsproperly(bag_index.geom,pand_centroid.geom)
+        OR st_contains(bag_index.geom_border,pand_centroid.geom)
+    ),
+    bag_tiles_cnt AS (
+        SELECT bladnr AS tile_id, count(*) AS bag_cnt
+        FROM bag_tiles
+        GROUP BY bladnr
+    ),
+    bag3d_tiles_cnt AS (
+        SELECT tile_id, count(*) AS bag3d_cnt
+        FROM bagactueel.pand3d
+        GROUP BY tile_id
+    )
+    SELECT a.tile_id, bag_cnt, bag3d_cnt
+    FROM bag_tiles_cnt a
+    LEFT JOIN bag3d_tiles_cnt b ON a.tile_id = b.tile_id;
     """).format(bag3d=sql.Identifier(config["output"]["bag3d_table"]),
                 schema=schema)
     try:
