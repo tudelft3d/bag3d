@@ -118,7 +118,12 @@ def call_3dfier(db, tile, schema_tiles,
                    output_path]
         try:
             logger.debug(" ".join(command))
-            bag.run_subprocess(command, shell=True, doexec=doexec)
+            success = bag.run_subprocess(command, shell=True, doexec=doexec)
+            if success:
+                tile_skipped = None
+            else:
+                tile_skipped = tile
+                output_path = None
             try:
                 remove(yml_path)
             except Exception as e:
@@ -126,17 +131,16 @@ def call_3dfier(db, tile, schema_tiles,
         except BaseException as e:
             logger.exception("Cannot run 3dfier on tile %s", tile)
             tile_skipped = tile
+            output_path = None
     else:
         logger.debug("Pointcloud file(s) %s not available. Skipping tile.",
                      str(tiles.keys()))
         tile_skipped = tile
-        return({'tile_skipped': tile_skipped,
-                'out_path': None})
+        output_path = None
     end = time.process_time()
     proc_time = (end - start) / 60
     logger_perf.debug("%s - %s - process_time: %s" % (tile_group, tile, proc_time))
-    return {'tile_skipped': None, 
-            'out_path': output_path}
+    return {'tile_skipped': tile_skipped, 'out_path': output_path}
 
 
 def yamlr(dbname, host, port, user, pw, schema_tiles,

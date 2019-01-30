@@ -45,10 +45,14 @@ def run_subprocess(command, shell=False, doexec=True):
         proc = run(command, shell=shell, stderr=PIPE, stdout=PIPE)
         err = proc.stderr.decode(locale.getpreferredencoding(do_setlocale=True))
         if proc.returncode != 0:
-            logger.error("Process returned with non-zero exit code")
+            logger.debug("Process returned with non-zero exit code: %s", proc.returncode)
             logger.error(err)
+            return False
+        else:
+            return True
     else:
         logger.debug("Not executing %s", command)
+        return True
 
 
 def get_latest_BAG(url):
