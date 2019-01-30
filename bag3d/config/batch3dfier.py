@@ -19,19 +19,6 @@ import psutil
 from bag3d.update import bag
 
 logger = logging.getLogger(__name__)
-logger_perf = logging.getLogger('performance')
-
-
-def report_procs():
-    res = []
-    for p in psutil.process_iter(attrs=['name', 'status', "cmdline", 'memory_info']):
-        if '3dfier' in p.info['name']:
-            res.append((p.info['cmdline'], p.info['memory_info']))
-    if len(res) > 0:
-        res.extend(["loadavg %s" % str(os.getloadavg()), psutil.swap_memory()])
-        return res
-    else:
-        return None
 
 def call_3dfier(db, tile, schema_tiles,
                 table_index_pc, fields_index_pc, idx_identical,
@@ -74,9 +61,9 @@ def call_3dfier(db, tile, schema_tiles,
         out_path : str
             Output path of 3dfier
     """
-    perf = report_procs()
-    if perf:
-        logger_perf.debug("%s - %s - %s" % (tile_group, tile, perf))
+    # perf = report_procs()
+    # if perf:
+    #     logger_perf.debug("%s - %s - %s" % (tile_group, tile, perf))
     start = time.process_time()
     tiles = find_pc_tiles(db, table_index_pc, fields_index_pc, idx_identical,
                              table_index_footprint, fields_index_footprint,
@@ -118,7 +105,7 @@ def call_3dfier(db, tile, schema_tiles,
                    output_path]
         try:
             logger.debug(" ".join(command))
-            success = bag.run_subprocess(command, shell=True, doexec=doexec)
+            success = bag.run_subprocess(command, shell=True, doexec=doexec, monitor=True, tile_id=tile)
             if success:
                 tile_skipped = None
             else:
@@ -137,9 +124,9 @@ def call_3dfier(db, tile, schema_tiles,
                      str(tiles.keys()))
         tile_skipped = tile
         output_path = None
-    end = time.process_time()
-    proc_time = (end - start) / 60
-    logger_perf.debug("%s - %s - process_time: %s" % (tile_group, tile, proc_time))
+    # end = time.process_time()
+    # proc_time = (end - start) / 60
+    # logger_perf.debug("%s - %s - process_time: %s" % (tile_group, tile, proc_time))
     return {'tile_skipped': tile_skipped, 'out_path': output_path}
 
 

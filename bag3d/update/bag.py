@@ -3,10 +3,13 @@
 """Update the BAG database (2D) and tile index"""
 
 import os.path
+from time import sleep, process_time
 from datetime import datetime, date
 from subprocess import PIPE
-from psutil import Popen
+from psutil import Popen, Process, NoSuchProcess, ZombieProcess, AccessDenied, swap_memory
 import locale
+
+# from memory_profiler import memory_usage
 
 import logging
 from bs4 import BeautifulSoup
@@ -17,9 +20,29 @@ from bag3d.config import db
 
 
 logger = logging.getLogger(__name__)
+logger_perf = logging.getLogger('performance')
 
 
-def run_subprocess(command, shell=False, doexec=True):
+# def report_procs(pid):
+#     proc = Process(pid)
+#     try:
+#         with proc.oneshot():
+#             logger_perf.debug("%s - %s - %s - %s" % (proc.cmdline(), proc.cpu_percent(), proc.memory_full_info(), swap_memory()))
+#     except NoSuchProcess:
+#         pass
+    #
+    # res = []
+    # for p in psutil.process_iter(attrs=['name', 'status', "cmdline", 'memory_info']):
+    #     if '3dfier' in p.info['name']:
+    #         res.append((p.info['cmdline'], p.info['memory_info']))
+    # if len(res) > 0:
+    #     res.extend(["loadavg %s" % str(os.getloadavg()), psutil.swap_memory()])
+    #     return res
+    # else:
+    #     return None
+
+
+def run_subprocess(command, shell=False, doexec=True, monitor=False, tile_id=None):
     """Subprocess runner
     
     If subrocess returns non-zero exit code, STDERR is sent to the logger.
@@ -43,13 +66,40 @@ def run_subprocess(command, shell=False, doexec=True):
         if shell:
             command = cmd
         logger.debug(command)
-        proc = Popen(command, shell=shell, stderr=PIPE, stdout=PIPE)
-        pid = proc.pid
-        stdout, stderr = proc.communicate()
+        popen = Popen(command, shell=shell, stderr=PIPE, stdout=PIPE)
+        pid = popen.pid
+        if monitor:
+            proc = Process(pid)
+            with proc.oneshot():
+                try:
+                    logger_perf.debug("%s - %s - %s - %s - %s" % (
+                        tile_id, proc.cpu_percent(), proc.cpu_times(), proc.memory_full_info(), swap_memory()))
+                except NoSuchProcess or ZombieProcess:
+                    logger.debug("%s is Zombie or NoSuchProcess" % tile_id)
+                except AccessDenied as e:
+                    logger_perf.exception(e)
+        # if monitor:
+        #     running = True
+        #     proc = Process(pid)
+        #     with proc.oneshot():
+        #         while running:
+        #             try:
+        #                 logger_perf.debug("%s - %s - %s - %s - %s" % (
+        #                 tile_id, proc.cpu_percent(), proc.cpu_times(), proc.memory_full_info(), swap_memory()))
+        #             except NoSuchProcess or ZombieProcess:
+        #                 logger.debug("%s is Zombie or NoSuchProcess" % tile_id)
+        #                 break
+        #             except AccessDenied as e:
+        #                 logger_perf.exception(e)
+        #                 break
+        #             running = proc.is_running()
+        #             logger.debug("%s is running: %s" % (tile_id, running))
+        #             sleep(1)
+        stdout, stderr = popen.communicate()
         err = stderr.decode(locale.getpreferredencoding(do_setlocale=True))
-        returncode = proc.wait()
-        if returncode != 0:
-            logger.debug("Process returned with non-zero exit code: %s", proc.returncode)
+        popen.wait()
+        if popen.returncode != 0:
+            logger.debug("Process returned with non-zero exit code: %s", popen.returncode)
             logger.error(err)
             return False
         else:

@@ -17,6 +17,7 @@ numpy = "*"
 rasterstats = "*"
 sphinx-jsonschema = "*"
 psutil = "*"
+memory-profiler = "*"
 
 [requires]
 python_version = "3.6"
