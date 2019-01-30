@@ -7,12 +7,13 @@ import json
 from math import sqrt
 
 from psycopg2 import sql
+from psycopg2.extras import Json
 import numpy as np
 from rasterstats import zonal_stats
 
 from bag3d.config import border
 
-logger = logging.getLogger("quality")
+logger = logging.getLogger(__name__)
 
 
 def create_quality_views(conn, cfg):
@@ -153,12 +154,14 @@ def create_quality_table(conn):
     """Create a table to store the quality statistics"""
     query = sql.SQL("""
     CREATE TABLE IF NOT EXISTS public.bag3d_quality (
-    timestamp timestamptz PRIMARY KEY, 
+    id SERIAL PRIMARY KEY,
+    timestamp timestamptz, 
     total_cnt int,
     valid_height_pct float4,
     invalid_height_pct float4,
     ground_missing_pct float4,
-    roof_missing_pct float4
+    roof_missing_pct float4,
+    building_cnt json
     );
     """)
     try:
@@ -217,7 +220,6 @@ def get_counts(conn, config):
             {schema}.{bag3d}
         WHERE bouwjaar > ahn_file_date
     )
-    INSERT INTO public.bag3d_quality
     SELECT
         current_timestamp AS timestamp,
         t.total_cnt,
@@ -238,50 +240,97 @@ def get_counts(conn, config):
                 schema=schema)
     try:
         logger.debug(conn.print_query(query))
-        conn.sendQuery(query)
+        res = conn.get_dict(query)
+        logger.debug(res)
+        return res
     except BaseException as e:
         logger.exception(e)
         raise
 
-def count_buildings(conn, config):
+def buildings_per_tile(conn, config):
     """Count the number of buildings in the BAG and the 3D BAG per tile"""
     schema = sql.Identifier(config['input_polygons']['footprints']['schema'])
+    table_bag_q = sql.Identifier(config['input_polygons']['footprints']['table'])
+    schema_idx_q = sql.Identifier(config['tile_index']['polygons']['schema'])
+    table_idx_q = sql.Identifier(config['tile_index']['polygons']['table'])
+    field_idx_unit_q = sql.Identifier(config['tile_index']['polygons']['fields']['unit_name'])
+    field_idx_geom_q = sql.Identifier(config['tile_index']['polygons']['fields']['geometry'])
+
     query = sql.SQL("""
     WITH bag_tiles AS (
     SELECT
-        pandactueelbestaand.gid,
-        bag_index.bladnr
+        {table_bag}.gid,
+        {table_idx}.{field_idx}
     FROM
-        bagactueel.pandactueelbestaand
-    JOIN bagactueel.pand_centroid ON
-        pandactueelbestaand.gid = pand_centroid.gid,
-        tile_index.bag_index
+        {schema}.{table_bag}
+    JOIN {schema}.pand_centroid ON
+        {table_bag}.gid = pand_centroid.gid,
+        {schema_idx}.{table_idx}
     WHERE
-        st_containsproperly(bag_index.geom,pand_centroid.geom)
-        OR st_contains(bag_index.geom_border,pand_centroid.geom)
+        st_containsproperly({table_idx}.{field_idx_geom}, pand_centroid.geom)
+        OR st_contains({table_idx}.geom_border, pand_centroid.geom)
     ),
     bag_tiles_cnt AS (
-        SELECT bladnr AS tile_id, count(*) AS bag_cnt
+        SELECT {field_idx} AS tile_id, count(*) AS bag_cnt
         FROM bag_tiles
-        GROUP BY bladnr
+        GROUP BY {field_idx}
     ),
     bag3d_tiles_cnt AS (
         SELECT tile_id, count(*) AS bag3d_cnt
-        FROM bagactueel.pand3d
+        FROM {schema}.{bag3d}
         GROUP BY tile_id
+    ),
+    counts AS (
+        SELECT a.tile_id, bag_cnt, bag3d_cnt
+        FROM bag_tiles_cnt a
+        LEFT JOIN bag3d_tiles_cnt b ON a.tile_id = b.tile_id
     )
-    SELECT a.tile_id, bag_cnt, bag3d_cnt
-    FROM bag_tiles_cnt a
-    LEFT JOIN bag3d_tiles_cnt b ON a.tile_id = b.tile_id;
+    SELECT array_to_json(array_agg(counts)) AS building_cnt
+    FROM counts;
     """).format(bag3d=sql.Identifier(config["output"]["bag3d_table"]),
-                schema=schema)
+                schema=schema,
+                table_bag=table_bag_q,
+                schema_idx=schema_idx_q,
+                table_idx=table_idx_q,
+                field_idx=field_idx_unit_q,
+                field_idx_geom=field_idx_geom_q
+                )
     try:
         logger.debug(conn.print_query(query))
-        conn.sendQuery(query)
+        res = conn.getQuery(query)
+        logger.debug(res)
+        return res
     except BaseException as e:
         logger.exception(e)
         raise
 
+def update_quality_table(conn, counts, buildings_per_tile):
+    """Inserts the quality metrics into the quality table"""
+    try:
+        with conn.conn:
+            with conn.conn.cursor() as cur:
+                cur.execute("""
+                INSERT INTO public.bag3d_quality (
+                    timestamp, 
+                    total_cnt,
+                    valid_height_pct,
+                    invalid_height_pct,
+                    ground_missing_pct,
+                    roof_missing_pct,
+                    building_cnt
+                ) VALUES (%(time)s, %(total)s, %(valid)s, %(invalid)s, %(ground)s, %(roof)s, %(building)s);
+                """, {'time': counts[0]['timestamp'],
+                    'total': counts[0]['total_cnt'],
+                    'valid': counts[0]['valid_height_pct'],
+                    'invalid': counts[0]['invalid_height_pct'],
+                    'ground': counts[0]['ground_missing_pct'],
+                    'roof': counts[0]['roof_missing_pct'],
+                    'building': Json(buildings_per_tile[0][0])
+                      }
+                            )
+    except BaseException as e:
+        logger.exception(e)
+        raise
 
 def get_sample(conn, config):
     """Get a random sample of buildings from the 3D BAG

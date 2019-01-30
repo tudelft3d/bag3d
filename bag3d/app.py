@@ -224,7 +224,9 @@ def app(cli_args, here, log_conf):
             logger.info("Checking 3D BAG quality")
 #             cfg_quality = quality.create_quality_views(conn, cfg)
             quality.create_quality_table(conn)
-            quality.get_counts(conn, cfg)
+            counts = quality.get_counts(conn, cfg)
+            building_per_tile = quality.buildings_per_tile(conn, cfg)
+            quality.update_quality_table(conn, counts, building_per_tile)
 
 
         # Clean up
