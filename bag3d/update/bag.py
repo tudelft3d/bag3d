@@ -4,7 +4,8 @@
 
 import os.path
 from datetime import datetime, date
-from subprocess import run, PIPE
+from subprocess import PIPE
+from psutil import Popen
 import locale
 
 import logging
@@ -42,9 +43,12 @@ def run_subprocess(command, shell=False, doexec=True):
         if shell:
             command = cmd
         logger.debug(command)
-        proc = run(command, shell=shell, stderr=PIPE, stdout=PIPE)
-        err = proc.stderr.decode(locale.getpreferredencoding(do_setlocale=True))
-        if proc.returncode != 0:
+        proc = Popen(command, shell=shell, stderr=PIPE, stdout=PIPE)
+        pid = proc.pid
+        stdout, stderr = proc.communicate()
+        err = stderr.decode(locale.getpreferredencoding(do_setlocale=True))
+        returncode = proc.wait()
+        if returncode != 0:
             logger.debug("Process returned with non-zero exit code: %s", proc.returncode)
             logger.error(err)
             return False
