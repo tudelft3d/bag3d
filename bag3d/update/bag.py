@@ -72,8 +72,8 @@ def run_subprocess(command, shell=False, doexec=True, monitor=False, tile_id=Non
             proc = Process(pid)
             with proc.oneshot():
                 try:
-                    logger_perf.debug("%s - %s - %s - %s - %s" % (
-                        tile_id, proc.cpu_percent(), proc.cpu_times(), proc.memory_full_info(), swap_memory()))
+                    logger_perf.debug("%s - %s - %s" % (
+                        tile_id, proc.memory_full_info(), swap_memory()))
                 except NoSuchProcess or ZombieProcess:
                     logger.debug("%s is Zombie or NoSuchProcess" % tile_id)
                 except AccessDenied as e:
