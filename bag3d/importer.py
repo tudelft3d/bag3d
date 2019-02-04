@@ -114,6 +114,8 @@ def csv2db(conn, cfg, out_paths):
     
     table_idx = sql.Identifier(cfg['output']['schema'] + "_id_idx")
     a = create_heights_table(conn, cfg['output']['schema'], cfg['output']['table'])
+
+    conn.sendQuery(sql.SQL("CREATE SCHEMA IF NOT EXISTS {schema};").format(schema=schema_out_q))
     
     if a:
         tbl = ".".join([cfg['output']['schema'], cfg['output']['table']])
