@@ -8,6 +8,7 @@ import warnings
 import copy
 import re
 import logging
+from random import shuffle
 from pprint import pformat
 
 import yaml
@@ -323,6 +324,7 @@ def get_border_tiles(conn, tbl_schema, border_table, tbl_tile):
         )
     logger.debug(conn.print_query(query))
     r = [row[0] for row in conn.getQuery(query)]
+    shuffle(r)
     logger.debug("%s", r)
     return r
 
@@ -375,6 +377,7 @@ def get_non_border_tiles(conn, tbl_schema, tbl_name, border_table, tbl_tile):
     r = conn.getQuery(query)
 #     r = [row[0] for row in conn.getQuery(query)]
 #    logger.debug("%s", r)
+    shuffle(r)
     return r
 
 

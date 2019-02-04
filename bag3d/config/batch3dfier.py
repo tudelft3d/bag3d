@@ -9,6 +9,7 @@ from itertools import chain
 from pprint import pformat
 import time
 import logging
+from random import shuffle
 
 from shapely.geometry import shape
 from shapely import geos
@@ -505,6 +506,7 @@ def get_2Dtiles(db, table_index, fields_index, ewkb):
                             field_idx_geom=field_idx_geom_q,
                             ewkb=ewkb_q)
     resultset = db.getQuery(query)
+    shuffle(resultset)
     tiles = [tile[0] for tile in resultset]
     logger.debug("Nr. of tiles in clip extent: " + str(len(tiles)))
     return tiles
