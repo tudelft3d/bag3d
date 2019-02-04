@@ -6,6 +6,7 @@
 import os
 import sys
 from shutil import rmtree
+from datetime import datetime
 
 import logging, logging.config
 
@@ -37,6 +38,8 @@ def app(cli_args, here, log_conf):
     args_in = args.parse_console_args(cli_args[1:])
 
     log_conf['handlers']['console']['level'] = args_in['loglevel']
+    log_conf['handlers']['logfile']['filename'] = "bag3d_" + datetime.utcnow().date().isoformat() + ".log"
+    log_conf['handlers']['logfile_performance']['filename'] = "bag3d_performance_" + datetime.utcnow().date().isoformat() + ".log"
     logging.config.dictConfig(log_conf)
     logger = logging.getLogger(__name__)
 
