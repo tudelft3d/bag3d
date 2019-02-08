@@ -6,7 +6,7 @@ import os.path
 from time import sleep, process_time
 from datetime import datetime, date
 from subprocess import PIPE
-from psutil import Popen, Process, NoSuchProcess, ZombieProcess, AccessDenied, swap_memory
+from psutil import Popen, Process, NoSuchProcess, ZombieProcess, AccessDenied, swap_memory, virtual_memory
 import locale
 
 # from memory_profiler import memory_usage
@@ -73,7 +73,7 @@ def run_subprocess(command, shell=False, doexec=True, monitor=False, tile_id=Non
             with proc.oneshot():
                 try:
                     logger_perf.debug("%s;%s;%s" % (
-                        tile_id, proc.memory_full_info(), swap_memory()))
+                        tile_id, virtual_memory().used, swap_memory().used))
                 except NoSuchProcess or ZombieProcess:
                     logger.debug("%s is Zombie or NoSuchProcess" % tile_id)
                 except AccessDenied as e:
