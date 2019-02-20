@@ -41,9 +41,11 @@ def create_heights_table(conn, schema, table):
     boolean
         True on success
     """
-
     schema_q = sql.Identifier(schema)
     table_q = sql.Identifier(table)
+    query_s = sql.SQL("""
+    CREATE SCHEMA IF NOT EXISTS {schema};
+    """).format(schema=schema_q)
     query = sql.SQL("""
     CREATE TABLE IF NOT EXISTS {schema}.{table} (
         id varchar(16),
@@ -79,11 +81,11 @@ def create_heights_table(conn, schema, table):
     """).format(schema=schema_q, table=table_q)
     logger.debug(conn.print_query(query))
     try:
+        conn.sendQuery(query_s)
         conn.sendQuery(query)
         return True
     except Exception as e:
         logger.exception(e)
-        raise
         return False
 
 
@@ -113,10 +115,9 @@ def csv2db(conn, cfg, out_paths):
     table_out_q = sql.Identifier(cfg['output']['table'])
     
     table_idx = sql.Identifier(cfg['output']['schema'] + "_id_idx")
+
     a = create_heights_table(conn, cfg['output']['schema'], cfg['output']['table'])
 
-    conn.sendQuery(sql.SQL("CREATE SCHEMA IF NOT EXISTS {schema};").format(schema=schema_out_q))
-    
     if a:
         tbl = ".".join([cfg['output']['schema'], cfg['output']['table']])
         with conn.conn.cursor() as cur:
