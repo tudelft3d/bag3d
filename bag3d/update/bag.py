@@ -330,7 +330,7 @@ def import_index(idx, dbname, tile_schema, host, port, user,
     run_subprocess(command, shell=True, doexec=doexec)
 
 
-def grant_access(conn, user, tile_schema, tile_index_schema):
+def grant_access(conn, user, tile_schema, tile_index_schema, production_schema):
     """Grants all the necessary privileges for a user for operating on the 3DBAG database
     
     Parameters
@@ -350,33 +350,41 @@ def grant_access(conn, user, tile_schema, tile_index_schema):
         nothing
     """
     query_public = sql.SQL("""
-GRANT EXECUTE ON ALL functions IN SCHEMA public TO {u};
-GRANT SELECT ON ALL tables IN SCHEMA public TO {u};
-GRANT USAGE, SELECT ON ALL sequences IN SCHEMA public TO {u};
-""").format(u=sql.Identifier(user))
+    GRANT EXECUTE ON ALL functions IN SCHEMA public TO {u};
+    GRANT SELECT ON ALL tables IN SCHEMA public TO {u};
+    GRANT USAGE, SELECT ON ALL sequences IN SCHEMA public TO {u};
+    """).format(u=sql.Identifier(user))
     logger.debug(conn.print_query(query_public))
     conn.sendQuery(query_public)
     
     query_bagactueel = sql.SQL("""
-GRANT USAGE ON SCHEMA bagactueel TO {u};
-GRANT SELECT ON ALL tables IN SCHEMA bagactueel TO {u};
-GRANT USAGE, SELECT ON ALL sequences IN SCHEMA bagactueel TO {u};
-""").format(u=sql.Identifier(user))
+    GRANT USAGE ON SCHEMA bagactueel TO {u};
+    GRANT SELECT ON ALL tables IN SCHEMA bagactueel TO {u};
+    GRANT USAGE, SELECT ON ALL sequences IN SCHEMA bagactueel TO {u};
+    """).format(u=sql.Identifier(user))
     logger.debug(conn.print_query(query_bagactueel))
     conn.sendQuery(query_bagactueel)
-    
+
+    query_bagactueel = sql.SQL("""
+    GRANT USAGE ON SCHEMA {s} TO {u};
+    GRANT SELECT ON ALL tables IN SCHEMA {s} TO {u};
+    GRANT USAGE, SELECT ON ALL sequences IN SCHEMA {s} TO {u};
+    """).format(u=sql.Identifier(user), s=sql.Identifier(production_schema))
+    logger.debug(conn.print_query(query_bagactueel))
+    conn.sendQuery(query_bagactueel)
+
     query_tile_schema = sql.SQL("""
-GRANT USAGE ON SCHEMA {s} TO {u};
-GRANT SELECT, UPDATE, INSERT ON ALL tables IN SCHEMA {s} TO {u};
-GRANT USAGE, SELECT, UPDATE ON ALL sequences IN SCHEMA {s} TO {u};
-""").format(u=sql.Identifier(user), s=sql.Identifier(tile_schema))
+    GRANT USAGE ON SCHEMA {s} TO {u};
+    GRANT SELECT, UPDATE, INSERT ON ALL tables IN SCHEMA {s} TO {u};
+    GRANT USAGE, SELECT, UPDATE ON ALL sequences IN SCHEMA {s} TO {u};
+    """).format(u=sql.Identifier(user), s=sql.Identifier(tile_schema))
     logger.debug(conn.print_query(query_tile_schema))
     conn.sendQuery(query_tile_schema)
 
     query_tile_index_schema = sql.SQL("""
-GRANT USAGE ON SCHEMA {s} TO {u};
-GRANT SELECT, UPDATE, INSERT ON ALL tables IN SCHEMA {s} TO {u};
-GRANT USAGE, SELECT, UPDATE ON ALL sequences IN SCHEMA {s} TO {u};
-""").format(u=sql.Identifier(user), s=sql.Identifier(tile_index_schema))
+    GRANT USAGE ON SCHEMA {s} TO {u};
+    GRANT SELECT, UPDATE, INSERT ON ALL tables IN SCHEMA {s} TO {u};
+    GRANT USAGE, SELECT, UPDATE ON ALL sequences IN SCHEMA {s} TO {u};
+    """).format(u=sql.Identifier(user), s=sql.Identifier(tile_index_schema))
     logger.debug(conn.print_query(query_tile_index_schema))
     conn.sendQuery(query_tile_index_schema)

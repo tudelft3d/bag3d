@@ -11,7 +11,7 @@ import logging
 
 from bag3d.update import bag
 
-logger = logging.getLogger('import')
+logger = logging.getLogger(__name__)
 
 
 def create_heights_table(conn, schema, table):
@@ -107,15 +107,17 @@ def csv2db(conn, cfg, out_paths):
     table_pc_q = sql.Identifier(cfg['tile_index']['elevation']['table'])
     field_pc_unit_q = sql.Identifier(cfg['tile_index']['elevation']['fields']['unit_name'])
     
-    schema_out_q = sql.Identifier(cfg['output']['schema'])
-    table_out_q = sql.Identifier(cfg['output']['table'])
+    schema_out_q = sql.Identifier(cfg["output"]["staging"]["schema"])
+    table_out_q = sql.Identifier(cfg["output"]["staging"]["heights_table"])
     
-    table_idx = sql.Identifier(cfg['output']['schema'] + "_id_idx")
+    table_idx = sql.Identifier(cfg["output"]["staging"]["schema"] + "_id_idx")
 
-    a = create_heights_table(conn, cfg['output']['schema'], cfg['output']['table'])
+    a = create_heights_table(conn, cfg["output"]["staging"]["schema"], cfg["output"]["staging"]["heights_table"])
 
     if a:
-        tbl = ".".join([cfg['output']['schema'], cfg['output']['table']])
+        s = '"' + cfg["output"]["staging"]["schema"] + '"' # expecting here that the yaml parser took care of stripping the " and ' from the name
+        t = '"' + cfg["output"]["staging"]["heights_table"] + '"'
+        tbl = ".".join([s, t])
         with conn.conn.cursor() as cur:
             for path in out_paths:
                 csv_file = os.path.split(path)[1]
@@ -166,20 +168,19 @@ ahn_file_date,ahn_version,tile_id/' %s" % path
                         
         conn.sendQuery(
             sql.SQL("""CREATE INDEX IF NOT EXISTS {table}
-                    ON {schema_q}.{table_q} (id);
-                    """).format(schema_q=schema_out_q,
+                    ON {out_schema_q}.{table_q} (id);
+                    """).format(out_schema_q=schema_out_q,
                                 table_q=table_out_q,
                                 table=table_idx)
         )
         conn.sendQuery(
-            sql.SQL("""COMMENT ON TABLE {schema}.{table} IS
+            sql.SQL("""COMMENT ON TABLE {out_schema}.{table} IS
                     'Building heights generated with 3dfier.';
-                    """).format(schema=schema_out_q,
+                    """).format(out_schema=schema_out_q,
                                table=table_out_q)
         )
     else:
         logger.error("csv2db: exit because create_heights_table returned False")
-        raise
 
 
 def create_bag3d_relations(conn, cfg):
@@ -192,19 +193,20 @@ def create_bag3d_relations(conn, cfg):
     cfg: dict
         batch3dfier YAML config as returned by :meth:`bag3d.config.args.parse_config`
     """
-    schema_q = sql.Identifier(cfg['input_polygons']['footprints']['schema'])
+    bag_schema_q = sql.Identifier(cfg['input_polygons']['footprints']['schema'])
     bag_table_q = sql.Identifier(cfg['input_polygons']['footprints']['table'])
     uniqueid_q = sql.Identifier(cfg['input_polygons']['footprints']['fields']['uniqueid'])
-    bag3d_table_q = sql.Identifier(cfg['output']['bag3d_table'])
-    heights_table_q = sql.Identifier(cfg['output']['table'])
+    bag3d_table_q = sql.Identifier(cfg["output"]["staging"]["bag3d_table"])
+    output_schema_q = sql.Identifier(cfg["output"]["staging"]["schema"])
+    heights_table_q = sql.Identifier(cfg["output"]["staging"]["heights_table"])
     
     drop_q = sql.SQL("DROP TABLE IF EXISTS {schema}.{bag3d} CASCADE;").format(
         bag3d=bag3d_table_q,
-        schema=schema_q)
+        schema=output_schema_q)
     conn.sendQuery(drop_q)
     
     query = sql.SQL("""
-    CREATE TABLE {schema}.{bag3d} AS
+    CREATE TABLE {out_schema}.{bag3d} AS
     SELECT
         p.gid,
         p.identificatie,
@@ -252,51 +254,17 @@ def create_bag3d_relations(conn, cfg):
             ELSE TRUE
         END AS height_valid,
         h.tile_id
-    FROM {schema}.{bag} p
-    INNER JOIN {schema}.{heights} h ON p.{uniqueid} = h.id;
-    """).format(bag=bag_table_q, uniqueid=uniqueid_q,schema=schema_q,
-                bag3d=bag3d_table_q, heights=heights_table_q)
+    FROM {bag_schema}.{bag} p
+    INNER JOIN {out_schema}.{heights} h ON p.{uniqueid} = h.id;
+    """).format(bag=bag_table_q, uniqueid=uniqueid_q,bag_schema=bag_schema_q,
+                bag3d=bag3d_table_q, out_schema=output_schema_q, heights=heights_table_q)
     # the type of bagactueel.pand.identificatie can change between different 
     # BAG extracts (numeric or varchar)
     conn.sendQuery(query)
     
-    idx = sql.Identifier(cfg['output']['bag3d_table'] + "_identificatie_idx")
-    query = sql.SQL("""
-    CREATE INDEX {idx} ON {schema}.{bag3d} ({uniqueid});
-    """).format(idx=idx, bag3d=bag3d_table_q,schema=schema_q,uniqueid=uniqueid_q)
-    conn.sendQuery(query)
-    
-    idx = sql.Identifier(cfg['output']['bag3d_table'] + "_tile_id_idx")
-    query = sql.SQL("""
-    CREATE INDEX {idx} ON {schema}.{bag3d} (tile_id);
-    """).format(idx=idx, bag3d=bag3d_table_q,schema=schema_q)
-    conn.sendQuery(query)
-    
-    idx = sql.Identifier(cfg['output']['bag3d_table'] + "_valid_idx")
-    query = sql.SQL("""
-    CREATE INDEX {idx} ON {schema}.{bag3d} (height_valid);
-    """).format(idx=idx, bag3d=bag3d_table_q,schema=schema_q)
-    conn.sendQuery(query)
-    
-    idx = sql.Identifier(cfg['output']['bag3d_table'] + "_geovlak_idx")
-    query = sql.SQL("""
-    CREATE INDEX {idx} ON {schema}.{bag3d} USING GIST (geovlak);
-    """).format(idx=idx, bag3d=bag3d_table_q,schema=schema_q)
-    conn.sendQuery(query)
-    
-    query = sql.SQL("""
-    SELECT populate_geometry_columns('{schema}.{bag3d}'::regclass);
-    """).format(bag3d=bag3d_table_q,schema=schema_q)
-    conn.sendQuery(query)
-    
-    query = sql.SQL("""
-    COMMENT ON TABLE {schema}.{bag3d} IS 'The 3D BAG';
-    """).format(bag3d=bag3d_table_q,schema=schema_q)
-    conn.sendQuery(query)
-    
     query = sql.SQL("""
     DROP TABLE {schema}.{heights} CASCADE;
-    """).format(heights=heights_table_q,schema=schema_q)
+    """).format(heights=heights_table_q,schema=output_schema_q)
     conn.sendQuery(query)
 
 
@@ -312,14 +280,14 @@ def import_csv(conn, cfg):
     """
     
     # Get CSV files in dir
-    for root, dir, filenames in os.walk(cfg['output']['dir'], topdown=True):
+    for root, dir, filenames in os.walk(cfg['output']['staging']['dir'], topdown=True):
         csv_files = [f for f in filenames if os.path.splitext(f)[1].lower() == ".csv"]
-        out_paths = [os.path.join(cfg['output']['dir'], f) for f in csv_files]
+        out_paths = [os.path.join(cfg['output']['staging']['dir'], f) for f in csv_files]
     try:
         logger.debug("out_paths: %s", out_paths)
         logger.info("There are {} CSV files in the directory".format(len(csv_files)))
     except UnboundLocalError as e:
-        logger.exception("Couln't find any CSVs in %s", cfg['output']['dir'])
+        logger.exception("Couln't find any CSVs in %s", cfg['output']['staging']['dir'])
         raise
     csv2db(conn, cfg, out_paths)
     # TODO: add option for dropping the relations if exist
@@ -522,7 +490,7 @@ def drop_border_table(conn, cfg):
     query_d = sql.SQL("""
     DROP TABLE IF EXISTS {schema}.{table};
     """).format(schema=sql.Identifier(cfg['input_polygons']['footprints']['schema']), 
-                table=sql.Identifier(cfg['output']['bag3d_table']))
+                table=sql.Identifier(cfg["output"]["staging"]["bag3d_table"]))
     try:
         logger.debug(conn.print_query(query_d))
         conn.sendQuery(query_d)

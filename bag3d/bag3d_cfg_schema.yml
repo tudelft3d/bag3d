@@ -1,188 +1,205 @@
 name: bag3d configuration schema
 type: map
 mapping:
-    database:
-        desc: Database connection parameters
-        type: map
-        mapping:
-            dbname:
-                type: str
-                required: True
-            host:
-                type: str
-                required: True
-            port:
-                type: int
-                required: True
-            user:
-                type: str
-                required: True
-            pw:
-                type: str
-    input_polygons:
-        desc: Database access for 2D footprints
-        type: map
-        mapping:
-            footprints:
-                type: map
-                mapping:
-                    schema:
-                        type: str
-                        required: True
-                    table:
-                        type: str
-                        required: True
-                    fields:
-                        type: map
-                        mapping:
-                            primary_key:
-                                type: str
-                                required: True
-                                desc: Name of the primary key field
-                            geometry:
-                                type: str
-                                required: True
-                                desc: Name of the geometry field
-                            uniqueid:
-                                type: str
-                                required: True
-                                desc: Not sure myself
-            tile_schema:
-                type: str
-                required: True
-                desc: Name of the schema that contains the footprint tile views
-            user_schema:
-                type: str
-                desc: If user has no CREATE and DROP privilege on tile_schema, provide a schema where it has. Mainly relevant when *extent* is provided.
-            tile_prefix:
-                type: str
-                desc: Prefix prepended to the footprint tile view names. If blank, its assumed that the views are named as the values in field referenced by *tile_index:elevation:fields:unit_name*
-            extent:
-                type: str
-                desc: The polygon for clipping the input
-                example: /example_data/extent_small.geojson
-            tile_list:
-                type: any
-                desc: Sequence of tile IDs as they are in tile_schema or [all] to use all IDs in tile_index
-                example: "[all]"
-    input_elevation:
-        type: map
-        mapping:
-            dataset_dir:
-                type: seq
-                matching: all
-                required: True
-                desc: Location of pointcloud files. Provide AHN3 directory first, AHN2 second
-                sequence:
-                    - type: str
-            dataset_name:
-                type: seq
-                required: True
-                desc: Naming convention for the pointcloud files, where {tile} is substituted with values from *elevation:fields:unit_name*. Do not forget to quote the string. The letter case matters for the AHN file discorvery.
-                example: "c_{tile}.laz"
-                sequence:
-                    - type: str
-    tile_index:
-        type: map
-        mapping:
-            polygons:
-                type: map
-                mapping:
-                    schema:
-                        type: str
-                        required: True
-                    table:
-                        type: str
-                        required: True
-                    fields:
-                        type: map
-                        mapping:
-                            primary_key:
-                                type: str
-                                required: True
-                                desc: Name of the primary key field in bag_units
-                            geometry:
-                                type: str
-                                required: True
-                                desc: Name of the geometry field in bag_units
-                            unit_name:
-                                type: str
-                                required: True
-                                desc: Name of the field of the tile index unit names
-                    file:
-                        type: str
-            elevation:
-                type: map
-                mapping:
-                    schema:
-                        type: str
-                        required: True
-                    table:
-                        type: str
-                        required: True
-                    border_table:
-                        type: str
-                        required: False
-                        desc: Name of the table that contains those tiles which are on the border of the AHN3, and thus these tiles are missing points in AHN3
-                    fields:
-                        type: map
-                        mapping:
-                            primary_key:
-                                type: str
-                                required: True
-                                desc: Name of the primary key field in bag_units
-                            geometry:
-                                type: str
-                                required: True
-                                desc: Name of the geometry field in bag_units
-                            unit_name:
-                                type: str
-                                required: True
-                                desc: Name of the field of the tile index unit names
-                            version:
-                                type: str
-                                required: True
-                                desc: Name of the field that contains the version of the available AHN file. This field is automatically created and populated if --update-ahn and --import-tile-idx are used.
-                    file:
-                        type: str
-            identical:
-                type: bool
-                required: True
-                desc: Are the footprint and elevation tiles identical? Eg. when the AHN tile index is used for tiling the BAG as well.
-    output:
-        type: map
-        mapping:
-            dir:
-                type: str
-                required: True
-            schema:
-                type: str
-            table:
-                type: str
-            bag3d_table:
-                type: str
-                required: True
-                desc: Name of the table that stores the 3D BAG in the database
-    path_3dfier:
+  database:
+    desc: Database connection parameters
+    type: map
+    mapping:
+      dbname:
         type: str
         required: True
-        desc: Location of the 3dfier executable
-    path_lasinfo:
+      host:
         type: str
         required: True
-        desc: Location of the lasinfo executable
-    quality:
+      port:
+        type: int
+        required: True
+      user:
+        type: str
+        required: True
+      pw:
+        type: str
+  input_polygons:
+    desc: Database access for 2D footprints
+    type: map
+    mapping:
+      footprints:
         type: map
         mapping:
-            ahn2_rast_dir:
+          schema:
+            type: str
+            required: True
+          table:
+            type: str
+            required: True
+          fields:
+            type: map
+            mapping:
+              primary_key:
                 type: str
-                desc: Path to AHN2 raster directory
-            ahn3_rast_dir:
+                required: True
+                desc: Name of the primary key field
+              geometry:
                 type: str
-                desc: Path to AHN3 raster directory
-            results:
+                required: True
+                desc: Name of the geometry field
+              uniqueid:
                 type: str
-                desc: Path to the CSV file where the quality test results will be saved
-            sample_size:
-                type: float
-                desc: Sample size in percent 
+                required: True
+                desc: Not sure myself
+      tile_schema:
+        type: str
+        required: True
+        desc: Name of the schema that contains the footprint tile views
+      user_schema:
+        type: str
+        desc: If user has no CREATE and DROP privilege on tile_schema, provide a schema where it has. Mainly relevant when *extent* is provided.
+      tile_prefix:
+        type: str
+        desc: Prefix prepended to the footprint tile view names. If blank, its assumed that the views are named as the values in field referenced by *tile_index:elevation:fields:unit_name*
+      extent:
+        type: str
+        desc: The polygon for clipping the input
+        example: /example_data/extent_small.geojson
+      tile_list:
+        type: any
+        desc: Sequence of tile IDs as they are in tile_schema or [all] to use all IDs in tile_index
+        example: "[all]"
+  input_elevation:
+    type: map
+    mapping:
+      dataset_dir:
+        type: seq
+        matching: all
+        required: True
+        desc: Location of pointcloud files. Provide AHN3 directory first, AHN2 second
+        sequence:
+          - type: str
+      dataset_name:
+        type: seq
+        required: True
+        desc: Naming convention for the pointcloud files, where {tile} is substituted with values from *elevation:fields:unit_name*. Do not forget to quote the string. The letter case matters for the AHN file discorvery.
+        example: "c_{tile}.laz"
+        sequence:
+          - type: str
+  tile_index:
+    type: map
+    mapping:
+      polygons:
+        type: map
+        mapping:
+          schema:
+            type: str
+            required: True
+          table:
+            type: str
+            required: True
+          fields:
+            type: map
+            mapping:
+              primary_key:
+                type: str
+                required: True
+                desc: Name of the primary key field in bag_units
+              geometry:
+                type: str
+                required: True
+                desc: Name of the geometry field in bag_units
+              unit_name:
+                type: str
+                required: True
+                desc: Name of the field of the tile index unit names
+          file:
+            type: str
+      elevation:
+        type: map
+        mapping:
+          schema:
+            type: str
+            required: True
+          table:
+            type: str
+            required: True
+          border_table:
+            type: str
+            required: False
+            desc: Name of the table that contains those tiles which are on the border of the AHN3, and thus these tiles are missing points in AHN3
+          fields:
+            type: map
+            mapping:
+              primary_key:
+                type: str
+                required: True
+                desc: Name of the primary key field in bag_units
+              geometry:
+                type: str
+                required: True
+                desc: Name of the geometry field in bag_units
+              unit_name:
+                type: str
+                required: True
+                desc: Name of the field of the tile index unit names
+              version:
+                type: str
+                required: True
+                desc: Name of the field that contains the version of the available AHN file. This field is automatically created and populated if --update-ahn and --import-tile-idx are used.
+          file:
+            type: str
+      identical:
+        type: bool
+        required: True
+        desc: Are the footprint and elevation tiles identical? Eg. when the AHN tile index is used for tiling the BAG as well.
+  output:
+    type: map
+    mapping:
+      staging:
+        type: map
+        mapping:
+          dir:
+            type: str
+            required: True
+            desc: Directory for the exported files
+          schema:
+            type: str
+          heights_table:
+            type: str
+          bag3d_table:
+            type: str
+            required: True
+            desc: Name of the table that stores the 3D BAG in the database
+      production:
+        type: map
+        mapping:
+          dir:
+            type: str
+            required: True
+            desc: Directory for the exported files
+          schema:
+            type: str
+          bag3d_table:
+            type: str
+            required: True
+            desc: Name of the table that stores the 3D BAG in the database
+  path_3dfier:
+    type: str
+    required: True
+    desc: Location of the 3dfier executable
+  path_lasinfo:
+    type: str
+    required: True
+    desc: Location of the lasinfo executable
+  quality:
+    type: map
+    mapping:
+      ahn2_rast_dir:
+        type: str
+        desc: Path to AHN2 raster directory
+      ahn3_rast_dir:
+        type: str
+        desc: Path to AHN3 raster directory
+      results:
+        type: str
+        desc: Path to the CSV file where the quality test results will be saved
+      sample_size:
+        type: float
+        desc: Sample size in percent

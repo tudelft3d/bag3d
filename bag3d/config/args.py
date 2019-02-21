@@ -270,8 +270,10 @@ def parse_config(args_in, schema):
     cfg['prefix_tile_footprint'] = cfg_stream["input_polygons"]["tile_prefix"]
     
     cfg["output"] = cfg_stream["output"]
-    cfg["output"]["dir"] = os.path.abspath(cfg_stream["output"]["dir"])
-    os.makedirs(cfg["output"]["dir"], exist_ok=True)
+    cfg["output"]["staging"]["dir"] = os.path.abspath(cfg_stream["output"]["staging"]["dir"])
+    os.makedirs(cfg["output"]["staging"]["dir"], exist_ok=True)
+    cfg["output"]["production"]["dir"] = os.path.abspath(cfg_stream["output"]["production"]["dir"])
+    os.makedirs(cfg["output"]["production"]["dir"], exist_ok=True)
     
     cfg["config"] = {}
     cfg["config"]["in"] = args_in['cfg_file']

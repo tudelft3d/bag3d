@@ -189,33 +189,32 @@ def get_counts(conn, config):
     dict
         With the field names as keys
     """
-    schema = sql.Identifier(config['input_polygons']['footprints']['schema'])
     query = sql.SQL("""
     WITH total AS (
         SELECT
             COUNT(gid) total_cnt
         FROM
-            {schema}.{bag3d}
+            {out_schema}.{bag3d}
     ),
     ground AS (
         SELECT
             COUNT(gid) ground_missing_cnt
         FROM
-            {schema}.{bag3d}
+            {out_schema}.{bag3d}
         WHERE nr_ground_pts = 0
     ),
     roof AS (
         SELECT
             COUNT(gid) roof_missing_cnt
         FROM
-            {schema}.{bag3d}
+            {out_schema}.{bag3d}
         WHERE nr_roof_pts = 0
     ),
     invalid AS (
         SELECT
             COUNT (gid) invalid_height_cnt
         FROM
-            {schema}.{bag3d}
+            {out_schema}.{bag3d}
         WHERE bouwjaar > ahn_file_date
     )
     SELECT
@@ -234,8 +233,8 @@ def get_counts(conn, config):
         ground g,
         roof r,
         invalid i;
-    """).format(bag3d=sql.Identifier(config["output"]["bag3d_table"]),
-                schema=schema)
+    """).format(bag3d=sql.Identifier(config['output']['production']['bag3d_table']),
+                out_schema=sql.Identifier(config['output']['production']['schema']))
     try:
         logger.debug(conn.print_query(query))
         res = conn.get_dict(query)
@@ -275,7 +274,7 @@ def buildings_per_tile(conn, config):
     ),
     bag3d_tiles_cnt AS (
         SELECT tile_id, count(*) AS bag3d_cnt
-        FROM {schema}.{bag3d}
+        FROM {out_schema}.{bag3d}
         GROUP BY tile_id
     ),
     counts AS (
@@ -285,7 +284,8 @@ def buildings_per_tile(conn, config):
     )
     SELECT array_to_json(array_agg(counts)) AS building_cnt
     FROM counts;
-    """).format(bag3d=sql.Identifier(config["output"]["bag3d_table"]),
+    """).format(bag3d=sql.Identifier(config['output']['production']['bag3d_table']),
+                out_schema=sql.Identifier(config['output']['production']['schema']),
                 schema=schema,
                 table_bag=table_bag_q,
                 schema_idx=schema_idx_q,

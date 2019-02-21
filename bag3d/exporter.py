@@ -11,7 +11,65 @@ from psycopg2 import sql
 from bag3d.update import bag
 
 
-logger = logging.getLogger("export")
+logger = logging.getLogger(__name__)
+
+def migrate(conn, config):
+    """Migrate the 3D BAG from the staging area to production"""
+    staging_schema = sql.Identifier(config["output"]["staging"]["schema"])
+    staging_table = sql.Identifier(config["output"]["staging"]["bag3d_table"])
+    prod_schema = sql.Identifier(config["output"]["production"]["schema"])
+    prod_table = sql.Identifier(config["output"]["production"]["bag3d_table"])
+    uniqueid_q = sql.Identifier(config['input_polygons']['footprints']['fields']['uniqueid'])
+
+    query = sql.SQL("""
+    CREATE SCHEMA IF NOT EXISTS {pr_s};
+    """).format(pr_s=prod_schema)
+    conn.sendQuery(query)
+
+    query = sql.SQL("""
+    DROP TABLE IF EXISTS {pr_s}.{pr_t} CASCADE;
+    """).format(pr_s=prod_schema, pr_t=prod_table)
+    conn.sendQuery(query)
+
+    query = sql.SQL("""
+    CREATE TABLE {pr_s}.{pr_t} AS SELECT * FROM {st_s}.{st_t};
+    """).format(pr_s=prod_schema,pr_t=prod_table,st_s=staging_schema,st_t=staging_table)
+    conn.sendQuery(query)
+
+    idx = sql.Identifier(config["output"]["production"]["bag3d_table"] + "_identificatie_idx")
+    query = sql.SQL("""
+    CREATE INDEX {idx} ON {schema}.{bag3d} ({uniqueid});
+    """).format(idx=idx, bag3d=prod_table, schema=prod_schema, uniqueid=uniqueid_q)
+    conn.sendQuery(query)
+
+    idx = sql.Identifier(config["output"]["production"]["bag3d_table"] + "_tile_id_idx")
+    query = sql.SQL("""
+    CREATE INDEX {idx} ON {schema}.{bag3d} (tile_id);
+    """).format(idx=idx, bag3d=prod_table, schema=prod_schema)
+    conn.sendQuery(query)
+
+    idx = sql.Identifier(config["output"]["production"]["bag3d_table"] + "_valid_idx")
+    query = sql.SQL("""
+    CREATE INDEX {idx} ON {schema}.{bag3d} (height_valid);
+    """).format(idx=idx, bag3d=prod_table, schema=prod_schema)
+    conn.sendQuery(query)
+
+    idx = sql.Identifier(config["output"]["production"]["bag3d_table"] + "_geovlak_idx")
+    query = sql.SQL("""
+    CREATE INDEX {idx} ON {schema}.{bag3d} USING GIST (geovlak);
+    """).format(idx=idx, bag3d=prod_table, schema=prod_schema)
+    conn.sendQuery(query)
+
+    query = sql.SQL("""
+    SELECT populate_geometry_columns('{schema}.{bag3d}'::regclass);
+    """).format(bag3d=prod_table, schema=prod_schema)
+    conn.sendQuery(query)
+
+    query = sql.SQL("""
+    COMMENT ON TABLE {schema}.{bag3d} IS 'The 3D BAG';
+    """).format(bag3d=prod_table, schema=prod_schema)
+    conn.sendQuery(query)
+
 
 def compute_md5(file, d):
     """Compute the md5sum of a file"""
@@ -33,7 +91,8 @@ def csv(conn, config, out_dir):
         Path to the output directory. The directory 'csv' will be created if 
         doesn't exist.
     """
-    bag3d_table_q = sql.Identifier(config["output"]['bag3d_table'])
+    out_schema_q = sql.Identifier(config['output']['production']['schema'])
+    bag3d_table_q = sql.Identifier(config['output']['production']['bag3d_table'])
     
     query = sql.SQL("""
     COPY (
@@ -66,11 +125,11 @@ def csv(conn, config, out_dir):
             ahn_version,
             height_valid::int,
             tile_id
-        FROM bagactueel.{bag3d})
+        FROM {out_schema}.{bag3d})
     TO STDOUT
     WITH (FORMAT 'csv', HEADER TRUE, ENCODING 'utf-8', 
           FORCE_QUOTE (identificatie,gemeentecode,ahn_file_date,tile_id) )
-    """).format(bag3d=bag3d_table_q)
+    """).format(bag3d=bag3d_table_q, out_schema=out_schema_q)
     logger.debug(conn.print_query(query))
     
     date = datetime.date.today().isoformat()
@@ -98,7 +157,8 @@ def gpkg(conn, config, out_dir, doexec=True):
         Path to the output directory. The directory 'csv' will be created if 
         doesn't exist.
     """
-    bag3d = config["output"]['bag3d_table']
+    schema = config['output']['production']['schema']
+    bag3d = config['output']['production']['bag3d_table']
     date = datetime.date.today().isoformat()
     x = "bag3d_{d}.gpkg".format(d=date)
     d = os.path.join(out_dir, "gpkg")
@@ -106,16 +166,17 @@ def gpkg(conn, config, out_dir, doexec=True):
     f = os.path.join(d, x)
     if conn.password:
         dns = "PG:'dbname={db} host={h} port={p} user={u} password={pw} \
-        schemas=bagactueel tables={bag3d}'".format(db=conn.dbname,
+        schemas={schema} tables={bag3d}'".format(db=conn.dbname,
                                                  h=conn.host,
                                                  p=conn.port,
                                                  pw=conn.password,
                                                  u=conn.user,
+                                                 schema=schema,
                                                  bag3d=bag3d)
     else:
-        dns = "PG:'dbname={db} host={h} port={p} user={u} schemas=bagactueel \
+        dns = "PG:'dbname={db} host={h} port={p} user={u} schemas={schema} \
         tables={bag3d}'".format(db=conn.dbname, h=conn.host, p=conn.port,
-                                pw=conn.password, u=conn.user, bag3d=bag3d)
+                                pw=conn.password, u=conn.user, schema=schema, bag3d=bag3d)
     command = ["ogr2ogr", "-f", "GPKG", f, dns]
     logger.info("Exporting GPKG")
     bag.run_subprocess(command, shell=True, doexec=doexec)
@@ -143,7 +204,8 @@ def postgis(conn, config, out_dir, doexec=True):
         Path to the output directory. The directory 'csv' will be created if 
         doesn't exist.
     """
-    bag3d = config["output"]['bag3d_table']
+    schema = config['output']['production']['schema']
+    bag3d = config['output']['production']['bag3d_table']
     
     date = datetime.date.today().isoformat()
     
@@ -160,8 +222,8 @@ def postgis(conn, config, out_dir, doexec=True):
     compute_md5(f, postgis_dir)
     
     # The 3D BAG (building heights + footprint geom)s
-    f = os.path.join(postgis_dir, "bag3d_{d}.backup".format(d=date))
-    tbl = "bagactueel.%s" % bag3d
+    f = os.path.join(postgis_dir, 'bag3d_{d}.backup'.format(d=date))
+    tbl = '%s.%s' % (schema, bag3d)
     command = ["pg_dump", "--host", conn.host, "--port", conn.port,
                "--username", conn.user, "--no-password", "--format", 
                "custom", "--no-owner", "--compress", "7", "--encoding", 

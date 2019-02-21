@@ -222,18 +222,18 @@ def update_output(cfg, ahn_version, ahn_dir, border_table):
         cfg["tile_index"]["elevation"]["table"] = border_table
     
     cfg["input_elevation"]["dataset_dir"] = ahn_dir
-    d = cfg["output"]["dir"]
+    d = cfg['output']['staging']['dir']
     dname = path.join(path.dirname(d), path.basename(d) + sfx)
-    cfg["output"]["dir"] = dname
-    if cfg["output"]["table"]:
-        t = cfg["output"]["table"]
-        cfg["output"]["table"] = t + sfx
-        tb = cfg["output"]["bag3d_table"]
-        cfg["output"]["bag3d_table"] = tb + sfx
+    cfg['output']['staging']['dir'] = dname
+    if cfg["output"]["staging"]["heights_table"]:
+        t = cfg["output"]["staging"]["heights_table"]
+        cfg["output"]["staging"]["heights_table"] = t + sfx
+        tb = cfg["output"]["staging"]["bag3d_table"]
+        cfg["output"]["staging"]["bag3d_table"] = tb + sfx
     else:
-        cfg["output"]["schema"] = "public"
-        cfg["output"]["table"] = "heights" + sfx
-        cfg["output"]["bag3d_table"] = "bag3d" + sfx
+        cfg["output"]["staging"]["schema"] = "public"
+        cfg["output"]["staging"]["heights_table"] = "heights" + sfx
+        cfg["output"]["staging"]["bag3d_table"] = "bag3d" + sfx
     return cfg
 
 
@@ -259,30 +259,30 @@ def update_tile_list(conn, config, tile_list, ahn_version=None,
     dict
         The updated configuration
     """
-    c = copy.deepcopy(config)
+    cfg = copy.deepcopy(config)
 #     logger.debug(config["input_polygons"]["tile_list"])
     tl = list(set(tile_list).intersection(set(config["input_polygons"]["tile_list"])))
     tile_views = batch3dfier.get_2Dtile_views(conn, config["input_polygons"]["tile_schema"], 
                                  tl)
-    c["input_polygons"]["tile_list"] = tile_views
+    cfg["input_polygons"]["tile_list"] = tile_views
     
     if ahn_version:
-        c = update_output(c, ahn_version, ahn_dir, border_table)
+        cfg = update_output(cfg, ahn_version, ahn_dir, border_table)
     else:
         sfx = "_rest"
-        d = c["output"]["dir"]
+        d = cfg['output']['staging']['dir']
         dname = path.join(path.dirname(d), path.basename(d) + sfx)
-        c["output"]["dir"] = dname
-        if c["output"]["table"]:
-            t = c["output"]["table"]
-            c["output"]["table"] = t + sfx
-            tb = c["output"]["bag3d_table"]
-            c["output"]["bag3d_table"] = tb + sfx
+        cfg['output']['staging']['dir'] = dname
+        if cfg["output"]["staging"]["heights_table"]:
+            t = cfg["output"]["staging"]["heights_table"]
+            cfg["output"]["staging"]["heights_table"] = t + sfx
+            tb = cfg["output"]["staging"]["bag3d_table"]
+            cfg["output"]["staging"]["bag3d_table"] = tb + sfx
         else:
-            c["output"]["schema"] = "public"
-            c["output"]["table"] = "heights" + sfx
-            c["output"]["bag3d_table"] = "bag3d" + sfx
-    return c
+            cfg["output"]["staging"]["schema"] = "public"
+            cfg["output"]["staging"]["heights_table"] = "heights" + sfx
+            cfg["output"]["staging"]["bag3d_table"] = "bag3d" + sfx
+    return cfg
 
 
 def write_yml(yml, file):
