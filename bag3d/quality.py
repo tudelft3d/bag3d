@@ -94,8 +94,6 @@ def create_quality_views(conn, cfg):
     SELECT *
     FROM bagactueel.{bag3d}
     WHERE
-    "roof-0.00" IS NULL OR
-    "roof-0.10" IS NULL OR
     "roof-0.25" IS NULL OR
     "roof-0.50" IS NULL OR
     "roof-0.75" IS NULL OR
@@ -354,8 +352,6 @@ def get_sample(conn, config):
     SELECT 
     gid,
     ST_AsEWKB({geom}) geom,
-    "roof-0.00" "percentile_0.00",
-    "roof-0.10" "percentile_0.10",
     "roof-0.25" "percentile_0.25",
     "roof-0.50" "percentile_0.50",
     "roof-0.75" "percentile_0.75",

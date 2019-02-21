@@ -19,8 +19,6 @@ conn = db.db(dbname="bag3d_test", host="localhost",
 query = sql.SQL("""
 SELECT 
 ST_AsEWKB({geom}) geom,
-"roof-0.00" "percentile_0.00",
-"roof-0.10" "percentile_0.10",
 "roof-0.25" "percentile_0.25",
 "roof-0.50" "percentile_0.50",
 "roof-0.75" "percentile_0.75",
