@@ -91,7 +91,7 @@ def call_3dfier(db, tile, schema_tiles,
             with open(yml_path, "w") as text_file:
                 text_file.write(config)
         except BaseException as e:
-            logger.exception("Error: cannot write _config.yml")
+            logger.exception("Error: cannot write %s", yml_path)
         # Prep output file name
         if "obj" in output_format.lower():
             o = tile_out + ".obj"
