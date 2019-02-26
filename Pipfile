@@ -9,7 +9,6 @@ Shapely = "*"
 Fiona = "*"
 PyYAML = "*"
 Sphinx = "*"
-"e1839a8" = {path = ".", editable = true}
 lxml = "*"
 "bs4" = "*"
 pykwalify = "*"
