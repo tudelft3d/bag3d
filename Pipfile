@@ -7,7 +7,7 @@ name = "pypi"
 "psycopg2" = "*"
 Shapely = "*"
 Fiona = "*"
-PyYAML = "*"
+PyYAML = ">4.2b"
 Sphinx = "*"
 lxml = "*"
 "bs4" = "*"
@@ -17,6 +17,7 @@ rasterstats = "*"
 sphinx-jsonschema = "*"
 psutil = "*"
 memory-profiler = "*"
+bag3d = {path = "."}
 
 [requires]
 python_version = "3.6"
