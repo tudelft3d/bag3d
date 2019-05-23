@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
+### Fixes
++ Paging in Geoserver by adding PKEY to production table. Issue [#26](https://github.com/tudelft3d/bag3d/issues/26)
 
 
 ## [1.0.0] - 2019-02-25

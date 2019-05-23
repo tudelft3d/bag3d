@@ -24,50 +24,87 @@ def migrate(conn, config):
     query = sql.SQL("""
     CREATE SCHEMA IF NOT EXISTS {pr_s};
     """).format(pr_s=prod_schema)
+    logger.debug(conn.print_query(query))
     conn.sendQuery(query)
 
     query = sql.SQL("""
     DROP TABLE IF EXISTS {pr_s}.{pr_t} CASCADE;
     """).format(pr_s=prod_schema, pr_t=prod_table)
+    logger.debug(conn.print_query(query))
     conn.sendQuery(query)
 
     query = sql.SQL("""
     CREATE TABLE {pr_s}.{pr_t} AS SELECT * FROM {st_s}.{st_t};
     """).format(pr_s=prod_schema,pr_t=prod_table,st_s=staging_schema,st_t=staging_table)
+    logger.debug(conn.print_query(query))
+    conn.sendQuery(query)
+
+    idx = sql.Identifier(config["output"]["production"]["bag3d_table"] + "_gid_pk_idx")
+    seq_name = 'pand3d_gid_seq'
+    seq_name_q = sql.Identifier(seq_name)
+    query = sql.SQL("""
+    DROP SEQUENCE IF EXISTS {schema}.{seq};
+    CREATE SEQUENCE {schema}.{seq};
+    """).format(schema=prod_schema, seq=seq_name_q)
+    logger.debug(conn.print_query(query))
+    conn.sendQuery(query)
+    seq = sql.Literal('.'.join([config["output"]["production"]["schema"], seq_name]))
+    query = sql.SQL("""
+    ALTER TABLE {schema}.{bag3d} ALTER COLUMN gid SET DEFAULT nextval({seq});
+    """).format(seq=seq, bag3d=prod_table, schema=prod_schema)
+    logger.debug(conn.print_query(query))
+    conn.sendQuery(query)
+    query = sql.SQL("""
+    ALTER SEQUENCE {schema}.{seq} OWNED BY {schema}.{bag3d}.gid;
+    """).format(bag3d=prod_table, schema=prod_schema, seq=seq_name_q)
+    logger.debug(conn.print_query(query))
+    conn.sendQuery(query)
+
+    idx = sql.Identifier(config["output"]["production"]["bag3d_table"] + "_gid_pk_idx")
+    query = sql.SQL("""
+    ALTER TABLE {schema}.{bag3d} ADD PRIMARY KEY (gid);
+    """).format(idx=idx, bag3d=prod_table, schema=prod_schema)
+    logger.debug(conn.print_query(query))
     conn.sendQuery(query)
 
     idx = sql.Identifier(config["output"]["production"]["bag3d_table"] + "_identificatie_idx")
     query = sql.SQL("""
     CREATE INDEX {idx} ON {schema}.{bag3d} ({uniqueid});
     """).format(idx=idx, bag3d=prod_table, schema=prod_schema, uniqueid=uniqueid_q)
+    logger.debug(conn.print_query(query))
     conn.sendQuery(query)
 
     idx = sql.Identifier(config["output"]["production"]["bag3d_table"] + "_tile_id_idx")
     query = sql.SQL("""
     CREATE INDEX {idx} ON {schema}.{bag3d} (tile_id);
     """).format(idx=idx, bag3d=prod_table, schema=prod_schema)
+    logger.debug(conn.print_query(query))
     conn.sendQuery(query)
 
     idx = sql.Identifier(config["output"]["production"]["bag3d_table"] + "_valid_idx")
     query = sql.SQL("""
     CREATE INDEX {idx} ON {schema}.{bag3d} (height_valid);
     """).format(idx=idx, bag3d=prod_table, schema=prod_schema)
+    logger.debug(conn.print_query(query))
     conn.sendQuery(query)
 
     idx = sql.Identifier(config["output"]["production"]["bag3d_table"] + "_geovlak_idx")
     query = sql.SQL("""
     CREATE INDEX {idx} ON {schema}.{bag3d} USING GIST (geovlak);
     """).format(idx=idx, bag3d=prod_table, schema=prod_schema)
+    logger.debug(conn.print_query(query))
     conn.sendQuery(query)
 
     query = sql.SQL("""
     SELECT populate_geometry_columns('{schema}.{bag3d}'::regclass);
     """).format(bag3d=prod_table, schema=prod_schema)
+    logger.debug(conn.print_query(query))
     conn.sendQuery(query)
 
     query = sql.SQL("""
     COMMENT ON TABLE {schema}.{bag3d} IS 'The 3D BAG';
     """).format(bag3d=prod_table, schema=prod_schema)
+    logger.debug(conn.print_query(query))
     conn.sendQuery(query)
 
 
