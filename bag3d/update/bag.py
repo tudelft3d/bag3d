@@ -3,11 +3,11 @@
 """Update the BAG database (2D) and tile index"""
 
 import os.path
-from time import sleep, process_time
 from datetime import datetime, date
 from subprocess import PIPE
 from psutil import Popen, Process, NoSuchProcess, ZombieProcess, AccessDenied, swap_memory, virtual_memory
 import locale
+from shutil import which
 
 # from memory_profiler import memory_usage
 
@@ -212,6 +212,10 @@ def download_BAG(url, doexec=True):
     nothing
         nothing
     """
+    is_wget = which("wget")
+    if is_wget is None:
+        logger.error("'wget' not found, exiting")
+        exit(1)
     dl_url = os.path.join(url, 'bag-laatst.backup')
     command = ['wget', '-q', '-r', dl_url] 
     run_subprocess(command, doexec=doexec)

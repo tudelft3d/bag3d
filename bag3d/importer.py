@@ -134,7 +134,7 @@ def csv2db(conn, cfg, out_paths):
             for path in out_paths:
                 csv_file = os.path.split(path)[1]
                 fname = os.path.splitext(csv_file)[0]
-                tile = fname.replace(cfg['prefix_tile_footprint'], '', 1)
+                tile = fname.replace(cfg['input_polygons']['tile_prefix'], '', 1)
                 tile_q = sql.Literal(tile)
                 
                 query = sql.SQL("""SELECT file_date, ahn_version

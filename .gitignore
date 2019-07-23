@@ -2,11 +2,16 @@
 dist
 deploy.sh
 
-# Eclipse
+# Virtualenv
+Pipfile.lock
+
+# IDE
 .settings
 .project
 .pydevproject
 .dbeaver-data-sources.xml
+.idea
+.vscode
 
 # SQL
 Script*
@@ -37,3 +42,6 @@ example_data/ahn2/las
 example_data/ahn3/las
 *.qgz
 *.qgs*
+
+# KDE
+.directory

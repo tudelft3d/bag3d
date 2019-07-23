@@ -7,6 +7,7 @@ import os.path
 import subprocess
 import locale
 from datetime import datetime
+from shutil import which
 
 import re
 import urllib.request, json
@@ -30,9 +31,9 @@ def update_json_id(json):
     -------
     The modified GeoJSON
     """
-    for i,f in enumerate(json["features"]):
-        json["features"][i]["id"] = i+1
-        json["features"][i]["properties"]["id"] = i+1
+    for i,f in enumerate(json['features']):
+        json['features'][i]['id'] = i+1
+        json['features'][i]['properties']['id'] = i+1
     return json
 
 
@@ -162,7 +163,7 @@ def download(path_lasinfo, ahn3_dir, ahn2_dir, tile_index_file, ahn3_file_pat, a
                 j_in['features'][i]['properties']['file_date'] = d.isoformat()
                 j_in['features'][i]['properties']['ahn_version'] = 2
 
-    cmd = " ".join(["ls -l", ahn3_dir, "| wc -l"])
+    cmd = " ".join(['ls -l", ahn3_dir, "| wc -l'])
     dl = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE)
     out = int(dl.stdout.decode(locale.getpreferredencoding(do_setlocale=True)))
     file_count = out-1 # because the log of this script is also stored in the dir
@@ -181,6 +182,18 @@ def download(path_lasinfo, ahn3_dir, ahn2_dir, tile_index_file, ahn3_file_pat, a
 
 
 def downloader(tile_list, url, dir_out, doexec=True):
+    is_wget = which("wget")
+    is_unzip = which("unzip")
+    is_rm = which("rm")
+    if is_wget is None:
+        logger.error("'wget' not found, exiting")
+        exit(1)
+    if is_unzip is None:
+        logger.error("'unzip' not found, exiting")
+        exit(1)
+    if is_rm is None:
+        logger.error("'rm' not found, exiting")
+        exit(1)
     try:
         fout = os.path.join(dir_out, 'tile')
         for tile in tile_list:
@@ -198,10 +211,10 @@ def downloader(tile_list, url, dir_out, doexec=True):
 def download_raster(conn, config, ahn2_rast_dir, ahn3_rast_dir, doexec=True):
     "wget https://geodata.nationaalgeoregister.nl/ahn3/extract/ahn3_05m_dsm/R_37HN1.ZIP -O tile && unzip -o tile && rm tile"
     
-    tbl_schema = config["tile_index"]['elevation']['schema']
-    tbl_name = config["tile_index"]['elevation']['table']
-    tbl_tile = config["tile_index"]['elevation']['fields']['unit_name']
-    border_table = config["tile_index"]['elevation']['border_table']
+    tbl_schema = config['tile_index']['elevation']['schema']
+    tbl_name = config['tile_index']['elevation']['table']
+    tbl_tile = config['tile_index']['elevation']['fields']['unit_name']
+    border_table = config['tile_index']['elevation']['border_table']
     
     ahn2_url = "http://geodata.nationaalgeoregister.nl/ahn2/extract/ahn2_05m_ruw/r{}.tif.zip"
     ahn3_url = "https://geodata.nationaalgeoregister.nl/ahn3/extract/ahn3_05m_dsm/R_{}.ZIP"
@@ -238,10 +251,10 @@ def rast_file_idx(conn, config, ahn2_rast_dir, ahn3_rast_dir):
     ahn2_files = os.listdir(ahn2_rast_dir)
     ahn3_files = os.listdir(ahn3_rast_dir)
     
-    tbl_schema = config["tile_index"]['elevation']['schema']
-    tbl_name = config["tile_index"]['elevation']['table']
-    tbl_tile = config["tile_index"]['elevation']['fields']['unit_name']
-    border_table = config["tile_index"]['elevation']['border_table']
+    tbl_schema = config['tile_index']['elevation']['schema']
+    tbl_name = config['tile_index']['elevation']['table']
+    tbl_tile = config['tile_index']['elevation']['fields']['unit_name']
+    border_table = config['tile_index']['elevation']['border_table']
     bt = border.get_non_border_tiles(conn, tbl_schema, tbl_name, 
                                      border_table, tbl_tile)
     ahn2_tiles = [t[0].lower() for t in bt if t[1] is not None and t[1]==2]

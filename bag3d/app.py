@@ -55,20 +55,20 @@ def app(cli_args, here, log_conf):
     try:
         conn = db.db(
             dbname=cfg['database']['dbname'],
-            host=str(cfg['database']["host"]),
-            port=str(cfg['database']["port"]),
-            user=cfg['database']["user"],
-            password=cfg['database']["pw"])
+            host=str(cfg['database']['host']),
+            port=str(cfg['database']['port']),
+            user=cfg['database']['user'],
+            password=cfg['database']['pw'])
     except Exception as e:
         logger.exception(e)
         sys.exit(1)
     
     try:
         # well, let's assume the user provided the AHN3 dir first
-        ahn3_fp = cfg["input_elevation"]["dataset_name"][0]
-        ahn2_fp = cfg["input_elevation"]["dataset_name"][1]
-        ahn3_dir = cfg["input_elevation"]["dataset_dir"][0]
-        ahn2_dir = cfg["input_elevation"]["dataset_dir"][1]
+        ahn3_fp = cfg['input_elevation']['dataset_name'][0]
+        ahn2_fp = cfg['input_elevation']['dataset_name'][1]
+        ahn3_dir = cfg['input_elevation']['dataset_dir'][0]
+        ahn2_dir = cfg['input_elevation']['dataset_dir'][1]
 
 
         if args_in['update_bag']:
@@ -84,7 +84,7 @@ def app(cli_args, here, log_conf):
             ahn.download(path_lasinfo=cfg['path_lasinfo'],
                          ahn3_dir=ahn3_dir, 
                          ahn2_dir=ahn2_dir, 
-                         tile_index_file=cfg["elevation"]["file"],
+                         tile_index_file=cfg['tile_index']['elevation']['file'],
                          ahn3_file_pat=ahn3_fp,
                          ahn2_file_pat=ahn2_fp)
 
@@ -92,58 +92,58 @@ def app(cli_args, here, log_conf):
         if args_in['update_ahn_raster']:
             logger.info("Updating AHN 0.5m raster files")
             ahn.download_raster(conn, cfg, 
-                                cfg['quality']["ahn2_rast_dir"], 
-                                cfg['quality']["ahn3_rast_dir"], 
+                                cfg['quality']['ahn2_rast_dir'],
+                                cfg['quality']['ahn3_rast_dir'],
                                 doexec=args_in['no_exec'])
     
         if args_in['import_tile_idx']:
             logger.info("Importing BAG tile index")
-            bag.import_index(cfg['polygons']["file"], cfg['database']['dbname'], 
-                             cfg['polygons']['schema'], str(cfg['database']["host"]), 
-                             str(cfg['database']["port"]), cfg['database']["user"], 
-                             cfg['database']["pw"],
+            bag.import_index(cfg['tile_index']['polygons']['file'], cfg['database']['dbname'],
+                             cfg['tile_index']['polygons']['schema'], str(cfg['database']['host']),
+                             str(cfg['database']['port']), cfg['database']['user'],
+                             cfg['database']['pw'],
                              doexec=args_in['no_exec'])
             # Update BAG tiles to include the lower/left boundary
             footprints.update_tile_index(conn,
-                                         table_index=[cfg['polygons']['schema'], 
-                                                      cfg['polygons']["table"]],
-                                         fields_index=[cfg['polygons']['fields']["primary_key"], 
-                                                       cfg['polygons']['fields']["geometry"], 
-                                                       cfg['polygons']['fields']["unit_name"]]
+                                         table_index=[cfg['tile_index']['polygons']['schema'],
+                                                      cfg['tile_index']['polygons']['table']],
+                                         fields_index=[cfg['tile_index']['polygons']['fields']['primary_key'],
+                                                       cfg['tile_index']['polygons']['fields']['geometry'],
+                                                       cfg['tile_index']['polygons']['fields']['unit_name']]
                                          )
             logger.info("Partitioning the BAG")
             logger.debug("Creating centroids")
             footprints.create_centroids(conn,
-                                        table_centroid=[cfg['footprints']['schema'], 
-                                                        "pand_centroid"],
-                                        table_footprint=[cfg['footprints']['schema'], 
-                                                         cfg['footprints']["table"]],
-                                        fields_footprint=[cfg['footprints']['fields']["primary_key"], 
-                                                          cfg['footprints']['fields']["geometry"]]
+                                        table_centroid=[cfg['input_polygons']['footprints']['schema'],
+                                                        'pand_centroid'],
+                                        table_footprint=[cfg['input_polygons']['footprints']['schema'],
+                                                         cfg['input_polygons']['footprints']['table']],
+                                        fields_footprint=[cfg['input_polygons']['footprints']['fields']['primary_key'],
+                                                          cfg['input_polygons']['footprints']['fields']['geometry']]
                                         )
             logger.debug("Creating tiles")
-            footprints.create_views(conn, schema_tiles=cfg['tile_schema'], 
-                                     table_index=[cfg['polygons']['schema'], 
-                                                  cfg['polygons']["table"]],
-                                     fields_index=[cfg['polygons']['fields']["primary_key"], 
-                                                   cfg['polygons']['fields']["geometry"], 
-                                                   cfg['polygons']['fields']["unit_name"]],
-                                     table_centroid=[cfg['footprints']['schema'], "pand_centroid"],
-                                     fields_centroid=[cfg['footprints']['fields']["primary_key"], 
-                                                      "geom"],
-                                     table_footprint=[cfg['footprints']['schema'], 
-                                                      cfg['footprints']["table"]],
-                                     fields_footprint=[cfg['footprints']['fields']["primary_key"], 
-                                                       cfg['footprints']['fields']["geometry"],
-                                                       cfg['footprints']['fields']["uniqueid"]
+            footprints.create_views(conn, schema_tiles=cfg['input_polygons']['tile_schema'],
+                                     table_index=[cfg['tile_index']['polygons']['schema'],
+                                                  cfg['tile_index']['polygons']['table']],
+                                     fields_index=[cfg['tile_index']['polygons']['fields']['primary_key'],
+                                                   cfg['tile_index']['polygons']['fields']['geometry'],
+                                                   cfg['tile_index']['polygons']['fields']['unit_name']],
+                                     table_centroid=[cfg['input_polygons']['footprints']['schema'], 'pand_centroid'],
+                                     fields_centroid=[cfg['input_polygons']['footprints']['fields']['primary_key'],
+                                                      'geom'],
+                                     table_footprint=[cfg['input_polygons']['footprints']['schema'],
+                                                      cfg['input_polygons']['footprints']['table']],
+                                     fields_footprint=[cfg['input_polygons']['footprints']['fields']['primary_key'],
+                                                       cfg['input_polygons']['footprints']['fields']['geometry'],
+                                                       cfg['input_polygons']['footprints']['fields']['uniqueid']
                                                        ],
-                                     prefix_tiles=cfg['prefix_tile_footprint'])
+                                     prefix_tiles=cfg['input_polygons']['tile_prefix'])
             
             logger.info("Importing AHN tile index")
-            bag.import_index(cfg['elevation']['file'], cfg['database']['dbname'], 
-                             cfg['elevation']['schema'], str(cfg['database']["host"]), 
-                             str(cfg['database']["port"]), cfg['database']["user"], 
-                             cfg['database']["pw"],
+            bag.import_index(cfg['tile_index']['elevation']['file'], cfg['database']['dbname'],
+                             cfg['tile_index']['elevation']['schema'], str(cfg['database']['host']),
+                             str(cfg['database']['port']), cfg['database']['user'],
+                             cfg['database']['pw'],
                              doexec=args_in['no_exec'])
 
 
@@ -192,7 +192,7 @@ def app(cli_args, here, log_conf):
                 
                 if not os.listdir(c['output']['staging']['dir']):
                     logger.warning("3dfier failed completely for %s, skipping import", 
-                                   c["config"]["in"])
+                                   c['config']['in'])
                 else:
                     logger.info("Importing batch3dfier output into database")
                     importer.import_csv(conn, c)
@@ -214,14 +214,14 @@ def app(cli_args, here, log_conf):
             logger.info("Migrating the 3D BAG to production")
             exporter.migrate(conn, cfg)
             logger.info("Exporting 3D BAG")
-            exporter.csv(conn, cfg, cfg['output']["production"]["dir"])
-            exporter.gpkg(conn, cfg, cfg['output']["production"]["dir"], args_in['no_exec'])
-            exporter.postgis(conn, cfg, cfg['output']["production"]["dir"], args_in['no_exec'])
+            exporter.csv(conn, cfg, cfg['output']['production']['dir'])
+            exporter.gpkg(conn, cfg, cfg['output']['production']['dir'], args_in['no_exec'])
+            exporter.postgis(conn, cfg, cfg['output']['production']['dir'], args_in['no_exec'])
 
         if args_in['grant_access']:
-            bag.grant_access(conn, args_in["grant_access"],
-                             cfg['tile_schema'],
-                             cfg['polygons']['schema'],
+            bag.grant_access(conn, args_in['grant_access'],
+                             cfg['input_polygons']['tile_schema'],
+                             cfg['tile_index']['polygons']['schema'],
                              cfg['output']['production']['schema'])
 
         if args_in['quality']:
@@ -240,11 +240,11 @@ def app(cli_args, here, log_conf):
                   cfg['config']['out_border_ahn3'],
                   cfg['config']['out_rest']]:
             rmtree(os.path.dirname(c), ignore_errors=True)
-#           rmtree(c['output']["dir"], ignore_errors=True)
+#           rmtree(c['output']['dir'], ignore_errors=True)
 
 #             rast_idx = ahn.rast_file_idx(conn, cfg, 
-#                                          cfg['quality']["ahn2_rast_dir"], 
-#                                          cfg['quality']["ahn3_rast_dir"])
+#                                          cfg['quality']['ahn2_rast_dir'], 
+#                                          cfg['quality']['ahn3_rast_dir'])
 #             sample = quality.get_sample(conn, cfg_quality)
 #             logger.info("Sample size %s", len(sample))
 #             logger.debug(sample[0])
@@ -255,11 +255,11 @@ def app(cli_args, here, log_conf):
 #             diffs,fields = quality.compute_diffs(reference, stats)
 #             logger.info("Computed differences on %s buildings", len(diffs))
 #             
-#             out_dir = os.path.dirname(cfg['quality']["results"])
+#             out_dir = os.path.dirname(cfg['quality']['results'])
 #             os.makedirs(out_dir, exist_ok=True)
 #             logger.info("Writing height comparison to %s",
-#                                 cfg['quality']["results"])
-#             with open(cfg['quality']["results"], 'w') as csvfile:
+#                                 cfg['quality']['results'])
+#             with open(cfg['quality']['results'], 'w') as csvfile:
 #                 writer = DictWriter(csvfile, fieldnames=fields)
 #                 writer.writeheader()
 #                 for row in diffs:
