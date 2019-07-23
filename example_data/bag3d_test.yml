@@ -55,12 +55,17 @@ tile_index:
     identical: True
 
 output:
-    dir: temp
-    schema: bagactueel
-    table: heights
-    bag3d_table: pand3d
+    staging:
+        dir: staging
+        schema: staging
+        heights_table: heights
+        bag3d_table: pand3d
+    production:
+        dir: production
+        schema: production
+        bag3d_table: pand3d
 
-path_3dfier: /home/balazs/Development/3dfier_src/3dfier/build/3dfier
-path_lasinfo: /opt/LAStools/src/lasinfo
+path_3dfier: /home/balazs/Development/3dfier_src/build_bag3d/3dfier
+path_lasinfo: /opt/LAStools-bin/bin/lasinfo
 
 

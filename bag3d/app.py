@@ -210,6 +210,7 @@ def app(cli_args, here, log_conf):
                 importer.drop_border_table(conn, c)
 
         if args_in['export']:
+            # TODO: split migration into a separate module/step
             logger.info("Migrating the 3D BAG to production")
             exporter.migrate(conn, cfg)
             logger.info("Exporting 3D BAG")
@@ -224,6 +225,8 @@ def app(cli_args, here, log_conf):
                              cfg['output']['production']['schema'])
 
         if args_in['quality']:
+            # TODO: quality check needs to run on the staging schema, not the production, because it supposed to
+            # verify the quality BEFORE it goes to production
             logger.info("Checking 3D BAG quality")
 #             cfg_quality = quality.create_quality_views(conn, cfg)
             quality.create_quality_table(conn)

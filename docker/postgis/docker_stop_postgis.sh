@@ -1,2 +1,2 @@
 #!/bin/bash
-docker stop 3dbag_postgis
+docker stop bag3d_postgis

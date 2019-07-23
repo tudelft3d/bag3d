@@ -12,12 +12,12 @@ Sphinx = "*"
 lxml = "*"
 "bs4" = "*"
 pykwalify = "*"
-numpy = "*"
-rasterstats = "*"
+#numpy = "*"
+#rasterstats = "*"
 sphinx-jsonschema = "*"
 psutil = "*"
 memory-profiler = "*"
-bag3d = {path = "."}
+bag3d = {editable = true,path = "."}
 
 [requires]
 python_version = "3.6"
