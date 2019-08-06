@@ -17,6 +17,7 @@ The bag3d software
    :caption: Contents:
 
    _modules/modules
+   schema
    contact
 
 Indices and tables

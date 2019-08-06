@@ -1,4 +1,4 @@
-name: bag3d configuration schema
+name: bag3d configuration schema, YAML schema is validated by pykwalify (https://pykwalify.readthedocs.io/en/master/)
 type: map
 mapping:
   database:
