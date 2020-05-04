@@ -153,8 +153,8 @@ def app(cli_args, here, log_conf):
             logger.info("Configuring AHN2-3 border tiles")
             border.create_border_table(conn, cfg, 
                                        doexec=args_in['no_exec'])
-            border.update_file_date(conn, cfg, ahn2_dir, ahn2_fp, 
-                                    doexec=args_in['no_exec'])
+            # border.update_file_date(conn, cfg, ahn2_dir, ahn2_fp,
+            #                         doexec=args_in['no_exec'])
 
 
         if args_in['run_3dfier']:
