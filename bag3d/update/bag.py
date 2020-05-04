@@ -193,7 +193,7 @@ def run_pg_restore(dbase, dump=None, doexec=True):
     # Restore from the latest extract
     command = ['pg_restore', '--no-owner', '--no-privileges', '-j', '20',
                '-h', dbase['host'], '-U', dbase['user'], '-d', dbase['dbname'],
-               '-w', dump]
+               dump]
     run_subprocess(command, doexec=doexec)
 
 
@@ -250,7 +250,7 @@ def restore_BAG(dbase, bag_latest=None, dump=None, doexec=True):
         bag_latest = get_latest_BAG(bag_url)
         logger.debug("bag_latest is %s", bag_latest.isoformat())
     else:
-        bag_latest = datetime.strptime(bag_latest, '%Y-%m-%d')
+        bag_latest = datetime.strptime(bag_latest, '%Y-%m-%d').date()
         logger.debug("bag_latest is %s", bag_latest.isoformat())
     
     # Get the date of the last update on the BAG database on Godzilla ----------
