@@ -191,7 +191,7 @@ def run_pg_restore(dbase, dump=None, doexec=True):
     run_subprocess(command, shell=True, doexec=doexec)
     
     # Restore from the latest extract
-    command = ['pg_restore', '--no-owner', '--no-privileges', '-j', '20',
+    command = ['/usr/lib/postgresql/10/bin/pg_restore', '--no-owner', '--no-privileges', '-j', '20',
                '-h', dbase['host'], '-U', dbase['user'], '-d', dbase['dbname'],
                dump]
     run_subprocess(command, doexec=doexec)
