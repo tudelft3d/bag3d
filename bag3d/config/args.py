@@ -205,7 +205,8 @@ def parse_config(args_in, schema):
         The configuration parameters
     """
     cfg = {}
-    
+
+    # -- Get command line parameters, configure temporary files, validate config file
     try:
         validate_config(args_in['cfg_file'], schema)
         logger.info("Configuration file is valid")
@@ -213,70 +214,9 @@ def parse_config(args_in, schema):
             cfg_stream = yaml.load(stream)
     except pykwalify.errors.PyKwalifyException:
         raise
-    
-    cfg["threads"] = int(args_in["threads"])
-    cfg["input_elevation"] = cfg_stream["input_elevation"]
-    cfg["input_elevation"]["dataset_dir"] = add_abspath(
-        cfg_stream["input_elevation"]["dataset_dir"])
-    #FIXME: remove this below --v
-    cfg["pc_dir"] = add_abspath(
-        cfg_stream["input_elevation"]["dataset_dir"])
-    
-    cfg['tile_index'] = cfg_stream['tile_index']
-    #FIXME: remove this below --v
-    cfg['polygons'] = cfg_stream['tile_index']['polygons']
-    cfg['elevation'] = cfg_stream['tile_index']['elevation']
 
-#     cfg['output_dir'] = os.path.abspath(cfg_stream["output"]["dir"])
-#     if not os.path.exists(cfg['output_dir']):
-#         os.makedirs(cfg['output_dir'], exist_ok=True)
-#     
-#     cfg['out_schema'] = cfg_stream["output"]["schema"]
-#     cfg['out_table'] = cfg_stream["output"]["table"]
-#     cfg['bag3d_table'] = cfg_stream["output"]["bag3d_table"]
-
-    cfg['path_3dfier'] = cfg_stream["path_3dfier"]
-    cfg['path_lasinfo'] = cfg_stream['path_lasinfo']
-
-    cfg["input_polygons"] = cfg_stream["input_polygons"]
-    #FIXME: sanitzie this below --v
-    try:
-        # in case user gave " " or "" for 'extent'
-        if len(cfg_stream["input_polygons"]["extent"]) <= 1:
-            EXTENT_FILE = None
-            logger.debug("extent string has length <= 1")
-        cfg['extent_file'] = os.path.abspath(
-            cfg_stream["input_polygons"]["extent"])
-        cfg['tiles'] = None
-    except (NameError, AttributeError, TypeError):
-        tile_list = cfg_stream["input_polygons"]["tile_list"]
-        assert isinstance(
-            tile_list, list), "Please provide input for tile_list as a list: [...]"
-        cfg['tiles'] = tile_list
-        cfg['extent_file'] = None
-
-    # 'user_schema' is used for the '_clip3dfy_' and '_union' views, thus
-    # only use 'user_schema' if 'extent' is provided
-    cfg['tile_schema'] = cfg_stream["input_polygons"]["tile_schema"]
-    USER_SCHEMA = cfg_stream["input_polygons"]["user_schema"]
-    if (USER_SCHEMA is None) or (EXTENT_FILE is None):
-        logger.debug("user_schema or extent is None")
-        cfg["input_polygons"]['user_schema'] = cfg["input_polygons"]['tile_schema']
-    
-    cfg['database'] = cfg_stream['database']
-
-    cfg["footprints"] = cfg_stream["input_polygons"]["footprints"]
-
-    cfg['prefix_tile_footprint'] = cfg_stream["input_polygons"]["tile_prefix"]
-    
-    cfg["output"] = cfg_stream["output"]
-    cfg["output"]["staging"]["dir"] = os.path.abspath(cfg_stream["output"]["staging"]["dir"])
-    os.makedirs(cfg["output"]["staging"]["dir"], exist_ok=True)
-    cfg["output"]["production"]["dir"] = os.path.abspath(cfg_stream["output"]["production"]["dir"])
-    os.makedirs(cfg["output"]["production"]["dir"], exist_ok=True)
-    
-    cfg["config"] = {}
-    cfg["config"]["in"] = args_in['cfg_file']
+    cfg['config'] = {}
+    cfg['config']['in'] = args_in['cfg_file']
     rootdir = os.path.dirname(args_in['cfg_file'])
     rest_dir = os.path.join(rootdir, "cfg_rest")
     ahn2_dir = os.path.join(rootdir, "cfg_ahn2")
@@ -289,14 +229,62 @@ def parse_config(args_in, schema):
             logger.debug("Created %s", d)
         except Exception as e:
             logger.error(e)
-    cfg["config"]["out_rest"] = os.path.join(rest_dir, "bag3d_cfg_rest.yml")
-    cfg["config"]["out_border_ahn2"] = os.path.join(ahn2_dir, "bag3d_cfg_border_ahn2.yml")
-    cfg["config"]["out_border_ahn3"] = os.path.join(ahn3_dir, "bag3d_cfg_border_ahn3.yml")
-    
-    if cfg_stream["quality"]["ahn2_rast_dir"]:
-        os.makedirs(cfg_stream["quality"]["ahn2_rast_dir"], exist_ok=True)
-    if cfg_stream["quality"]["ahn3_rast_dir"]:
-        os.makedirs(cfg_stream["quality"]["ahn3_rast_dir"], exist_ok=True)
-    cfg["quality"] = cfg_stream["quality"]
+    cfg['config']['out_rest'] = os.path.join(rest_dir, "bag3d_cfg_rest.yml")
+    cfg['config']['out_border_ahn2'] = os.path.join(ahn2_dir, "bag3d_cfg_border_ahn2.yml")
+    cfg['config']['out_border_ahn3'] = os.path.join(ahn3_dir, "bag3d_cfg_border_ahn3.yml")
+    cfg['config']['threads'] = int(args_in['threads'])
+
+    #-- Get config file parameters
+    # database connection
+    cfg['database'] = cfg_stream['database']
+
+    # 2D polygons
+    cfg['input_polygons'] = cfg_stream['input_polygons']
+    try:
+        # in case user gave " " or "" for 'extent'
+        if len(cfg_stream['input_polygons']['extent']) <= 1:
+            EXTENT_FILE = None
+            logger.debug('extent string has length <= 1')
+        cfg['input_polygons']['extent_file'] = os.path.abspath(
+            cfg_stream['input_polygons']['extent'])
+        cfg['input_polygons']['tile_list'] = None
+    except (NameError, AttributeError, TypeError):
+        tile_list = cfg_stream['input_polygons']['tile_list']
+        assert isinstance(
+            tile_list, list), "Please provide input for tile_list as a list: [...]"
+        cfg['input_polygons']['tile_list'] = tile_list
+        cfg['input_polygons']['extent_file'] = None
+    # 'user_schema' is used for the '_clip3dfy_' and '_union' views, thus
+    # only use 'user_schema' if 'extent' is provided
+    USER_SCHEMA = cfg_stream['input_polygons']['user_schema']
+    if (USER_SCHEMA is None) or (EXTENT_FILE is None):
+        logger.debug("user_schema or extent is None")
+        cfg['input_polygons']['user_schema'] = cfg['input_polygons']['tile_schema']
+
+    # AHN point cloud
+    cfg['input_elevation'] = cfg_stream['input_elevation']
+    cfg['input_elevation']['dataset_dir'] = add_abspath(
+        cfg_stream['input_elevation']['dataset_dir'])
+
+    # quality checks
+    if cfg_stream['quality']['ahn2_rast_dir']:
+        os.makedirs(cfg_stream['quality']['ahn2_rast_dir'], exist_ok=True)
+    if cfg_stream['quality']['ahn3_rast_dir']:
+        os.makedirs(cfg_stream['quality']['ahn3_rast_dir'], exist_ok=True)
+    cfg['quality'] = cfg_stream['quality']
+
+    # partitioning of the 2D polygons
+    cfg['tile_index'] = cfg_stream['tile_index']
+
+    # output control
+    cfg['output'] = cfg_stream['output']
+    cfg['output']['staging']['dir'] = os.path.abspath(cfg_stream['output']['staging']['dir'])
+    os.makedirs(cfg['output']['staging']['dir'], exist_ok=True)
+    cfg['output']['production']['dir'] = os.path.abspath(cfg_stream['output']['production']['dir'])
+    os.makedirs(cfg['output']['production']['dir'], exist_ok=True)
+
+    # executables
+    cfg['path_3dfier'] = cfg_stream['path_3dfier']
+    cfg['path_lasinfo'] = cfg_stream['path_lasinfo']
 
     return cfg

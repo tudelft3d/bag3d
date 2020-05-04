@@ -4,6 +4,8 @@
 
 import os
 from subprocess import run
+from shutil import which
+from sys import exit
 
 import psycopg2
 from psycopg2 import sql
@@ -118,11 +120,21 @@ def csv2db(conn, cfg, out_paths):
         s = '"' + cfg["output"]["staging"]["schema"] + '"' # expecting here that the yaml parser took care of stripping the " and ' from the name
         t = '"' + cfg["output"]["staging"]["heights_table"] + '"'
         tbl = ".".join([s, t])
+
+        is_gawk = which("gawk")
+        is_sed = which("sed")
+        if is_gawk is None:
+            logger.error("'gawk' not found")
+            exit(1)
+        if is_sed is None:
+            logger.error("'sed' not found")
+            exit(1)
+
         with conn.conn.cursor() as cur:
             for path in out_paths:
                 csv_file = os.path.split(path)[1]
                 fname = os.path.splitext(csv_file)[0]
-                tile = fname.replace(cfg['prefix_tile_footprint'], '', 1)
+                tile = fname.replace(cfg['input_polygons']['tile_prefix'], '', 1)
                 tile_q = sql.Literal(tile)
                 
                 query = sql.SQL("""SELECT file_date, ahn_version

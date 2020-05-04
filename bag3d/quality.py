@@ -8,8 +8,8 @@ from math import sqrt
 
 from psycopg2 import sql
 from psycopg2.extras import Json
-import numpy as np
-from rasterstats import zonal_stats
+# import numpy as np
+# from rasterstats import zonal_stats
 
 from bag3d.config import border
 
@@ -368,35 +368,35 @@ def get_sample(conn, config):
     return conn.get_dict(query)
 
 
-def compute_stats(sample, file_idx, stats):
-    """Compute statistics from a reference data set for comparison with 
-    3dfier's output
-    """
-    logger.info("Computing %s from reference data", stats)
-    tiles = set([fp["tile_id"] for fp in sample])
-    out = []
-    logger.debug("%s tiles selected" % len(tiles))
-    for tile in tiles:
-        if tile in file_idx:
-            rast = file_idx[tile]
-            fprints_in_tile = []
-            for i,fp in enumerate(sample):
-                if isinstance(fp, list):
-                    logger.error("oh oh, unexpected list")
-                    logger.debug(fp[0])
-                else:
-                    if fp["tile_id"] == tile:
-                        fprints_in_tile.append(fp)
-                        del sample[i]
-            polys = [bytes(fp['geom']) for fp in fprints_in_tile]
-            ref_heights = zonal_stats(polys, rast, stats=stats)
-            for i,fp in enumerate(fprints_in_tile):
-                fp['reference'] = ref_heights[i]
-                out.append(fp)
-        else:
-            logger.debug("%s not in raster index", tile)
-            pass
-    return out
+# def compute_stats(sample, file_idx, stats):
+#     """Compute statistics from a reference data set for comparison with
+#     3dfier's output
+#     """
+#     logger.info("Computing %s from reference data", stats)
+#     tiles = set([fp["tile_id"] for fp in sample])
+#     out = []
+#     logger.debug("%s tiles selected" % len(tiles))
+#     for tile in tiles:
+#         if tile in file_idx:
+#             rast = file_idx[tile]
+#             fprints_in_tile = []
+#             for i,fp in enumerate(sample):
+#                 if isinstance(fp, list):
+#                     logger.error("oh oh, unexpected list")
+#                     logger.debug(fp[0])
+#                 else:
+#                     if fp["tile_id"] == tile:
+#                         fprints_in_tile.append(fp)
+#                         del sample[i]
+#             polys = [bytes(fp['geom']) for fp in fprints_in_tile]
+#             ref_heights = zonal_stats(polys, rast, stats=stats)
+#             for i,fp in enumerate(fprints_in_tile):
+#                 fp['reference'] = ref_heights[i]
+#                 out.append(fp)
+#         else:
+#             logger.debug("%s not in raster index", tile)
+#             pass
+#     return out
 
 
 def export_stats(sample, fout):
@@ -441,15 +441,15 @@ def rmse(a):
     """
     return sqrt(sum([d**2 for d in a]) / len(a))
 
-def compute_rmse(diffs, stats):
-    """Compute the RMSE across the whole sample"""
-    res = {}
-    for pctile in stats:
-        logger.debug("Computing %s", pctile)
-        r = []
-        for fp in diffs:
-            r.append(fp[pctile])
-        a = np.array(r, dtype='float32')
-        logger.debug(a)
-        res[pctile] = round(rmse(a[~np.isnan(a)]),2)
-    return res
+# def compute_rmse(diffs, stats):
+#     """Compute the RMSE across the whole sample"""
+#     res = {}
+#     for pctile in stats:
+#         logger.debug("Computing %s", pctile)
+#         r = []
+#         for fp in diffs:
+#             r.append(fp[pctile])
+#         a = np.array(r, dtype='float32')
+#         logger.debug(a)
+#         res[pctile] = round(rmse(a[~np.isnan(a)]),2)
+#     return res
