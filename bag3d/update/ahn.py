@@ -120,7 +120,7 @@ def download(path_lasinfo, ahn3_dir, ahn2_dir, tile_index_file, ahn3_file_pat, a
     ahn2_pat = ahn2_file_pat # in /data/pointcloud/AHN2/uitgefiltered
     f_date_pat = re.compile(r"(?<=\sfile creation day/year:).*", 
                             flags=re.IGNORECASE & re.MULTILINE)
-    url = "https://geodata.nationaalgeoregister.nl/ahn3/extract/ahn3_laz/C_{}.LAZ"
+    url = "https://download.pdok.nl/rws/ahn3/v1_0/laz/C_{}.LAZ"
     
     downloaded = 0
     ahn2_files = 0
