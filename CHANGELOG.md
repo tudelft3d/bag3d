@@ -5,6 +5,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [1.1.0] - 2020-05-04
+### Software
++ Update BAG extract link
++ Restore local BAG extract instead of download
++ Update AHN3 LAZ download link
+
 ## [1.0.2] - 2019-05-23
 ### Fixes
 + Paging in Geoserver by adding PKEY to production table. Issue [#26](https://github.com/tudelft3d/bag3d/issues/26)
