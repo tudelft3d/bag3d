@@ -75,7 +75,9 @@ def app(cli_args, here, log_conf):
             logger.info("Updating BAG database")
             # At this point an empty database should exists, restore_BAG 
             # takes care of the rest
-            bag.restore_BAG(cfg['database'], doexec=args_in['no_exec'])
+            bag.restore_BAG(cfg['database'], bag_latest=args_in['bag_date'],
+                            dump=args_in['bag_dump'],
+                            doexec=args_in['no_exec'])
 
 
         if args_in['update_ahn']:

@@ -42,6 +42,16 @@ def parse_console_args(args):
         action="store_true",
         help="Update the BAG in the database. If it does not exists, download and restore the BAG extract into the database")
     parser.add_argument(
+        "--bag-dump",
+        dest='bag_dump',
+        type=str,
+        help="BAG database dump path")
+    parser.add_argument(
+        "--bag-dump-date",
+        dest='bag_date',
+        type=str,
+        help="BAG database dump date")
+    parser.add_argument(
         "--update-ahn",
         dest='update_ahn',
         action="store_true",
@@ -92,6 +102,8 @@ def parse_console_args(args):
         help="Set logging level.")
     parser.set_defaults(get_bag=False)
     parser.set_defaults(update_bag=False)
+    parser.set_defaults(bag_dump=None)
+    parser.set_defaults(bag_date=None)
     parser.set_defaults(update_ahn=False)
     parser.set_defaults(update_ahn_raster=False)
     parser.set_defaults(import_tile_idx=False)
@@ -114,6 +126,8 @@ def parse_console_args(args):
     args_in['threads'] = args.threads
     args_in['get_bag'] = args.get_bag
     args_in['update_bag'] = args.update_bag
+    args_in['bag_dump'] = args.bag_dump
+    args_in['bag_date'] = args.bag_date
     args_in['update_ahn'] = args.update_ahn
     args_in['update_ahn_raster'] = args.update_ahn_raster
     args_in['import_tile_idx'] = args.import_tile_idx
