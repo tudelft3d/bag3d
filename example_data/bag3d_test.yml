@@ -15,7 +15,7 @@ input_polygons:
             uniqueid: identificatie
     tile_schema: bag_tiles
     user_schema: 
-    tile_prefix: t_ 
+    tile_prefix:
     extent:
     tile_list: [all]
 
@@ -36,7 +36,7 @@ quality:
 tile_index:
     polygons:
         schema: tile_index
-        table: bag_index
+        table: bag_tiles
         fields:
             primary_key: id
             geometry: geom
@@ -44,7 +44,7 @@ tile_index:
         file: bag_index.geojson
     elevation: 
         schema: tile_index
-        table: ahn_index
+        table: ahn_tiles
         border_table: border_tiles
         fields:
             primary_key: id
@@ -66,6 +66,6 @@ output:
         bag3d_table: pand3d
 
 path_3dfier: /home/balazs/Development/3dfier_src/build_bag3d/3dfier
-path_lasinfo: /opt/LAStools-bin/bin/lasinfo
+path_lasinfo: /opt/LAStools/install/bin/lasinfo64
 
 

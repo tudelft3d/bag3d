@@ -169,7 +169,7 @@ CREATE SCHEMA IF NOT EXISTS tile_index;
         logger.debug(conn.print_query(query))
 
 
-def run_pg_restore(dbase, doexec=True):
+def run_pg_restore(dbase, dump=None, doexec=True):
     """Run the pg_restore process
     
     Parameters
@@ -193,7 +193,7 @@ def run_pg_restore(dbase, doexec=True):
     # Restore from the latest extract
     command = ['pg_restore', '--no-owner', '--no-privileges', '-j', '20',
                '-h', dbase['host'], '-U', dbase['user'], '-d', dbase['dbname'],
-               '-w', './data.nlextract.nl/bag/postgis/bag-laatst.backup']
+               '-w', dump]
     run_subprocess(command, doexec=doexec)
 
 
@@ -221,7 +221,7 @@ def download_BAG(url, doexec=True):
     run_subprocess(command, doexec=doexec)
 
 
-def restore_BAG(dbase, doexec=True):
+def restore_BAG(dbase, bag_latest=None, dump=None, doexec=True):
     """Restores the BAG extract into a database
     
     Parameters
@@ -244,10 +244,14 @@ def restore_BAG(dbase, doexec=True):
         raise
     
     setup_BAG(conn, doexec=doexec)
-    
-    bag_url = 'http://data.nlextract.nl/bag/postgis/'
-    bag_latest = get_latest_BAG(bag_url)
-    logger.debug("bag_latest is %s", bag_latest.isoformat())
+
+    if dump is None:
+        bag_url = 'http://data.nlextract.nl/bag/postgis/'
+        bag_latest = get_latest_BAG(bag_url)
+        logger.debug("bag_latest is %s", bag_latest.isoformat())
+    else:
+        bag_latest = datetime.strptime(bag_latest, '%Y-%m-%d')
+        logger.debug("bag_latest is %s", bag_latest.isoformat())
     
     # Get the date of the last update on the BAG database on Godzilla ----------
     query = "SELECT max(last_update) FROM public.bag_updates;"
@@ -264,10 +268,11 @@ def restore_BAG(dbase, doexec=True):
     
     # Download the latest dump if necessary ------------------------------------
     if bag_latest > godzilla_update:
-        logger.info("There is a newer BAG-extract available, starting download and update...")
-        download_BAG(bag_url, doexec=doexec)
+        if dump is None:
+            logger.info("There is a newer BAG-extract available, starting download and update...")
+            download_BAG(bag_url, doexec=doexec)
         
-        run_pg_restore(dbase, doexec=doexec)
+        run_pg_restore(dbase, dump=dump, doexec=doexec)
         
         # Update timestamp in bag_updates
         query = sql.SQL("""
