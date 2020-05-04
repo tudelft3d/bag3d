@@ -4,6 +4,7 @@
 
 import os
 import os.path
+from pathlib import Path
 import subprocess
 import locale
 from datetime import datetime
@@ -163,10 +164,10 @@ def download(path_lasinfo, ahn3_dir, ahn2_dir, tile_index_file, ahn3_file_pat, a
                 j_in['features'][i]['properties']['file_date'] = d.isoformat()
                 j_in['features'][i]['properties']['ahn_version'] = 2
 
-    cmd = " ".join(['ls -l', ahn3_dir, '| wc -l'])
-    dl = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE)
-    out = int(dl.stdout.decode(locale.getpreferredencoding(do_setlocale=True)))
-    file_count = out-1 # because the log of this script is also stored in the dir
+    file_count = 0
+    for f in Path(ahn3_dir).iterdir():
+        if f.is_file() and f.suffix == '.LAZ':
+            file_count += 1
     
     # set serial integer ID field
     j = update_json_id(j_in)
